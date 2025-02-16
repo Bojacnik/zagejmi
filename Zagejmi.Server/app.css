@@ -9,6 +9,16 @@
     src: url("font/Outfit/static/Outfit-Regular.ttf") format("truetype");
 }
 
+html {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+}
+
 * {
     font-family: "Outfit", sans-serif;
     font-optical-sizing: auto;
