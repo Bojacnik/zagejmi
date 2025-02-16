@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@font-face {
+    font-family: "Outfit";
+    src: url("font/Outfit/static/Outfit-Regular.ttf") format("truetype");
+}
+
+* {
+    font-family: "Outfit", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 200;
+    font-style: normal;
+}

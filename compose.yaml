@@ -1,0 +1,12 @@
+﻿services:
+  zagejmi.client:
+    image: zagejmi.client
+    build:
+      context: .
+      dockerfile: Zagejmi/Zagejmi.Client/Dockerfile
+
+  zagejmi:
+    image: zagejmi
+    build:
+      context: .
+      dockerfile: Zagejmi/Zagejmi/Dockerfile
