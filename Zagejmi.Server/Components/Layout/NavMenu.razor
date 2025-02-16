@@ -1,41 +1,37 @@
 ﻿@implements IDisposable
 
 @inject NavigationManager NavigationManager
-
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Zagejmi</a>
+<div class="flex flex-row w-full h-full">
+    <div class="flex justify-center h-full w-32 pl-4">
+        <img src="img/cat.png" class="aspect-square" alt=""/>
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+    <div class="pl-4 flex w-full h-full">
+        <nav class="nav flex flex-row fl gap-2">
+            <div class="nav-item px-3 flex items-center">
+                <NavLink href="" Match="NavLinkMatch.All">
+                    Home
+                </NavLink>
+            </div>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
+            <div class="nav-item px-3 flex items-center">
+                <NavLink class="nav-link" href="counter">
+                    Counter
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3 flex items-center">
+                <NavLink class="nav-link" href="weather">
+                    Weather
+                </NavLink>
+            </div>
+        </nav>
+
+        <div class="flex gap-2 flex-row-reverse grow pr-4">
+            <a class="text-violet-500 w-fit flex items-center">register</a>
+            <h1 class="flex items-center">login</h1>
         </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
-            </NavLink>
-        </div>
-    </nav>
+    </div>
 </div>
 
 @code {
