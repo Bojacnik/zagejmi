@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Zagejmi.Components;
+using Zagejmi.Infrastructure.Ctx;
 
 namespace Zagejmi;
 
@@ -12,6 +14,9 @@ public class Program
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
+        
+        builder.Services.AddDbContext<ZagejmiContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
         WebApplication app = builder.Build();
 
