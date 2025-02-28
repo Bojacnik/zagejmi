@@ -13,7 +13,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Repository\" />
+      <PackageReference Include="MediatR" Version="12.4.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Events\Transactions\" />
     </ItemGroup>
 
 </Project>
