@@ -1,32 +1,20 @@
-﻿using Zagejmi.Domain.Community.User;
+﻿namespace Zagejmi.Domain.Community.Goin;
 
-namespace Zagejmi.Domain.Community.Goin;
-
-public class GoinWallet
+public class GoinWallet(List<GoinTransaction> transactions)
 {
-    public Person Owner;
-
     /// <summary>
     /// CACHED AMOUNT ONLY!!!
     /// IF YOU NEED TO MAKE A TRANSACTION
     /// YOU HAVE TO EVALUATE EVERYTHING FROM THE TRANSACTION LIST
     /// </summary>
-    public ulong Balance;
+    public ulong CacheBalance;
 
     /// <summary>
     /// TRANSACTION LIST
     /// </summary>
-    public List<GoinTransaction> Transactions;
+    public List<GoinTransaction> Transactions = transactions;
 
-    public GoinWallet(Person owner)
+    public GoinWallet() : this([])
     {
-        Owner = owner;
-        Transactions = [];
-    }
-
-    public GoinWallet(Person owner, List<GoinTransaction> transactions)
-    {
-        Owner = owner;
-        Transactions = transactions;
     }
 }
