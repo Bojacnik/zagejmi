@@ -24,7 +24,8 @@ public class CreatePersonCommandHandler(
         {
             FirstName = request.FirstName,
             LastName = request.LastName,
-            Email = request.MailAddress
+            Email = request.MailAddress,
+            UserName = request.UserName
         };
 
         await eventStore.SaveEventAsync(@event, cancellationToken);

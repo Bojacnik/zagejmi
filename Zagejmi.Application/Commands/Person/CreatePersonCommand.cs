@@ -7,6 +7,7 @@ namespace Zagejmi.Application.Commands.Person;
 
 public record CreatePersonCommand(
     MailAddress MailAddress,
+    string UserName,
     string FirstName,
     string LastName,
     DateTime BirthDate,

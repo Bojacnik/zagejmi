@@ -10,9 +10,11 @@ namespace Zagejmi.Infrastructure.Models;
 public class PersonalInformationModel
 {
     [Key] public ulong Id { get; init; }
+    [StringLength(255)] public required string Email { get; init; }
+    [StringLength(255)] public required string UserName { get; init; }
+
     [StringLength(255)] public required string FirstName { get; init; }
     [StringLength(255)] public required string LastName { get; init; }
-    [StringLength(255)] public required string Email { get; init; }
     public DateTime BirthDate { get; init; }
     public Gender Gender { get; init; }
 

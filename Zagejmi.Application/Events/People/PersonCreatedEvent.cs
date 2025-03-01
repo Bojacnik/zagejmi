@@ -14,6 +14,7 @@ public record PersonCreatedEvent(
 {
     public ulong? Id { get; init; }
     public required string FirstName { get; init; }
+    public required string UserName { get; init; }
     public required string LastName { get; init; }
     public required MailAddress Email { get; init; }
     public DateTime BirthDate { get; init; }

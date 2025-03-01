@@ -4,6 +4,7 @@ namespace Zagejmi.Domain.Community.User;
 
 public record PersonalInfo(
     MailAddress MailAddress,
+    string UserName,
     string FirstName,
     string LastName,
     DateTime BirthDay,

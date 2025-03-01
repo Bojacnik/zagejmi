@@ -5,6 +5,6 @@ namespace Zagejmi.Application.Repository;
 
 public interface IPersonRepository : IDefaultRepository<Person, IPersonEvent>
 {
-    Task<Person> GetByEmailAsync(string email);
-    Task<Person> GetByUsernameAsync(string username);
+    Task<Person> GetByEmailAsync(string email, CancellationToken cancellationToken);
+    Task<Person> GetByUsernameAsync(string username, CancellationToken cancellationToken);
 }
