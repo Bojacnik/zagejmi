@@ -10,7 +10,7 @@ public class GoinWallet(List<GoinTransaction> transactions)
     public ulong CacheBalance;
 
     /// <summary>
-    /// TRANSACTION LIST
+    /// TRANSACTION LIST containing only transactions of user owning this wallet
     /// </summary>
     public List<GoinTransaction> Transactions = transactions;
 
