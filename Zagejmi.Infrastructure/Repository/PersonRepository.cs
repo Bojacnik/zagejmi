@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Zagejmi.Application.Repository;
 using Zagejmi.Domain.Community.User;
 using Zagejmi.Infrastructure.Ctx;
@@ -11,8 +12,18 @@ public class PersonRepository(ZagejmiContext dbContext, IMapper mapper) : IPerso
 {
     public Task<List<Person>> GetAllAsync(CancellationToken cancellationToken)
     {
-        Task<List<Person>> people = dbContext.Set<Person>().ToListAsync(cancellationToken);
-        return people;
+        return Task.Run(async () =>
+        {
+            List<PersonModel> transactionModels = await
+                dbContext
+                    .Set<PersonModel>()
+                    .ToListAsync(cancellationToken);
+
+            return mapper
+                .Map<List<PersonModel>, List<Person>>(
+                    transactionModels
+                );
+        }, cancellationToken);
     }
 
     public Task<Person> GetByIdAsync(ulong id, CancellationToken cancellationToken)
@@ -30,28 +41,50 @@ public class PersonRepository(ZagejmiContext dbContext, IMapper mapper) : IPerso
 
         dbContext.Database.BeginTransaction();
 
-        var result = dbContext.Set<PersonModel>().AddAsync(model, cancellationToken);
+        ValueTask<EntityEntry<PersonModel>> result =
+            dbContext
+                .Set<PersonModel>()
+                .AddAsync(
+                    model,
+                    cancellationToken
+                );
 
         dbContext.Database.CommitTransaction();
 
         // TODO: will this work ??
-        return Task.Run( async () => mapper.Map<Person>(await result));
-        
+        return Task.Run(async () =>
+                mapper.Map<Person>(
+                    (await result).Entity),
+            cancellationToken
+        );
     }
 
     public Task<Person> UpdateAsync(Person oldEntity, Person newEntity, CancellationToken cancellationToken)
     {
-
         dbContext.Database.BeginTransaction();
 
-        ValueTask<PersonModel?> oldModel = dbContext.Set<PersonModel>().FindAsync([oldEntity.Id], cancellationToken);
+        ValueTask<PersonModel?> oldModel =
+            dbContext
+                .Set<PersonModel>()
+                .FindAsync(
+                    [oldEntity.Id],
+                    cancellationToken
+                );
 
-        dbContext.Entry(oldModel).CurrentValues.SetValues(
-            mapper.Map<PersonModel>(newEntity)
-        );
+        dbContext
+            .Entry(oldModel)
+            .CurrentValues
+            .SetValues(
+                mapper.Map<PersonModel>(newEntity)
+            );
 
         ValueTask<PersonModel?> updatedModel =
-            dbContext.Set<PersonModel>().FindAsync([oldEntity.Id], cancellationToken);
+            dbContext
+                .Set<PersonModel>()
+                .FindAsync(
+                    [oldEntity.Id],
+                    cancellationToken
+                );
 
         dbContext.Database.CommitTransaction();
 
@@ -67,7 +100,9 @@ public class PersonRepository(ZagejmiContext dbContext, IMapper mapper) : IPerso
 
         dbContext.Database.BeginTransaction();
 
-        dbContext.Set<PersonModel>().Remove(model);
+        dbContext
+            .Set<PersonModel>()
+            .Remove(model);
 
         dbContext.Database.CommitTransaction();
 
@@ -102,10 +137,15 @@ public class PersonRepository(ZagejmiContext dbContext, IMapper mapper) : IPerso
 
     public Task<Person> GetByUsernameAsync(string username, CancellationToken cancellationToken)
     {
-        Task<PersonModel?> model = dbContext.Set<PersonModel>()
-            .SingleOrDefaultAsync(personModel => personModel.PersonalInfo != null &&
-                                                 personModel.PersonalInfo.UserName == username
-                , cancellationToken);
+        Task<PersonModel?> model =
+            dbContext
+                .Set<PersonModel>()
+                .SingleOrDefaultAsync(
+                    personModel =>
+                        personModel.PersonalInfo != null &&
+                        personModel.PersonalInfo.UserName == username,
+                    cancellationToken
+                );
 
         return Task.Run(
             async () => mapper.Map<Person>(await model),
