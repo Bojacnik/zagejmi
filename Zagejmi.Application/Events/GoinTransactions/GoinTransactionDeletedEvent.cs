@@ -2,7 +2,7 @@
 
 namespace Zagejmi.Application.Events.GoinTransactions;
 
-public class GoinTransactionDeleted(
+public class GoinTransactionDeletedEvent(
     Guid eventId,
     DateTime timestamp,
     ulong version,

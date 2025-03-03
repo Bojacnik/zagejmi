@@ -9,9 +9,9 @@ namespace Zagejmi.Application.CommandHandlers;
 public class CreatePersonCommandHandler(
     IEventStore eventStore,
     IPersonRepository repository)
-    : IRequestHandler<CreatePersonCommand, PersonCreatedEvent>
+    : IRequestHandler<PersonCreateCommand, PersonCreatedEvent>
 {
-    public async Task<PersonCreatedEvent> Handle(CreatePersonCommand request, CancellationToken cancellationToken)
+    public async Task<PersonCreatedEvent> Handle(PersonCreateCommand request, CancellationToken cancellationToken)
     {
         var @event = new PersonCreatedEvent(
             Guid.NewGuid(),

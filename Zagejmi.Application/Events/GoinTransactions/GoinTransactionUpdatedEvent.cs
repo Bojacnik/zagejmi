@@ -2,7 +2,7 @@
 
 namespace Zagejmi.Application.Events.GoinTransactions;
 
-public class GoinTransactionUpdated(
+public class GoinTransactionUpdatedEvent(
     Guid eventId,
     DateTime timestamp,
     ulong version,

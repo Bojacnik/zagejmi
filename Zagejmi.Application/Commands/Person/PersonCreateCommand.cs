@@ -5,7 +5,7 @@ using Zagejmi.Domain.Community.User;
 
 namespace Zagejmi.Application.Commands.Person;
 
-public record CreatePersonCommand(
+public record PersonCreateCommand(
     MailAddress MailAddress,
     string UserName,
     string FirstName,
