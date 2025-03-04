@@ -5,6 +5,7 @@ namespace Zagejmi.Infrastructure.Utility;
 
 public class ImageConverter : ValueConverter<Image, byte[]>
 {
+    // TODO: Make platform independent
     public ImageConverter()
         : base(
             image => ImageToByteArray(image),
