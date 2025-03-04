@@ -15,8 +15,8 @@ public class Program
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
         
-        builder.Services.AddDbContext<ZagejmiContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+        // TODO: Make .env with DefaultConnection string pointing to Postgre or MariaDB, or replace with SQLite in the future
+        //builder.Services.AddDbContext<ZagejmiContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
         WebApplication app = builder.Build();
 
