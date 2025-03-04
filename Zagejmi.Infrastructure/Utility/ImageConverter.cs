@@ -7,8 +7,8 @@ public class ImageConverter : ValueConverter<Image, byte[]>
 {
     public ImageConverter()
         : base(
-            image => image != null ? ImageToByteArray(image) : null,
-            bytes => bytes != null ? ByteArrayToImage(bytes) : null)
+            image => ImageToByteArray(image),
+            bytes => ByteArrayToImage(bytes))
     {
     }
 
