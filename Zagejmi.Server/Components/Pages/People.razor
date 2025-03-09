@@ -1,6 +1,16 @@
 ﻿@page "/people"
-<div class="inline-flex flex-wrap gap-2">
-    @for (var i = 0; i < 50; i++)
+<div class="    
+    grid
+    sm:grid-cols-1
+    md:grid-cols-2
+    lg:grid-cols-3
+    xl:grid-cols-4
+    2xl:grid-cols-5
+    grid-flow-row-dense
+    gap-2
+    overflow-y-auto
+">
+    @for (var i = 0; i < 20; i++)
     {
         <Zagejmi.Components.Elements.Card/>
     }
