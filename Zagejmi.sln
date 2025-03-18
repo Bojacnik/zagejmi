@@ -1,19 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server", "Zagejmi.Server\Zagejmi.Server.csproj", "{2A35F764-C0D3-4289-AA80-BA8AD34AC426}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server", "src/Zagejmi.Server/Zagejmi.Server.csproj", "{2A35F764-C0D3-4289-AA80-BA8AD34AC426}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Client", "Zagejmi.Client\Zagejmi.Client.csproj", "{1EFA30E0-CA50-4466-94A3-237F0AB3180A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Client", "src/Zagejmi.Client/Zagejmi.Client.csproj", "{1EFA30E0-CA50-4466-94A3-237F0AB3180A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1B09407A-477A-4D3F-8A67-8BF1280D247E}"
 	ProjectSection(SolutionItems) = preProject
 		compose.yaml = compose.yaml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Application", "Zagejmi.Application\Zagejmi.Application.csproj", "{72CB788E-2B5F-4027-9507-C15276EF6F23}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Application", "src/Zagejmi.Application/Zagejmi.Application.csproj", "{72CB788E-2B5F-4027-9507-C15276EF6F23}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Domain", "Zagejmi.Domain\Zagejmi.Domain.csproj", "{5D84816D-E678-4942-B784-46172AAC2FBE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Domain", "src/Zagejmi.Domain/Zagejmi.Domain.csproj", "{5D84816D-E678-4942-B784-46172AAC2FBE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Infrastructure", "Zagejmi.Infrastructure\Zagejmi.Infrastructure.csproj", "{635CCA25-A381-4A19-A695-4A0EBF0601E9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Infrastructure", "src/Zagejmi.Infrastructure/Zagejmi.Infrastructure.csproj", "{635CCA25-A381-4A19-A695-4A0EBF0601E9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

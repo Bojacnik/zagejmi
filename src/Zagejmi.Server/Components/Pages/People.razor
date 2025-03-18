@@ -1,0 +1,33 @@
+﻿@page "/people"
+<div class="    
+    grid
+    sm:grid-cols-1
+    md:grid-cols-2
+    lg:grid-cols-3
+    xl:grid-cols-4
+    2xl:grid-cols-5
+    grid-flow-row-dense
+    gap-2
+    overflow-y-auto
+">
+    @for (var i = 0; i < 20; i++)
+    {
+        <Zagejmi.Components.Elements.Card class="relative group bg-amber-700 hover:transition-transform duration-200 ease-in-out">
+            <div class="absolute inset-0">
+                <img src="img/cat.png" class="w-full h-full object-cover" alt="" />
+            </div>
+            <div class="absolute left-0 bottom-0 z-10 flex flex-col items-center justify-center w-full h-[20%] bg-gradient-to-r from-blue-950 to-blue-900 opacity-85">
+                <p class="">
+                    Placeholder text
+                </p>
+                <div class="inline-flex p-1 rounded-2xl  bg-amber-600">
+                    <p>sample placeholder</p>
+                </div>
+            </div>
+        </Zagejmi.Components.Elements.Card>
+    }
+</div>
+
+@code {
+    
+}

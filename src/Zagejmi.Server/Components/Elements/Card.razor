@@ -1,0 +1,8 @@
+﻿<div class="relative aspect-square rounded-2xl border-4  overflow-hidden border-b-gray-900 @Class">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Class { get; set; }
+}
