@@ -1,7 +1,7 @@
-﻿using Zagejmi.Domain;
+﻿using SharedKernel;
 using Zagejmi.Domain.Events;
 
-namespace Zagejmi.Application.Repository;
+namespace Zagejmi.Domain.Repository;
 
 public interface IDefaultRepository<TEntity, TEvent>
     where TEntity : Entity<TEvent> where TEvent : IDomainEvent

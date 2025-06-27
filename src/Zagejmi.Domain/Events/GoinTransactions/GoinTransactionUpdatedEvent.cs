@@ -1,8 +1,6 @@
-﻿using Zagejmi.Domain.Events;
+﻿namespace Zagejmi.Domain.Events.GoinTransactions;
 
-namespace Zagejmi.Application.Events.GoinTransactions;
-
-public class GoinTransactionCreatedEvent(
+public class GoinTransactionUpdatedEvent(
     Guid eventId,
     DateTime timestamp,
     ulong version,

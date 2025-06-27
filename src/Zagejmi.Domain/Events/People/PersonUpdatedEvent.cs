@@ -1,7 +1,6 @@
 ﻿using Zagejmi.Domain.Community.User;
-using Zagejmi.Domain.Events;
 
-namespace Zagejmi.Application.Events.People;
+namespace Zagejmi.Domain.Events.People;
 
 public record PersonUpdatedEvent(
     Guid EventId,

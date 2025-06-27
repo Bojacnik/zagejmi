@@ -1,4 +1,4 @@
-﻿namespace Zagejmi.Domain.Events;
+﻿namespace SharedKernel;
 
 public interface IDomainEvent
 {

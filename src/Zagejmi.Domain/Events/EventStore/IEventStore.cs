@@ -1,6 +1,6 @@
-﻿using Zagejmi.Domain.Events;
+﻿using SharedKernel;
 
-namespace Zagejmi.Application.EventStore;
+namespace Zagejmi.Domain.Events.EventStore;
 
 public interface IEventStore
 {

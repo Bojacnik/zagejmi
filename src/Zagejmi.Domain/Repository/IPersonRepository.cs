@@ -1,7 +1,7 @@
-﻿using Zagejmi.Domain.Community.User;
-using Zagejmi.Domain.Events;
+﻿using Zagejmi.Domain.Events;
+using Zagejmi.Domain.Community.User;
 
-namespace Zagejmi.Application.Repository;
+namespace Zagejmi.Domain.Repository;
 
 public interface IPersonRepository : IDefaultRepository<Person, IPersonEvent>
 {

@@ -1,8 +1,9 @@
-﻿using Zagejmi.Domain.Events;
+﻿using SharedKernel;
+using Zagejmi.Domain.Events;
 
 namespace Zagejmi.Domain.Community.Goin;
 
-public class GoinTransaction(
+public sealed class GoinTransaction(
     ulong id,
     GoinWallet sender,
     GoinWallet receiver,

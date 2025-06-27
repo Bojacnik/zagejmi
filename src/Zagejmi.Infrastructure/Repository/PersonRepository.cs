@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Zagejmi.Application.Repository;
 using Zagejmi.Domain.Community.User;
+using Zagejmi.Domain.Repository;
 using Zagejmi.Infrastructure.Ctx;
 using Zagejmi.Infrastructure.Models;
 

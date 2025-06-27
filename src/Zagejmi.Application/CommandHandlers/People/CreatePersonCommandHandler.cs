@@ -1,8 +1,8 @@
 ﻿using MediatR;
 using Zagejmi.Application.Commands.Person;
-using Zagejmi.Application.Events.People;
-using Zagejmi.Application.EventStore;
-using Zagejmi.Application.Repository;
+using Zagejmi.Domain.Events.EventStore;
+using Zagejmi.Domain.Events.People;
+using Zagejmi.Domain.Repository;
 
 namespace Zagejmi.Application.CommandHandlers;
 

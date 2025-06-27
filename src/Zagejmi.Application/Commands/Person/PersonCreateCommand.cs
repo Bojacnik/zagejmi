@@ -1,7 +1,7 @@
 ﻿using System.Net.Mail;
 using MediatR;
-using Zagejmi.Application.Events.People;
 using Zagejmi.Domain.Community.User;
+using Zagejmi.Domain.Events.People;
 
 namespace Zagejmi.Application.Commands.Person;
 

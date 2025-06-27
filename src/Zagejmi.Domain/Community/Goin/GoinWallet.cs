@@ -1,7 +1,19 @@
-﻿namespace Zagejmi.Domain.Community.Goin;
+﻿using SharedKernel;
+using Zagejmi.Domain.Events;
 
-public class GoinWallet(List<GoinTransaction> transactions)
+namespace Zagejmi.Domain.Community.Goin;
+
+public sealed class GoinWallet(List<GoinTransaction> transactions) : Entity<IGoinTransactionEvent>
 {
+    #region Entity Properties
+
+    public override ulong Id { get; }
+    protected override ulong Version { get; set; }
+
+    #endregion
+
+    #region Wallet Properties
+
     /// <summary>
     /// CACHED AMOUNT ONLY!!!
     /// IF YOU NEED TO MAKE A TRANSACTION
@@ -14,7 +26,12 @@ public class GoinWallet(List<GoinTransaction> transactions)
     /// </summary>
     public List<GoinTransaction> Transactions = transactions;
 
-    public GoinWallet() : this([])
+    #endregion
+
+    public GoinWallet(ulong id, ulong version, List<GoinTransaction> transactions) : this(transactions)
     {
+        Id = id;
+        Version = version;
+        Transactions = transactions;
     }
 }

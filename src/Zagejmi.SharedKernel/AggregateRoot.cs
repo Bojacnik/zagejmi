@@ -1,6 +1,4 @@
-﻿using Zagejmi.Domain.Events;
-
-namespace Zagejmi.Domain;
+﻿namespace SharedKernel;
 
 public abstract class AggregateRoot<TDomainEvent> where TDomainEvent : IDomainEvent
 {

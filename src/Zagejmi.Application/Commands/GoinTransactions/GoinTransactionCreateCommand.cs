@@ -1,6 +1,6 @@
 ﻿using MediatR;
-using Zagejmi.Application.Events.GoinTransactions;
 using Zagejmi.Domain.Community.Goin;
+using Zagejmi.Domain.Events.GoinTransactions;
 
 namespace Zagejmi.Application.Commands.GoinTransactions;
 

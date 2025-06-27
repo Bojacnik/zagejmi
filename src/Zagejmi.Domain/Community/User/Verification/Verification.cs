@@ -1,6 +1,10 @@
-﻿namespace Zagejmi.Domain.Community.User.Verification;
+﻿using SharedKernel;
+using Zagejmi.Domain.Events;
 
-public abstract class Verification
+namespace Zagejmi.Domain.Community.User.Verification;
+
+public abstract class Verification : ValueObject
 {
     public VerificationType Type { get; init; }
+    
 }

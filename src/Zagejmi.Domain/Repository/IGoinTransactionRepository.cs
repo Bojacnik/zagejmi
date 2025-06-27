@@ -1,8 +1,8 @@
-﻿using Zagejmi.Domain.Community.Goin;
+﻿using Zagejmi.Domain.Events;
+using Zagejmi.Domain.Community.Goin;
 using Zagejmi.Domain.Community.User;
-using Zagejmi.Domain.Events;
 
-namespace Zagejmi.Application.Repository;
+namespace Zagejmi.Domain.Repository;
 
 public interface IGoinTransactionRepository : IDefaultRepository<GoinTransaction, IGoinTransactionEvent>
 {

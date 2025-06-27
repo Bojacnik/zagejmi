@@ -1,3 +1,11 @@
-﻿namespace Zagejmi.Domain.Community.Goin;
+﻿using SharedKernel;
 
-public record Goin(ulong Amount);
+namespace Zagejmi.Domain.Community.Goin;
+
+public sealed class Goin(ulong amount) : ValueObject
+{
+    protected override IEnumerable<object?> GetAtomicValues()
+    {
+        yield return amount;
+    }
+}
