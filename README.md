@@ -24,9 +24,13 @@ TailwindCSS
 ### Backendové knihovny
 .NET
 
-MediatR
+Serilog
 
-AutoMapper
+AnyMapper
+
+MassTransit.Mediatr
+
+
 
 ### Další využité technologie
 LINQ
