@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿/*
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Zagejmi.Domain.Community.User;
@@ -153,3 +154,4 @@ public class PersonRepository(ZagejmiContext dbContext, IMapper mapper) : IPerso
         );
     }
 }
+*/

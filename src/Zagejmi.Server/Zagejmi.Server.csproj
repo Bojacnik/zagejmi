@@ -10,8 +10,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Serilog" Version="4.3.0" />
         <ProjectReference Include="..\Zagejmi.Application\Zagejmi.Application.csproj" />
         <ProjectReference Include="..\Zagejmi.Client\Zagejmi.Client.csproj"/>
+        <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.2"/>
         <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.2"/>
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.2"/>

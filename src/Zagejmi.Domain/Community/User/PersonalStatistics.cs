@@ -43,7 +43,7 @@ public sealed class PersonalStatistics : Entity<IPersonEvent>
         ulong czkSpent,
         ulong goingSpent,
         ulong transactionsAmount,
-        ulong giftsSent) 
+        ulong giftsSent)
     {
         Id = id;
         Version = version;

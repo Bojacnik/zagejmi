@@ -1,7 +1,5 @@
-﻿using MediatR;
-using Zagejmi.Domain.Events.GoinTransactions;
+﻿using Zagejmi.Domain.Events.GoinTransactions;
 
 namespace Zagejmi.Application.Commands.GoinTransactions;
 
-public class GoinTransactionDeleteCommand(ulong id)
-    : IRequest<GoinTransactionDeletedEvent>;
+public record GoinTransactionDeleteCommand(ulong id);

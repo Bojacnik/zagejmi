@@ -3,7 +3,7 @@ using Zagejmi.Domain.Events;
 
 namespace Zagejmi.Domain.Repository;
 
-public interface IDefaultRepository<TEntity, TEvent>
+public interface IRepositoryDefault<TEntity, TEvent>
     where TEntity : Entity<TEvent> where TEvent : IDomainEvent
 {
     Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken);

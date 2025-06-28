@@ -26,13 +26,12 @@ public sealed class Person(
     public PersonalStatistics PersonalStatistics { get; } = personalStatistics;
     public GoinWallet Wallet { get; } = wallet;
     public PersonType PersonType { get; } = personType;
-    
+
     #endregion
-    
+
     #region Optional Association Properties
 
     public AssociateProfile? AssociateProfile { get; } = associateProfile;
 
     #endregion
-    
 }

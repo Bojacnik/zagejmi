@@ -25,7 +25,7 @@ public sealed class GoinWallet(List<GoinTransaction> transactions) : Entity<IGoi
     /// TRANSACTION LIST containing only transactions of user owning this wallet
     /// </summary>
     public List<GoinTransaction> Transactions = transactions;
-
+    
     #endregion
 
     public GoinWallet(ulong id, ulong version, List<GoinTransaction> transactions) : this(transactions)

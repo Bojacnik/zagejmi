@@ -1,10 +1,5 @@
-﻿using MediatR;
-using Zagejmi.Domain.Community.Goin;
-using Zagejmi.Domain.Events.GoinTransactions;
+﻿using Zagejmi.Domain.Community.Goin;
 
 namespace Zagejmi.Application.Commands.GoinTransactions;
 
-public class GoinTransactionUpdateCommand(
-    GoinTransaction old,
-    GoinTransaction updated
-) : IRequest<GoinTransactionUpdatedEvent>;
+public record GoinTransactionUpdateCommand(GoinTransaction Old, GoinTransaction Updated);

@@ -3,28 +3,47 @@ using SharedKernel;
 
 namespace Zagejmi.Domain.Community.User;
 
-public class PersonalInfo(
-    MailAddress? mailAddress,
-    string? userName,
-    string? firstName,
-    string? lastName,
-    DateTime birthDay,
-    Gender gender,
+public class PersonalInfo : ValueObject
+{
+    public MailAddress? MailAddress;
+    public string? UserName;
+    public string? FirstName;
+
+    public string? LastName;
+    public DateTime BirthDay;
+    public Gender Gender;
 
     // Verification
-    bool isVerified,
-    Verification.Verification? verification
-) : ValueObject
-{
+    public bool IsVerified;
+    public Verification.Verification? Verification;
+
+    public PersonalInfo(
+        MailAddress mailAddress,
+        string userName,
+        string firstName,
+        string lastName,
+        DateTime birthDay,
+        Gender gender)
+    {
+        MailAddress = mailAddress;
+        UserName = userName;
+        FirstName = firstName;
+        LastName = lastName;
+        BirthDay = birthDay;
+        Gender = gender;
+        IsVerified = false;
+        Verification = null;
+    }
+    
     protected override IEnumerable<object?> GetAtomicValues()
     {
-        yield return mailAddress;
-        yield return userName;
-        yield return firstName;
-        yield return lastName;
-        yield return birthDay;
-        yield return gender;
-        yield return isVerified;
-        yield return verification;
+        yield return MailAddress;
+        yield return UserName;
+        yield return FirstName;
+        yield return LastName;
+        yield return BirthDay;
+        yield return Gender;
+        yield return IsVerified;
+        yield return Verification;
     }
 }

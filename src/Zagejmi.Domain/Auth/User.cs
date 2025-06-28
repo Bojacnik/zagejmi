@@ -1,18 +1,31 @@
 using System.ComponentModel.DataAnnotations;
+using SharedKernel;
 
 namespace Zagejmi.Domain.Auth;
 
-public class User
+public sealed class User<TUserEvent> : Entity<TUserEvent> where TUserEvent : IDomainEvent
 {
+    #region Entity Properties
+
+    public override ulong Id { get; }
+    protected override ulong Version { get; set; }
+
+    #endregion
+
+    #region User Properties
+
     public string Username;
     public Password Password;
 
     [EmailAddress] public string Email;
 
-    public User(string username, Password password, string email)
+    #endregion
+
+    public User(ulong id, string username, Password password, string email)
     {
-        this.Username = username;
-        this.Password = password;
-        this.Email = email;
+        Id = id;
+        Username = username;
+        Password = password;
+        Email = email;
     }
 }
