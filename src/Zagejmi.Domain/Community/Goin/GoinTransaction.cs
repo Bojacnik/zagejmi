@@ -10,6 +10,14 @@ public sealed class GoinTransaction(
     ulong goin
 ) : Entity<IGoinTransactionEvent>
 {
+    #region Entity properties
+
     public override ulong Id { get; } = id;
     protected override ulong Version { get; set; }
+
+    #endregion
+    
+    public GoinWallet Sender => sender;
+    public GoinWallet Receiver => receiver;
+    public ulong Goin => goin;
 }

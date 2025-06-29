@@ -1,7 +1,6 @@
 ﻿using LanguageExt;
 using SharedKernel.Failures;
 using Zagejmi.Domain.Community.Goin;
-using Zagejmi.Domain.Community.User;
 
 namespace Zagejmi.Domain.Repository;
 
@@ -12,9 +11,10 @@ public interface IRepositoryGoinTransactionRead
         CancellationToken cancellationToken);
 
     public Task<Either<Failure, List<GoinTransaction>>> GetBySenderAsync(
-        Person sender,
+        GoinWallet sender,
         CancellationToken cancellationToken);
 
-    public Task<Either<Failure, List<GoinTransaction>>> GetByReceiver(Person receiver,
+    public Task<Either<Failure, List<GoinTransaction>>> GetByReceiver(
+        GoinWallet receiver,
         CancellationToken cancellationToken);
 }
