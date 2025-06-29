@@ -38,7 +38,7 @@ public class RepositoryGoinTransactionRead : IRepositoryGoinTransactionRead
     }
 
     public async Task<Either<Failure, List<Domain.Community.Goin.GoinTransaction>>> GetBySenderAsync(
-        Person sender,
+        Domain.Community.User.Person sender,
         CancellationToken cancellationToken)
     {
         var senderModel = Mapper.Map<PersonModel>(sender);
@@ -62,7 +62,7 @@ public class RepositoryGoinTransactionRead : IRepositoryGoinTransactionRead
     }
 
     public async Task<Either<Failure, List<Domain.Community.Goin.GoinTransaction>>> GetByReceiver(
-        Person receiver,
+        Domain.Community.User.Person receiver,
         CancellationToken cancellationToken)
     {
         var receiverModel = Mapper.Map<PersonModel>(receiver);
