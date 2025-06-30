@@ -1,0 +1,70 @@
+﻿version: '3.8'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:2.14.2-pg16
+    
+    container_name: my_timescaledb_instance
+    
+    environment:
+      POSTGRES_DB: my_timescale_db      # The name of the database to create
+      POSTGRES_USER: my_timescale_user  # The superuser for the database
+      POSTGRES_PASSWORD: my_strong_password # The password for the superuser
+      POSTGRES_SHARED_BUFFERS: 512MB
+    
+    ports:
+      - "5432:5432"
+    
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    hostname: rabbitmq-host
+    container_name: zagejmi.rabbitmq-container
+    
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /my_vhost
+      
+      # RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 0.7 # 70% of total memory
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log_levels [{connection,info}]
+    
+    ports:
+      - "5672:5672"   # AMQP protocol port (for client connections)
+      - "15672:15672" # Management UI port (access via browser at http://localhost:15672)
+    
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/mnesia
+      - rabbitmq_logs:/var/log/rabbitmq
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+  
+  zagejmi.server:
+    image: zagejmi.server
+    build:
+      context: .
+      dockerfile: src/Zagejmi.Server/Dockerfile
+
+volumes:
+  rabbitmq_data:
+  rabbitmq_logs:
+  timescaledb_data:
+  timescaledb_logs:
