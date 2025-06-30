@@ -2,7 +2,7 @@
 
 namespace Zagejmi.Application.Commands.GoinTransactions;
 
-public record GoinTransactionCreateCommand(
+public record CommandGoinTransactionCreate(
     ulong Id,
     GoinWallet Sender,
     GoinWallet Receiver,

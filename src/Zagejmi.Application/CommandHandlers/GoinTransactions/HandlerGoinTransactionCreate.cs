@@ -8,13 +8,13 @@ using Zagejmi.Domain.Repository;
 
 namespace Zagejmi.Application.CommandHandlers.GoinTransactions;
 
-public class GoinTransactionCreateHandler(
+public class HandlerGoinTransactionCreate(
     IRepositoryGoinTransactionWrite repositoryWrite,
-    IRepositoryGoinTransactionRead repositoryRead) : IConsumer<GoinTransactionCreateCommand>
+    IRepositoryGoinTransactionRead repositoryRead) : IConsumer<CommandGoinTransactionCreate>
 {
-    public async Task Consume(ConsumeContext<GoinTransactionCreateCommand> context)
+    public async Task Consume(ConsumeContext<CommandGoinTransactionCreate> context)
     {
-        GoinTransactionCreateCommand command = context.Message;
+        CommandGoinTransactionCreate command = context.Message;
 
         // Validate
         var transactionsForSender = new GoinTransaction(command.Id, command.Sender, command.Receiver, command.Goin);
@@ -52,7 +52,7 @@ public class GoinTransactionCreateHandler(
     private static ulong GetWalletsGoins(GoinWallet wallet, List<GoinTransaction> transactions)
     {
         decimal sum = transactions
-            .Where((e) => { return e.Sender.Id == wallet.Id || e.Receiver.Id == wallet.Id; })
+            .Where(e => e.Sender.Id == wallet.Id || e.Receiver.Id == wallet.Id)
             .Sum(decimal (transaction) =>
             {
                 if (transaction.Sender.Id == wallet.Id)

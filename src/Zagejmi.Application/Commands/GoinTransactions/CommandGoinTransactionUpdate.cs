@@ -2,4 +2,4 @@
 
 namespace Zagejmi.Application.Commands.GoinTransactions;
 
-public record GoinTransactionUpdateCommand(GoinTransaction Old, GoinTransaction Updated);
+public record CommandGoinTransactionUpdate(GoinTransaction Old, GoinTransaction Updated);

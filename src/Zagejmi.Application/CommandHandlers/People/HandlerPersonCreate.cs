@@ -13,15 +13,16 @@ using Zagejmi.Domain.Repository;
 
 namespace Zagejmi.Application.CommandHandlers.People;
 
-public class PersonCreateCommandHandler : IConsumer<PersonCreateCommand>
+public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
 {
-    public async Task Consume(ConsumeContext<PersonCreateCommand> context)
+    public async Task Consume(ConsumeContext<CommandPersonCreate> context)
     {
-        PersonCreateCommand command = context.Message;
+        CommandPersonCreate command = context.Message;
 
-        GoinWallet goinWallet = command is PersonCReateNewWithWalletCommand
-            ? ((PersonCReateNewWithWalletCommand)command).GoinWallet
-            : new GoinWallet([]);
+        GoinWallet goinWallet =
+            command is CommandPersonCReateNewWithWallet wallet
+                ? wallet.GoinWallet
+                : new GoinWallet([]);
         var person = new Person(
             new PersonalInfo(
                 command.MailAddress,

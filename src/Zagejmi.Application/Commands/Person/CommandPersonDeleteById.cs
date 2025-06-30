@@ -1,3 +1,3 @@
 ﻿namespace Zagejmi.Application.Commands.Person;
 
-public record PersonDeleteByIdCommand(ulong Id);
+public record CommandPersonDeleteById(ulong Id);

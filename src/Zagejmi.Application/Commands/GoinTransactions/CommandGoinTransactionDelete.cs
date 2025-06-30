@@ -2,4 +2,4 @@
 
 namespace Zagejmi.Application.Commands.GoinTransactions;
 
-public record GoinTransactionDeleteCommand(ulong id);
+public record CommandGoinTransactionDelete(ulong id);
