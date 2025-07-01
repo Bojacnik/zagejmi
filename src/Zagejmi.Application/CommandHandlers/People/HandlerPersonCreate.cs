@@ -19,28 +19,36 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
     {
         CommandPersonCreate command = context.Message;
 
+        GoinWallet[] walletArray = [];
         GoinWallet goinWallet =
             command is CommandPersonCReateNewWithWallet wallet
                 ? wallet.GoinWallet
                 : new GoinWallet(1, []);
-        var person = new Person(0, PersonType.Customer, new PersonalInformation(
-            command.MailAddress,
-            command.UserName,
-            command.FirstName,
-            command.LastName,
-            command.BirthDate,
-            command.Gender
-        ), new PersonalStatistics(
+        var person = new Person(
             0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ), goinWallet, null);
+            PersonType.Customer,
+            new PersonalInformation(
+                command.MailAddress,
+                command.UserName,
+                command.FirstName,
+                command.LastName,
+                command.BirthDate,
+                command.Gender
+            ),
+            new PersonalStatistics(
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ),
+            walletArray,
+            null
+        );
 
         var @event = new PersonCreatedEvent(
             Guid.NewGuid(),
