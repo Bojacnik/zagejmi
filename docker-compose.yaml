@@ -1,5 +1,10 @@
 ﻿version: '3.8'
 
+# Define the custom network
+networks:
+  zagejmi_network:
+    driver: bridge # 'bridge' is the default and usually sufficient
+
 services:
   timescaledb:
     image: timescale/timescaledb:2.14.2-pg16
@@ -26,6 +31,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    
+    networks:
+      - zagejmi_network
   
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
@@ -56,12 +64,25 @@ services:
       timeout: 10s
       retries: 5
       start_period: 20s
+    
+    networks:
+      - zagejmi_network
   
   zagejmi.server:
     image: zagejmi.server
     build:
       context: .
       dockerfile: src/Zagejmi.Server/Dockerfile
+    
+    networks:
+      - zagejmi_network
+      
+      # Optional: Define dependencies to ensure services start in order
+    depends_on:
+      timescaledb:
+        condition: service_healthy # Or service_started if healthcheck is not sufficient
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   rabbitmq_data:
