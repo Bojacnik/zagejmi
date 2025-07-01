@@ -1,17 +1,17 @@
-﻿using SharedKernel;
-using Zagejmi.Domain.Events;
+﻿using RabbitMQ.Client;
+using SharedKernel;
 using Zagejmi.Domain.Events.EventStore;
+using Zagejmi.Infrastructure.EventBus;
 
 namespace Zagejmi.Infrastructure.EventStore;
 
-public class EventStore(Microsoft.EntityFrameworkCore.DbContext context) : IEventStore
+public class EventStore(IConnection connection) : IEventStore
 {
     public async Task SaveEventAsync<T>(
         T @event,
         CancellationToken cancellationToken
     ) where T : class, IDomainEvent
     {
-        await context.Set<T>().AddAsync(@event, cancellationToken);
-        await context.SaveChangesAsync(cancellationToken);
+        await RabbitMqProducer.SendMessage(">" + @event.GetType().Name + "", @event.EventType, connection);
     }
 }
