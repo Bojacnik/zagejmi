@@ -5,13 +5,14 @@ using Zagejmi.Infrastructure.EventBus;
 
 namespace Zagejmi.Infrastructure.EventStore;
 
-public class EventStore(IConnection connection) : IEventStore
+public class EventStore(IEventBusProducer producer) : IEventStore
 {
-    public async Task SaveEventAsync<T>(
-        T @event,
+    public async Task SaveEventAsync<TDomainEvent>(
+        TDomainEvent @event,
         CancellationToken cancellationToken
-    ) where T : class, IDomainEvent
+    ) where TDomainEvent : IDomainEvent
     {
-        await RabbitMqProducer.SendMessage(">" + @event.GetType().Name + "", @event.EventType, connection);
+        CancellationTokenSource cts = new();
+        await producer.SendAsync(@event, cts.Token);
     }
 }
