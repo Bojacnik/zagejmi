@@ -4,6 +4,8 @@ namespace Zagejmi.Domain.Events.EventStore;
 
 public interface IEventStore
 {
-    Task SaveEventAsync<T>(T @event, CancellationToken cancellationToken) 
-        where T : class, IDomainEvent;
+    Task SaveEventAsync<TDomainEvent>(
+        TDomainEvent @event,
+        CancellationToken cancellationToken
+    ) where TDomainEvent : IDomainEvent;
 }

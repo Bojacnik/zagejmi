@@ -5,14 +5,14 @@ using Zagejmi.Domain.Community.User.Associate;
 
 namespace Zagejmi.Domain.Community.User;
 
-public sealed class Person : Entity<ulong>
+public sealed class Person : AggregateRoot<Guid>
 {
     #region Person Properties
 
     public PersonType PersonType { get; init; }
     public PersonalInformation PersonalInformation { get; init; }
     public PersonalStatistics PersonalStatistics { get; init; }
-    public GoinWallet[] Wallet { get; init; }
+    public List<GoinWallet> Wallet { get; init; }
 
     #endregion
 
@@ -23,11 +23,11 @@ public sealed class Person : Entity<ulong>
     #endregion
 
     public Person(
-        ulong id,
+        Guid id,
         PersonType personType,
         PersonalInformation personalInformation,
         PersonalStatistics personalStatistics,
-        GoinWallet[] wallet,
+        List<GoinWallet> wallet,
         AssociateProfile? associateProfile) : base(id)
     {
         PersonType = personType;
@@ -35,5 +35,13 @@ public sealed class Person : Entity<ulong>
         PersonalStatistics = personalStatistics;
         Wallet = wallet;
         AssociateProfile = associateProfile;
+    }
+
+    protected override void Apply(IDomainEvent evt)
+    {
+        switch (evt.EventType)
+        {
+            
+        }
     }
 }

@@ -3,7 +3,7 @@ using Zagejmi.Domain.Community.User;
 
 namespace Zagejmi.Domain.Events.People;
 
-public record PersonCreatedEvent(
+public record EventPersonCreated(
     Guid EventId,
     DateTime Timestamp,
     ulong Version,
@@ -18,4 +18,5 @@ public record PersonCreatedEvent(
     public required MailAddress Email { get; init; }
     public DateTime BirthDate { get; init; }
     public Gender Gender { get; init; }
+    public required PersonType PersonType { get; init; }
 }

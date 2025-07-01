@@ -4,7 +4,7 @@ using SharedKernel.Failures;
 
 namespace Zagejmi.Domain.Community.User.Verification;
 
-public sealed class PersonalVerification(Person? verifier, string note) : Verification
+public sealed class VerificationPersonal(Person? verifier, string note) : Verification
 {
     public Person? Verifier = verifier;
     public string? Note = note;
