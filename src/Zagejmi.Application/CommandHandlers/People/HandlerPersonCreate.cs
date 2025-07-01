@@ -41,8 +41,6 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
                 0,
                 0,
                 0,
-                0,
-                0,
                 0
             ),
             goinWallet,

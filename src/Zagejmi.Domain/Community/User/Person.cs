@@ -11,15 +11,8 @@ public sealed class Person(
     GoinWallet wallet,
     PersonType personType,
     AssociateProfile? associateProfile,
-    ulong id) : Entity<IPersonEvent>
+    ulong id) : Entity<ulong>(id)
 {
-    #region Entity Properties
-
-    public override ulong Id { get; } = id;
-    protected override ulong Version { get; set; }
-
-    #endregion
-
     #region Person Properties
 
     public PersonalInfo PersonalInfo { get; } = personalInfo;

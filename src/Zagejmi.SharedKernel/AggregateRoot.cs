@@ -1,39 +1,56 @@
 ﻿namespace SharedKernel;
 
-public abstract class AggregateRoot<TDomainEvent> where TDomainEvent : IDomainEvent
+internal abstract class AggregateRoot<TId> : Entity<TId> where TId : notnull
 {
-    public abstract ulong Id { get; }
-    protected abstract ulong Version { get; set; }
-    private readonly List<TDomainEvent> _domainEvents = [];
-    public IReadOnlyCollection<TDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    private readonly List<IDomainEvent> _domainEvents = [];
 
-    protected void AddDomainEvent(TDomainEvent @event)
+    // The current version of the aggregate. Used for optimistic concurrency.
+    public int Version { get; protected set; }
+
+    // Provides access to the uncommitted events.
+    public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+
+    protected AggregateRoot(TId id) : base(id)
     {
-        _domainEvents.Add(@event);
     }
 
-    public void LoadFromHistory(IEnumerable<TDomainEvent> history)
+    /// <summary>
+    /// Adds an event to the list of uncommitted changes and immediately applies it
+    /// to the aggregate to update its state.
+    /// </summary>
+    protected void AddDomainEvent(IDomainEvent newEvent)
     {
-        foreach (TDomainEvent @event in history)
+        // 1. Ensure the event is applied to the aggregate to update its state.
+        Apply(newEvent);
+
+        // 2. Add the event to the list of uncommitted changes.
+        _domainEvents.Add(newEvent);
+    }
+
+    /// <summary>
+    /// Clears the list of uncommitted domain events.
+    /// This is called by the repository after the events have been persisted.
+    /// </summary>
+    public void ClearDomainEvents()
+    {
+        _domainEvents.Clear();
+    }
+
+    /// <summary>
+    /// Rehydrates the aggregate's state by applying a series of historical events.
+    /// </summary>
+    public void LoadFromHistory(IEnumerable<IDomainEvent> history)
+    {
+        foreach (var evt in history)
         {
-            ApplyEvent(@event, true);
+            Apply(evt);
+            Version++; // Increment version for each historical event
         }
     }
 
-    private void ApplyEvent(TDomainEvent @event, bool fromHistory = false)
-    {
-        // Apply event to aggregate
-
-        // TODO: FIX ME (tohle by ani Bořek Stavitel nespravil)
-        //((dynamic)this).Handle((dynamic)@event);
-
-        if (fromHistory) return;
-
-        checked
-        {
-            Version += @event.Version;
-        }
-
-        AddDomainEvent(@event);
-    }
+    /// <summary>
+    /// The magic method that routes an event to the correct state-mutating method.
+    /// It uses dynamic dispatch to call the appropriate `Apply(SpecificEventType evt)` overload.
+    /// </summary>
+    protected abstract void Apply(IDomainEvent evt);
 }

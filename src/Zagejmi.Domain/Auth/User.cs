@@ -3,15 +3,8 @@ using SharedKernel;
 
 namespace Zagejmi.Domain.Auth;
 
-public sealed class User<TUserEvent> : Entity<TUserEvent> where TUserEvent : IDomainEvent
+public sealed class User : Entity<ulong>
 {
-    #region Entity Properties
-
-    public override ulong Id { get; }
-    protected override ulong Version { get; set; }
-
-    #endregion
-
     #region User Properties
 
     public string Username;
@@ -21,7 +14,7 @@ public sealed class User<TUserEvent> : Entity<TUserEvent> where TUserEvent : IDo
 
     #endregion
 
-    public User(ulong id, string username, Password password, string email)
+    public User(ulong id, string username, Password password, string email) : base(id)
     {
         Id = id;
         Username = username;

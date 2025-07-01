@@ -3,15 +3,8 @@ using Zagejmi.Domain.Events;
 
 namespace Zagejmi.Domain.Community.User;
 
-public sealed class PersonalStatistics : Entity<IPersonEvent>
+public sealed class PersonalStatistics : ValueObject
 {
-    #region Entity Properties
-
-    public override ulong Id { get; }
-    protected override ulong Version { get; set; }
-
-    #endregion
-
     #region Personal Statistics Properties
 
     public ulong TotalScore { get; set; }
@@ -33,8 +26,6 @@ public sealed class PersonalStatistics : Entity<IPersonEvent>
     #endregion
 
     public PersonalStatistics(
-        ulong id,
-        ulong version,
         ulong totalScore,
         ulong level,
         ulong timeTotal,
@@ -45,8 +36,6 @@ public sealed class PersonalStatistics : Entity<IPersonEvent>
         ulong transactionsAmount,
         ulong giftsSent)
     {
-        Id = id;
-        Version = version;
         TotalScore = totalScore;
         Level = level;
         TimeTotal = timeTotal;
@@ -56,5 +45,18 @@ public sealed class PersonalStatistics : Entity<IPersonEvent>
         GoinSpent = goingSpent;
         TransactionsAmount = transactionsAmount;
         GiftsSent = giftsSent;
+    }
+
+    protected override IEnumerable<object?> GetAtomicValues()
+    {
+        yield return TotalScore;
+        yield return Level;
+        yield return TimeTotal;
+        yield return TimeWatching;
+        yield return ChatsSent;
+        yield return CzkSpent;
+        yield return GoinSpent;
+        yield return TransactionsAmount;
+        yield return GiftsSent;
     }
 }
