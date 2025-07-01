@@ -3,15 +3,8 @@ using Zagejmi.Domain.Events;
 
 namespace Zagejmi.Domain.Community.Goin;
 
-public sealed class GoinWallet(List<GoinTransaction> transactions) : Entity<IGoinTransactionEvent>
+public sealed class GoinWallet : Entity<ulong>
 {
-    #region Entity Properties
-
-    public override ulong Id { get; }
-    protected override ulong Version { get; set; }
-
-    #endregion
-
     #region Wallet Properties
 
     /// <summary>
@@ -24,14 +17,13 @@ public sealed class GoinWallet(List<GoinTransaction> transactions) : Entity<IGoi
     /// <summary>
     /// TRANSACTION LIST containing only transactions of user owning this wallet
     /// </summary>
-    public List<GoinTransaction> Transactions = transactions;
+    public List<GoinTransaction> Transactions;
     
     #endregion
 
-    public GoinWallet(ulong id, ulong version, List<GoinTransaction> transactions) : this(transactions)
+    public GoinWallet(ulong id, List<GoinTransaction> transactions) : base(id)
     {
         Id = id;
-        Version = version;
         Transactions = transactions;
     }
 }
