@@ -3,21 +3,18 @@ using SharedKernel;
 
 namespace Zagejmi.Domain.Community.User.Associate;
 
-public class AssociateProfile : ValueObject
+public class AssociateProfile : Entity<uint>
 {
-    public Person Owner;
-    public Image CardProfilePicture;
-    
-    public AssociateProfile(Person owner, Image cardProfilePicture)
-    {
-        Owner = owner;
-        CardProfilePicture = cardProfilePicture;
-    }
+    #region AssociateProfile properties
 
-    // TODO: Add a lot of stuff :) (i.e personality, astro-sign, badges, animals, photos, ...)
-    protected override IEnumerable<object?> GetAtomicValues()
+    public Image CardProfilePicture;
+
+    #endregion
+
+    public AssociateProfile(
+        uint id, 
+        Image cardProfilePicture) : base(id)
     {
-        yield return Owner;
-        yield return CardProfilePicture;
+        CardProfilePicture = cardProfilePicture;
     }
 }

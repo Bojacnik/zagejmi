@@ -3,11 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Zagejmi.Infrastructure.Models;
 
-[Table("PersonStats")]
-public class PersonStatsModel
+public class PersonalStatisticsModel
 {
-    [Key] public ulong Id { get; set; }
-
     public ulong TotalScore { get; set; }
     public ulong Level { get; set; }
 

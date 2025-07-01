@@ -3,7 +3,7 @@ using SharedKernel;
 
 namespace Zagejmi.Domain.Community.User;
 
-public class PersonalInfo : ValueObject
+public class PersonalInformation : ValueObject
 {
     public MailAddress? MailAddress;
     public string? UserName;
@@ -17,7 +17,7 @@ public class PersonalInfo : ValueObject
     public bool IsVerified;
     public Verification.Verification? Verification;
 
-    public PersonalInfo(
+    public PersonalInformation(
         MailAddress mailAddress,
         string userName,
         string firstName,

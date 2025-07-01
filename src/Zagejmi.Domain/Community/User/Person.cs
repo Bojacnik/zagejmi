@@ -5,26 +5,35 @@ using Zagejmi.Domain.Community.User.Associate;
 
 namespace Zagejmi.Domain.Community.User;
 
-public sealed class Person(
-    PersonalInfo personalInfo,
-    PersonalStatistics personalStatistics,
-    GoinWallet wallet,
-    PersonType personType,
-    AssociateProfile? associateProfile,
-    ulong id) : Entity<ulong>(id)
+public sealed class Person : Entity<ulong>
 {
     #region Person Properties
 
-    public PersonalInfo PersonalInfo { get; } = personalInfo;
-    public PersonalStatistics PersonalStatistics { get; } = personalStatistics;
-    public GoinWallet Wallet { get; } = wallet;
-    public PersonType PersonType { get; } = personType;
+    public PersonType PersonType { get; init; }
+    public PersonalInformation PersonalInformation { get; init; }
+    public PersonalStatistics PersonalStatistics { get; init; }
+    public GoinWallet[] Wallet { get; init; }
 
     #endregion
 
-    #region Optional Association Properties
+    #region Optional Properties
 
-    public AssociateProfile? AssociateProfile { get; } = associateProfile;
+    public AssociateProfile? AssociateProfile { get; init; }
 
     #endregion
+
+    public Person(
+        ulong id,
+        PersonType personType,
+        PersonalInformation personalInformation,
+        PersonalStatistics personalStatistics,
+        GoinWallet[] wallet,
+        AssociateProfile? associateProfile) : base(id)
+    {
+        PersonType = personType;
+        PersonalInformation = personalInformation;
+        PersonalStatistics = personalStatistics;
+        Wallet = wallet;
+        AssociateProfile = associateProfile;
+    }
 }

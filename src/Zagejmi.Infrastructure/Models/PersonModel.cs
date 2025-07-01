@@ -12,15 +12,21 @@ public class PersonModel
 
     public PersonType PersonType { get; init; }
 
-    [ForeignKey("PersonalInfo")] public PersonalInformationModel? PersonalInfo { get; init; }
+    public PersonalInformationModel PersonalInfo { get; init; }
 
-    public ulong? PersonalInformationId { get; init; }
+    public PersonalStatisticsModel PersonalStatistics { get; init; }
+    
+    public AssociateProfileModel? AssociateProfileModel { get; init; }
 
-    [ForeignKey("PersonStats")] public PersonStatsModel? Statistics { get; init; }
-
-    public ulong? StatisticsId { get; init; }
-
-    [ForeignKey("GoinWallet")] public GoinWallet? Wallet { get; init; }
-
-    public ulong? GoinWalletId { get; init; }
+    public PersonModel(
+        ulong id,
+        PersonType personType,
+        PersonalInformationModel personalInfo,
+        PersonalStatisticsModel personalStatistics)
+    {
+        Id = id;
+        PersonType = personType;
+        PersonalInfo = personalInfo;
+        PersonalStatistics = personalStatistics;
+    }
 }
