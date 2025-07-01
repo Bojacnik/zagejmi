@@ -22,32 +22,25 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
         GoinWallet goinWallet =
             command is CommandPersonCReateNewWithWallet wallet
                 ? wallet.GoinWallet
-                : new GoinWallet([]);
-        var person = new Person(
-            new PersonalInfo(
-                command.MailAddress,
-                command.UserName,
-                command.FirstName,
-                command.LastName,
-                command.BirthDate,
-                command.Gender
-            ),
-            new PersonalStatistics(
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ),
-            goinWallet,
-            PersonType.Customer,
-            null,
+                : new GoinWallet(1, []);
+        var person = new Person(0, PersonType.Customer, new PersonalInformation(
+            command.MailAddress,
+            command.UserName,
+            command.FirstName,
+            command.LastName,
+            command.BirthDate,
+            command.Gender
+        ), new PersonalStatistics(
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
             0
-        );
+        ), goinWallet, null);
 
         var @event = new PersonCreatedEvent(
             Guid.NewGuid(),
@@ -57,10 +50,10 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
             nameof(PersonCreatedEvent)
         )
         {
-            Email = person.PersonalInfo.MailAddress!,
-            UserName = person.PersonalInfo.UserName!,
-            FirstName = person.PersonalInfo.FirstName!,
-            LastName = person.PersonalInfo.LastName!,
+            Email = person.PersonalInformation.MailAddress!,
+            UserName = person.PersonalInformation.UserName!,
+            FirstName = person.PersonalInformation.FirstName!,
+            LastName = person.PersonalInformation.LastName!,
         };
 
         try
