@@ -1,21 +1,23 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SharedKernel.Outbox;
 using Zagejmi.Infrastructure.Models;
 
 namespace Zagejmi.Infrastructure.Ctx;
 
-public class ZagejmiContext : DbContext
+public class ZagejmiContext : DbContext // Or IdentityDbContext, etc.
 {
-    // TODO: Fix me
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        base.OnConfiguring(optionsBuilder);
-    }
+    // Your existing DbSets for other entities
+    public DbSet<ModelPerson> People { get; set; }
+    // ... other entities
+
+    // --- Add this line ---
+    public DbSet<OutboxEvent> OutboxEvents { get; set; }
+
+    public ZagejmiContext(DbContextOptions<ZagejmiContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Configure PersonalInfo
-        modelBuilder.Entity<PersonalInformationModel>()
-            .HasIndex(i => i.Email)
-            .IsUnique();
+        base.OnModelCreating(modelBuilder);
+        // Your existing configurations
     }
 }

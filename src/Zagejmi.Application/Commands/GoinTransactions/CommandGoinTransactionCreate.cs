@@ -1,9 +1,7 @@
-﻿using Zagejmi.Domain.Community.Goin;
-
-namespace Zagejmi.Application.Commands.GoinTransactions;
+﻿namespace Zagejmi.Application.Commands.GoinTransactions;
 
 public record CommandGoinTransactionCreate(
-    ulong SenderGoinWalletId,
-    ulong ReceiverGoinWalletId,
+    Guid SenderGoinWalletId,
+    Guid ReceiverGoinWalletId,
     ulong GoinAmount
 );

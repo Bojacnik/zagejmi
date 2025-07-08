@@ -3,7 +3,7 @@ using Zagejmi.Domain.Events;
 
 namespace Zagejmi.Domain.Community.Goin;
 
-public sealed class GoinWallet : Entity<ulong>
+public sealed class GoinWallet : Entity<Guid>
 {
     #region Wallet Properties
 
@@ -21,7 +21,7 @@ public sealed class GoinWallet : Entity<ulong>
     
     #endregion
 
-    public GoinWallet(ulong id, List<GoinTransaction> transactions) : base(id)
+    public GoinWallet(Guid id, List<GoinTransaction> transactions) : base(id)
     {
         Id = id;
         Transactions = transactions;

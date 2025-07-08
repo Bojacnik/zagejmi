@@ -16,22 +16,22 @@ public class InfrastructureMappingProfile : Profile
     {
         #region Person Mappings
 
-        CreateMap<Person, PersonModel>();
-        CreateMap<PersonModel, Person>();
+        CreateMap<Person, ModelPerson>();
+        CreateMap<ModelPerson, Person>();
 
         #endregion
 
         #region GoinWallet Mappings
         
-        CreateMap<GoinWallet, GoinWalletModel>();
-        CreateMap<GoinWalletModel, GoinWallet>();
+        CreateMap<GoinWallet, ModelGoinWallet>();
+        CreateMap<ModelGoinWallet, GoinWallet>();
 
         #endregion
 
         #region GoinTransaction Mappings
         
-        CreateMap<GoinTransaction, GoinTransactionModel>();
-        CreateMap<GoinTransactionModel, GoinTransaction>();
+        CreateMap<GoinTransaction, ModelGoinTransaction>();
+        CreateMap<ModelGoinTransaction, GoinTransaction>();
 
         #endregion
     }

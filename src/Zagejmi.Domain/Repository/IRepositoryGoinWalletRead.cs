@@ -6,5 +6,5 @@ namespace Zagejmi.Domain.Repository;
 
 public interface IRepositoryGoinWalletRead
 {
-    public Task<Either<Failure, GoinWallet?>> GetByIdAsync(ulong id, CancellationToken cancellationToken);
+    public Task<Either<Failure, GoinWallet?>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 }

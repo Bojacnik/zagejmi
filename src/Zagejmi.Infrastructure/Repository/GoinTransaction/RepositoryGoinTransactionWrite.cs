@@ -19,11 +19,11 @@ public class RepositoryGoinTransactionWrite : IRepositoryGoinTransactionWrite
     public async Task<Either<Failure, Unit>> CreateAsync(Domain.Community.Goin.GoinTransaction goinTransaction,
         CancellationToken cancellationToken)
     {
-        var goinTransactionModel = Mapper.Map<GoinTransactionModel>(goinTransaction);
+        var goinTransactionModel = Mapper.Map<ModelGoinTransaction>(goinTransaction);
         IDbContextTransaction transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            await _context.Set<GoinTransactionModel>().AddAsync(goinTransactionModel, cancellationToken);
+            await _context.Set<ModelGoinTransaction>().AddAsync(goinTransactionModel, cancellationToken);
         }
         catch (OperationCanceledException e)
         {

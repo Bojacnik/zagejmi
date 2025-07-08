@@ -2,7 +2,7 @@
 
 namespace Zagejmi.Domain.Events.People;
 
-public record PersonUpdatedEvent(
+public record EventPersonUpdated(
     Guid EventId,
     DateTime Timestamp,
     ulong Version,

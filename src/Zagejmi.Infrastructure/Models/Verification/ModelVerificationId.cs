@@ -4,9 +4,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Zagejmi.Infrastructure.Models.Verification;
 
 [Table("VerificationId")]
-public class VerificationIdModel
+public class ModelVerificationId
 {
     [Key] public ulong Id { get; set; }
+    
+    public Guid DomainId { get; init; }
 
     [Column(TypeName = "varbinary(max)")] public required byte[] ImageFront { get; set; }
 

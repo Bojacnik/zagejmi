@@ -5,12 +5,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Zagejmi.Infrastructure.Models;
 
 [Table("AssociateProfile")]
-public class AssociateProfileModel
+public class ModelAssociateProfile
 {
     [Key] public uint Id { get; init; }
     public Image CardProfilePicture { get; init; }
 
-    public AssociateProfileModel(
+    public ModelAssociateProfile(
         uint id,
         Image cardProfilePicture)
     {

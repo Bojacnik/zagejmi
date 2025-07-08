@@ -7,7 +7,7 @@ namespace Zagejmi.Infrastructure.Models;
 
 [Table("PersonalInformation")]
 [Index("Email", IsUnique = true)]
-public class PersonalInformationModel
+public class ModelPersonalInformation
 {
     [Key] public ulong Id { get; init; }
     [StringLength(255)] public required string Email { get; init; }

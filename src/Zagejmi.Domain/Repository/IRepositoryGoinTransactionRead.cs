@@ -7,14 +7,14 @@ namespace Zagejmi.Domain.Repository;
 public interface IRepositoryGoinTransactionRead
 {
     public Task<Either<Failure, GoinTransaction?>> GetByIdAsync(
-        ulong id,
+        Guid id,
         CancellationToken cancellationToken);
 
-    public Task<Either<Failure, List<GoinTransaction>>> GetBySenderAsync(
-        GoinWallet sender,
+    public Task<Either<Failure, List<GoinTransaction>>> GetBySenderIdAsync(
+        Guid senderId,
         CancellationToken cancellationToken);
 
     public Task<Either<Failure, List<GoinTransaction>>> GetByReceiver(
-        GoinWallet receiver,
+        Guid receiverId,
         CancellationToken cancellationToken);
 }

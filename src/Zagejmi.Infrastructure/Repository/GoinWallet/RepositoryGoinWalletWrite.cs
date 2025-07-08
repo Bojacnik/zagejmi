@@ -22,7 +22,7 @@ public class RepositoryGoinWalletWrite : IRepositoryGoinWalletWrite
     public async Task<Either<Failure, Unit>> CreateAsync(Domain.Community.Goin.GoinWallet goinWallet,
         CancellationToken cancellationToken)
     {
-        var goinWalletModel = Mapper.Map<GoinWalletModel>(goinWallet);
+        var goinWalletModel = Mapper.Map<ModelGoinWallet>(goinWallet);
         try
         {
             await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -35,7 +35,7 @@ public class RepositoryGoinWalletWrite : IRepositoryGoinWalletWrite
 
         try
         {
-            _ = await _context.Set<GoinWalletModel>().AddAsync(goinWalletModel, cancellationToken);
+            _ = await _context.Set<ModelGoinWallet>().AddAsync(goinWalletModel, cancellationToken);
         }
         catch (OperationCanceledException e)
         {
@@ -83,14 +83,14 @@ public class RepositoryGoinWalletWrite : IRepositoryGoinWalletWrite
     public async Task<Either<Failure, Unit>> UpdateAsync(Domain.Community.Goin.GoinWallet goinWalletOld,
         Domain.Community.Goin.GoinWallet goinWalletNew, CancellationToken cancellationToken)
     {
-        var goinWalletModelOld = Mapper.Map<GoinWalletModel>(goinWalletOld);
-        var goinWalletModelNew = Mapper.Map<GoinWalletModel>(goinWalletNew);
+        var goinWalletModelOld = Mapper.Map<ModelGoinWallet>(goinWalletOld);
+        var goinWalletModelNew = Mapper.Map<ModelGoinWallet>(goinWalletNew);
 
         try
         {
             IDbContextTransaction transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-            var model = await _context.FindAsync<GoinWalletModel>(
+            var model = await _context.FindAsync<ModelGoinWallet>(
                 [goinWalletModelOld.Id, cancellationToken],
                 cancellationToken
             );

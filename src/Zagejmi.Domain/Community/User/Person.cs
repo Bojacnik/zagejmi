@@ -2,6 +2,7 @@
 using Zagejmi.Domain.Events;
 using Zagejmi.Domain.Community.Goin;
 using Zagejmi.Domain.Community.User.Associate;
+using Zagejmi.Domain.Events.People;
 
 namespace Zagejmi.Domain.Community.User;
 
@@ -41,7 +42,24 @@ public sealed class Person : AggregateRoot<Guid>
     {
         switch (evt.EventType)
         {
-            
+            case "PersonCreated":
+                var eventPersonCreated = (EventPersonCreated)evt;
+                if (eventPersonCreated.AggregateId == Id)
+                {
+                    throw new Exception("Person with this ID already exists");
+                }
+
+                break;
+            case "PersonUpdated":
+                var eventPersonUpdated = (EventPersonUpdated)evt;
+                if (eventPersonUpdated.AggregateId == Id)
+                {
+                    throw new NotImplementedException();
+                }
+
+                break;
+            case "PersonDeleted":
+                throw new NotImplementedException();
         }
     }
 }

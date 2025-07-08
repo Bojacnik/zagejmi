@@ -20,7 +20,7 @@ public class RepositoryPersonWrite : IRepositoryPersonWrite
         Domain.Community.User.Person person,
         CancellationToken cancellationToken)
     {
-        var personModel = Mapper.Map<PersonModel>(person);
+        var personModel = Mapper.Map<ModelPerson>(person);
 
         Task<IDbContextTransaction> transaction;
 
@@ -104,7 +104,7 @@ public class RepositoryPersonWrite : IRepositoryPersonWrite
         Domain.Community.User.Person personNew,
         CancellationToken cancellationToken)
     {
-        var opersonModelOld = Mapper.Map<PersonModel>(personOld);
+        var opersonModelOld = Mapper.Map<ModelPerson>(personOld);
         try
         {
             _dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -122,7 +122,7 @@ public class RepositoryPersonWrite : IRepositoryPersonWrite
 
         try
         {
-            PersonModel? result = await _dbContext.Set<PersonModel>().FindAsync(
+            ModelPerson? result = await _dbContext.Set<ModelPerson>().FindAsync(
                 [opersonModelOld, cancellationToken],
                 cancellationToken);
 

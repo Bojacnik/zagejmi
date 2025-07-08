@@ -1,16 +1,15 @@
 ﻿using SharedKernel;
-using Zagejmi.Domain.Events;
 
 namespace Zagejmi.Domain.Community.Goin;
 
 public sealed class GoinTransaction(
-    ulong id,
+    Guid id,
     GoinWallet sender,
     GoinWallet receiver,
-    ulong goin
-) : Entity<ulong>(id)
+    Goin goin
+) : Entity<Guid>(id)
 {
     public GoinWallet Sender => sender;
     public GoinWallet Receiver => receiver;
-    public ulong Goin => goin;
+    public Goin Goin => goin;
 }

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Zagejmi.Infrastructure.Models;
 
-public class PersonalStatisticsModel
+public class ModelPersonalStatistics
 {
     public ulong TotalScore { get; set; }
     public ulong Level { get; set; }

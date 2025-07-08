@@ -15,14 +15,14 @@ public class RepositoryGoinWalletRead : IRepositoryGoinWalletRead
         _context = context;
     }
 
-    public async Task<Either<Failure, Domain.Community.Goin.GoinWallet?>> GetByIdAsync(ulong id,
+    public async Task<Either<Failure, Domain.Community.Goin.GoinWallet?>> GetByIdAsync(Guid id,
         CancellationToken cancellationToken)
     {
-        GoinWalletModel? result;
+        ModelGoinWallet? result;
         try
         {
             result = await _context
-                .Set<GoinWalletModel>()
+                .Set<ModelGoinWallet>()
                 .FindAsync([id], cancellationToken);
         }
         catch (OperationCanceledException e)

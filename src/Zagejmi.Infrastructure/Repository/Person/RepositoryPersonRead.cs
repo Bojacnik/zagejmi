@@ -19,10 +19,10 @@ public class RepositoryPersonRead : IRepositoryPersonRead
         string email,
         CancellationToken cancellationToken)
     {
-        PersonModel? person;
+        ModelPerson? person;
         try
         {
-            person = await _context.Set<PersonModel>().FindAsync([email], cancellationToken);
+            person = await _context.Set<ModelPerson>().FindAsync([email], cancellationToken);
         }
         catch (OperationCanceledException e)
         {
@@ -43,10 +43,10 @@ public class RepositoryPersonRead : IRepositoryPersonRead
         string username,
         CancellationToken cancellationToken)
     {
-        PersonModel? person;
+        ModelPerson? person;
         try
         {
-            person = await _context.Set<PersonModel>().FindAsync([username], cancellationToken);
+            person = await _context.Set<ModelPerson>().FindAsync([username], cancellationToken);
         }
         catch (OperationCanceledException e)
         {

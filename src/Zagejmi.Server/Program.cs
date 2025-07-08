@@ -1,4 +1,6 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Zagejmi.Application.CommandHandlers.People;
 using Zagejmi.Components;
 using Zagejmi.Infrastructure.Ctx;
 
@@ -10,13 +12,37 @@ public class Program
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
-        
-        // TODO: Make .env with DefaultConnection string pointing to Postgre or MariaDB, or replace with SQLite in the future
-        //builder.Services.AddDbContext<ZagejmiContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+        builder.Services.AddMassTransit(x =>
+        {
+            // Add your consumers
+            x.AddConsumer<HandlerPersonCreate>();
+
+            x.AddEntityFrameworkOutbox<ZagejmiContext>(o =>
+            {
+                // How often the outbox delivery service polls for new messages
+                o.QueryDelay = TimeSpan.FromSeconds(10);
+
+                o.UsePostgres();
+            });
+
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                cfg.Host("localhost", "/", h =>
+                {
+                    h.Username("guest");
+                    h.Password("guest");
+                });
+
+                cfg.ConfigureEndpoints(context);
+            });
+        });
+
+        builder.Services.AddDbContext<ZagejmiContext>(options => options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection")));
 
         WebApplication app = builder.Build();
 
@@ -28,7 +54,6 @@ public class Program
         else
         {
             app.UseExceptionHandler("/Error");
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
         }
 
@@ -43,7 +68,6 @@ public class Program
             .AddInteractiveWebAssemblyRenderMode()
             .AddAdditionalAssemblies(typeof(Client._Imports).Assembly);
 
-        // Add additional endpoints required by the Identity /Account Razor components.
         app.Run();
     }
 }

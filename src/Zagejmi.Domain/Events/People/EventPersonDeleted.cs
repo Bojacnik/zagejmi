@@ -1,6 +1,6 @@
 ﻿namespace Zagejmi.Domain.Events.People;
 
-public class PersonDeletedEvent(
+public class EventPersonDeleted(
     Guid eventId,
     DateTime timestamp,
     ulong version,

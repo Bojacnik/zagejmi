@@ -1,7 +1,5 @@
-﻿using RabbitMQ.Client;
-using SharedKernel;
+﻿using SharedKernel;
 using Zagejmi.Domain.Events.EventStore;
-using Zagejmi.Infrastructure.EventBus;
 
 namespace Zagejmi.Infrastructure.EventStore;
 

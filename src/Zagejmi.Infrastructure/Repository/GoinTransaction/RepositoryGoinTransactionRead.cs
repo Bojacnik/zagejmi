@@ -4,7 +4,6 @@ using LanguageExt;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.Failures;
 using Zagejmi.Domain.Repository;
-using Zagejmi.Domain.Community.User;
 using Zagejmi.Infrastructure.Ctx;
 using Zagejmi.Infrastructure.Models;
 
@@ -15,13 +14,13 @@ public class RepositoryGoinTransactionRead : IRepositoryGoinTransactionRead
     public RepositoryGoinTransactionRead(ZagejmiContext dbContext) => _dbContext = dbContext;
 
     public async Task<Either<Failure, Domain.Community.Goin.GoinTransaction?>> GetByIdAsync(
-        ulong id,
+        Guid id,
         CancellationToken cancellationToken)
     {
-        GoinTransactionModel? transactionModel;
+        ModelGoinTransaction? transactionModel;
         try
         {
-            transactionModel = await _dbContext.Set<GoinTransactionModel>()
+            transactionModel = await _dbContext.Set<ModelGoinTransaction>()
                 .FindAsync([id, cancellationToken], cancellationToken);
         }
         catch (OperationCanceledException e)
@@ -37,19 +36,20 @@ public class RepositoryGoinTransactionRead : IRepositoryGoinTransactionRead
         return Mapper.Map<Domain.Community.Goin.GoinTransaction>(transactionModel);
     }
 
-    public async Task<Either<Failure, List<Domain.Community.Goin.GoinTransaction>>> GetBySenderAsync(
-        Domain.Community.Goin.GoinWallet sender,
+    public async Task<Either<Failure, List<Domain.Community.Goin.GoinTransaction>>> GetBySenderIdAsync(
+        Guid sender,
         CancellationToken cancellationToken)
     {
-        var senderModel = Mapper.Map<GoinWalletModel>(sender);
+        var senderModel = Mapper.Map<ModelGoinWallet>(sender);
 
         List<Domain.Community.Goin.GoinTransaction> transactions;
         try
         {
-            transactions = await _dbContext.Set<GoinTransactionModel>()
+            transactions = await _dbContext.Set<ModelGoinTransaction>()
                 .Where(goinTransactionModel => goinTransactionModel.SenderId == senderModel.Id)
                 .OrderBy(model => model.Id)
-                .Select<GoinTransactionModel, Domain.Community.Goin.GoinTransaction>(model => Mapper.Map<Domain.Community.Goin.GoinTransaction>(model))
+                .Select<ModelGoinTransaction, Domain.Community.Goin.GoinTransaction>(model =>
+                    Mapper.Map<Domain.Community.Goin.GoinTransaction>(model))
                 .ToListAsync(cancellationToken);
         }
         catch (OperationCanceledException e)
@@ -62,18 +62,17 @@ public class RepositoryGoinTransactionRead : IRepositoryGoinTransactionRead
     }
 
     public async Task<Either<Failure, List<Domain.Community.Goin.GoinTransaction>>> GetByReceiver(
-        Domain.Community.Goin.GoinWallet receiver,
+        Guid receiver,
         CancellationToken cancellationToken)
     {
-        var receiverModel = Mapper.Map<GoinWalletModel>(receiver);
-
         List<Domain.Community.Goin.GoinTransaction> transactions;
         try
         {
-            transactions = await _dbContext.Set<GoinTransactionModel>()
-                .Where(goinTransactionModel => goinTransactionModel.ReceiverId == receiverModel.Id)
+            transactions = await _dbContext.Set<ModelGoinTransaction>()
+                .Where(goinTransactionModel => goinTransactionModel.DomainId == receiver)
                 .OrderBy(model => model.Id)
-                .Select<GoinTransactionModel, Domain.Community.Goin.GoinTransaction>(model => Mapper.Map<Domain.Community.Goin.GoinTransaction>(model))
+                .Select<ModelGoinTransaction, Domain.Community.Goin.GoinTransaction>(model =>
+                    Mapper.Map<Domain.Community.Goin.GoinTransaction>(model))
                 .ToListAsync(cancellationToken);
         }
         catch (OperationCanceledException e)

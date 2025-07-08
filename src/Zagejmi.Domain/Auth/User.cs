@@ -3,7 +3,7 @@ using SharedKernel;
 
 namespace Zagejmi.Domain.Auth;
 
-public sealed class User : Entity<ulong>
+public sealed class User : Entity<Guid>
 {
     #region User Properties
 
@@ -14,7 +14,7 @@ public sealed class User : Entity<ulong>
 
     #endregion
 
-    public User(ulong id, string username, Password password, string email) : base(id)
+    public User(Guid id, string username, Password password, string email) : base(id)
     {
         Id = id;
         Username = username;
