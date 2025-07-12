@@ -91,3 +91,24 @@ public class FailureArgumentInvalidLength : FailureArgument
     }
 }
 
+public abstract class FailureEventStore : Failure
+{
+    protected FailureEventStore(string message) : base(message)
+    {
+    }
+}
+
+public class FailureEventStoreConnectionLost : FailureEventStore
+{
+    public FailureEventStoreConnectionLost(string message) : base(message)
+    {
+    }
+}
+
+public class FailureEventStoreUnableToSave : FailureEventStore
+{
+    public FailureEventStoreUnableToSave(string message) : base(message)
+    {
+    }
+}
+

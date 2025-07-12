@@ -3,7 +3,7 @@ using SharedKernel;
 
 namespace Zagejmi.Domain.Auth;
 
-public sealed class User : Entity<Guid>
+public sealed record User : Entity<Guid>
 {
     #region User Properties
 

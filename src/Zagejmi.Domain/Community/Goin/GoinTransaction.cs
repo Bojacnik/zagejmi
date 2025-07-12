@@ -2,14 +2,9 @@
 
 namespace Zagejmi.Domain.Community.Goin;
 
-public sealed class GoinTransaction(
-    Guid id,
-    GoinWallet sender,
-    GoinWallet receiver,
-    Goin goin
-) : Entity<Guid>(id)
-{
-    public GoinWallet Sender => sender;
-    public GoinWallet Receiver => receiver;
-    public Goin Goin => goin;
-}
+public sealed record GoinTransaction(
+    Guid Id,
+    GoinWallet Sender,
+    GoinWallet Receiver,
+    Goin Goin
+) : Entity<Guid>(Id);

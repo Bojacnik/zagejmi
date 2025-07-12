@@ -1,16 +1,19 @@
-﻿namespace Zagejmi.Domain.Events.GoinTransactions;
+﻿using SharedKernel;
+using Zagejmi.Domain.Community.Goin;
+using Zagejmi.Domain.Community.User;
 
-public class GoinTransactionCreatedEvent(
-    Guid eventId,
-    DateTime timestamp,
-    ulong version,
-    Guid aggregateId,
-    string eventType)
-    : IGoinTransactionEvent
+namespace Zagejmi.Domain.Events.GoinTransactions;
+
+public record GoinTransactionCreatedEvent(
+    DateTime Timestamp,
+    EventTypeDomain EventType)
+    : IGoinTransactionEvent<Person, Guid>
 {
-    public Guid EventId { get; } = eventId;
-    public DateTime Timestamp { get; } = timestamp;
-    public ulong Version { get; } = version;
-    public Guid AggregateId { get; } = aggregateId;
-    public string EventType { get; } = eventType;
+    public DateTime Timestamp { get; } = Timestamp;
+    public EventTypeDomain EventType { get; } = EventType;
+
+    public Person Apply(Person aggregate)
+    {
+        throw new NotImplementedException();
+    }
 }

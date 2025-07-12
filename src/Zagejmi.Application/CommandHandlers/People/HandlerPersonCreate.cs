@@ -48,7 +48,8 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
             }
         );
         var stats = new PersonalStatistics(0, 0, 0, 0, 0, 0, 0, 0, 0);
-        var person = new Person(Guid.NewGuid(), PersonType.Customer, info, stats, [], null);
+        var personGuid = Guid.NewGuid();
+        var person = new Person(personGuid, PersonType.Customer, info, stats, [], null);
 
         // 2. Add the new Person via the repository.
         // The repository uses the same DbContext instance (managed by DI),
@@ -63,12 +64,11 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
 
         // 3. Create the domain event
         var personCreatedEvent = new EventPersonCreated(
-            Guid.NewGuid(),
             DateTime.UtcNow,
-            1,
-            person.Id,
-            "create")
+            EventTypeDomain.PersonCreated,
+            personGuid)
         {
+            AggregateId = personGuid,
             FirstName = person.PersonalInformation.FirstName!,
             LastName = person.PersonalInformation.LastName!,
             UserName = person.PersonalInformation.UserName!,
@@ -94,6 +94,7 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
         // This single call atomically saves the Person and the OutboxEvent.
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        Log.Information("Person {PersonId} and OutboxEvent {EventId} saved to database transactionally.", person.Id, outboxEvent.Id);
+        Log.Information("Person {PersonId} and OutboxEvent {EventId} saved to database transactionally.", person.Id,
+            outboxEvent.Id);
     }
 }

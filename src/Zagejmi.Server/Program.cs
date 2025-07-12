@@ -16,6 +16,8 @@ public class Program
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
 
+        
+        /*
         builder.Services.AddMassTransit(x =>
         {
             // Add your consumers
@@ -39,7 +41,9 @@ public class Program
 
                 cfg.ConfigureEndpoints(context);
             });
+            
         });
+        */
 
         builder.Services.AddDbContext<ZagejmiContext>(options => options.UseSqlServer(
             builder.Configuration.GetConnectionString("DefaultConnection")));

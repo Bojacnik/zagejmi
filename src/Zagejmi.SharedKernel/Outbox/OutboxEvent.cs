@@ -1,11 +1,11 @@
 ﻿namespace SharedKernel.Outbox;
 
-public class OutboxEvent
+public record OutboxEvent
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public string EventType { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty; // JSON-serialized event data
-    public DateTime OccurredOnUtc { get; set; }
-    public DateTime? ProcessedOnUtc { get; set; }
-    public string? Error { get; set; }
+    public required Guid Id { get; init; } = Guid.NewGuid();
+    public required EventTypeDomain EventType { get; init; }
+    public required string Content { get; init; }
+    public required DateTime OccurredOnUtc { get; init; }
+    public DateTime? ProcessedOnUtc { get; init; }
+    public string? Error { get; init; }
 }

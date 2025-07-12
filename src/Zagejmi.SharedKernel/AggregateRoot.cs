@@ -1,14 +1,16 @@
 ﻿namespace SharedKernel;
 
-public abstract class AggregateRoot<TId> : Entity<TId> where TId : notnull
+public abstract record AggregateRoot<TAggregateRoot, TId> : Entity<TId> 
+    where TAggregateRoot : AggregateRoot<TAggregateRoot, TId>
+    where TId : notnull
 {
-    private readonly List<IDomainEvent> _domainEvents = [];
+    private readonly List<IDomainEvent<TAggregateRoot, TId>> _domainEvents = [];
 
     // The current version of the aggregate. Used for optimistic concurrency.
     public int Version { get; protected set; }
 
     // Provides access to the uncommitted events.
-    public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    public IReadOnlyList<IDomainEvent<TAggregateRoot, TId>> DomainEvents => _domainEvents.AsReadOnly();
 
     protected AggregateRoot(TId id) : base(id)
     {
@@ -18,7 +20,7 @@ public abstract class AggregateRoot<TId> : Entity<TId> where TId : notnull
     /// Adds an event to the list of uncommitted changes and immediately applies it
     /// to the aggregate to update its state.
     /// </summary>
-    protected void AddDomainEvent(IDomainEvent newEvent)
+    protected void AddDomainEvent(IDomainEvent<TAggregateRoot, TId> newEvent)
     {
         // 1. Ensure the event is applied to the aggregate to update its state.
         Apply(newEvent);
@@ -39,9 +41,9 @@ public abstract class AggregateRoot<TId> : Entity<TId> where TId : notnull
     /// <summary>
     /// Rehydrates the aggregate's state by applying a series of historical events.
     /// </summary>
-    public void LoadFromHistory(IEnumerable<IDomainEvent> history)
+    public void LoadFromHistory(IEnumerable<IDomainEvent<TAggregateRoot, TId>> history)
     {
-        foreach (var evt in history)
+        foreach (IDomainEvent<TAggregateRoot, TId> evt in history)
         {
             Apply(evt);
             Version++; // Increment version for each historical event
@@ -52,5 +54,5 @@ public abstract class AggregateRoot<TId> : Entity<TId> where TId : notnull
     /// The magic method that routes an event to the correct state-mutating method.
     /// It uses dynamic dispatch to call the appropriate `Apply(SpecificEventType evt)` overload.
     /// </summary>
-    protected abstract void Apply(IDomainEvent evt);
+    protected abstract void Apply(IDomainEvent<TAggregateRoot, TId> evt);
 }

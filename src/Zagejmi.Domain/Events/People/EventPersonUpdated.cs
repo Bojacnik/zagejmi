@@ -1,18 +1,31 @@
-﻿using Zagejmi.Domain.Community.User;
+﻿using System.Net.Mail;
+using SharedKernel;
+using Zagejmi.Domain.Community.User;
 
 namespace Zagejmi.Domain.Events.People;
 
 public record EventPersonUpdated(
-    Guid EventId,
     DateTime Timestamp,
-    ulong Version,
-    Guid AggregateId,
-    string EventType) : IPersonEvent
+    EventTypeDomain EventType,
+    Guid AggregateId
+    ) : IPersonEvent<Person, Guid>
 {
-    public ulong PersonId { get; init; }
     public required string FirstName { get; init; }
     public required string LastName { get; init; }
-    public required string Email { get; init; }
-    public DateTime BirthDate { get; init; }
-    public Gender Gender { get; init; }
+    public required MailAddress Email { get; init; }
+    public required DateTime BirthDate { get; init; }
+    public required Gender Gender { get; init; }
+    public required PersonType PersonType { get; init; }
+
+    public Person Apply(Person aggregate)
+    {
+        aggregate.PersonalInformation.FirstName = FirstName;
+        aggregate.PersonalInformation.LastName = LastName;
+        aggregate.PersonalInformation.MailAddress = Email;
+        aggregate.PersonalInformation.BirthDay = BirthDate;
+        aggregate.PersonalInformation.Gender = Gender;
+        
+        aggregate.PersonType = PersonType;
+        return aggregate;
+    }
 }

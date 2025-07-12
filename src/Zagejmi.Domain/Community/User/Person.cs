@@ -6,11 +6,11 @@ using Zagejmi.Domain.Events.People;
 
 namespace Zagejmi.Domain.Community.User;
 
-public sealed class Person : AggregateRoot<Guid>
+public sealed record Person : AggregateRoot<Person, Guid>
 {
     #region Person Properties
 
-    public PersonType PersonType { get; init; }
+    public PersonType PersonType { get; set; }
     public PersonalInformation PersonalInformation { get; init; }
     public PersonalStatistics PersonalStatistics { get; init; }
     public List<GoinWallet> Wallet { get; init; }
@@ -38,28 +38,29 @@ public sealed class Person : AggregateRoot<Guid>
         AssociateProfile = associateProfile;
     }
 
-    protected override void Apply(IDomainEvent evt)
+    protected override void Apply(IDomainEvent<Person, Guid> evt)
     {
         switch (evt.EventType)
         {
-            case "PersonCreated":
+            case EventTypeDomain.PersonCreated:
                 var eventPersonCreated = (EventPersonCreated)evt;
                 if (eventPersonCreated.AggregateId == Id)
                 {
                     throw new Exception("Person with this ID already exists");
                 }
 
+                eventPersonCreated.Apply(this);
                 break;
-            case "PersonUpdated":
+            case EventTypeDomain.PersonUpdated:
                 var eventPersonUpdated = (EventPersonUpdated)evt;
                 if (eventPersonUpdated.AggregateId == Id)
                 {
-                    throw new NotImplementedException();
+                    eventPersonUpdated.Apply(this);
                 }
 
                 break;
-            case "PersonDeleted":
-                throw new NotImplementedException();
+            default:
+                throw new ArgumentOutOfRangeException();
         }
     }
 }

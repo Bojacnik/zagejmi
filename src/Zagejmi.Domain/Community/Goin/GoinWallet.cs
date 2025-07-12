@@ -3,7 +3,7 @@ using Zagejmi.Domain.Events;
 
 namespace Zagejmi.Domain.Community.Goin;
 
-public sealed class GoinWallet : Entity<Guid>
+public sealed record GoinWallet : Entity<Guid>
 {
     #region Wallet Properties
 

@@ -47,6 +47,10 @@ public sealed class PersonalStatistics : ValueObject
         GiftsSent = giftsSent;
     }
 
+    public PersonalStatistics()
+    {
+    }
+
     protected override IEnumerable<object?> GetAtomicValues()
     {
         yield return TotalScore;

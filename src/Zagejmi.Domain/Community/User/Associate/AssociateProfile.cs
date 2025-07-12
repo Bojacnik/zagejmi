@@ -3,7 +3,7 @@ using SharedKernel;
 
 namespace Zagejmi.Domain.Community.User.Associate;
 
-public class AssociateProfile : Entity<uint>
+public record AssociateProfile : Entity<Guid>
 {
     #region AssociateProfile properties
 
@@ -12,7 +12,7 @@ public class AssociateProfile : Entity<uint>
     #endregion
 
     public AssociateProfile(
-        uint id, 
+        Guid id, 
         Image cardProfilePicture) : base(id)
     {
         CardProfilePicture = cardProfilePicture;
