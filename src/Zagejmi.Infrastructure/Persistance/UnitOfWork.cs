@@ -26,7 +26,7 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task<Either<Failure, Unit>> ExecuteAsync(
         IDomainEvent<Person, Guid> @event,
-        Func<Task<Either<FailureDatabase, Unit>>> AddUpdateToWriteDatabaseOperation,
+        Func<Task<Either<FailureDatabase, Unit>>> addUpdateToWriteDatabaseOperation,
         CancellationToken cancellationToken = default)
     {
         Either<FailureEventStore, Unit> additionToEventStoreResult = await AddEventToEventStore(@event);
@@ -36,7 +36,7 @@ public class UnitOfWork : IUnitOfWork
             @event.Timestamp, failure.Message));
 
         Either<FailureDatabase, Unit> additionToWriteDatabase = await AddUpdateOperationWriteDatabase(
-            AddUpdateToWriteDatabaseOperation
+            addUpdateToWriteDatabaseOperation
         );
 
         additionToWriteDatabase.IfLeft(failure =>
@@ -48,13 +48,18 @@ public class UnitOfWork : IUnitOfWork
             "Could not save to write database because {e}", failure.Message));
 
         Either<FailureMessageBus, Unit> saveChangesToOutbox =
-            await AddOutboxEventAsync(Mapper.Map < IDomainEvent<Person, Guid>(@event), cancellationToken);
+            await AddOutboxEventAsync(Mapper.Map<OutboxEvent>(@event), cancellationToken);
+
+        saveChangesToOutbox.IfLeft(failure =>
+            Log.Error("Could not save to outbox because {e}", failure.Message)
+        );
         
+        return Unit.Default;
     }
 
     public async Task<Either<FailureEventStore, Unit>> AddEventToEventStore(IDomainEvent<Person, Guid> @event)
     {
-        var cts = new CancellationTokenSource();
+        CancellationTokenSource cts = new CancellationTokenSource();
         return await _eventStore.SaveEventAsync(@event, cts.Token);
     }
 
@@ -70,8 +75,7 @@ public class UnitOfWork : IUnitOfWork
         return MapDatabaseCodeToEither(resultAsInt);
     }
 
-    public async Task<Either<FailureMessageBus, Unit>> AddOutboxEventAsync(OutboxEvent outboxEvent,
-        CancellationToken cancellationToken = default)
+    public async Task<Either<FailureMessageBus, Unit>> AddOutboxEventAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken = default)
     {
         try
         {

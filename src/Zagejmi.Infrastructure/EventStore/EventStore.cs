@@ -18,5 +18,6 @@ public class EventStore<TAggregateRoot, TAggregateRootId>(
     {
         CancellationTokenSource cts = new();
         await producer.SendAsync(@event, cts.Token);
+        return Unit.Default;
     }
 }
