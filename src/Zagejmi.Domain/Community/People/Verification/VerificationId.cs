@@ -1,14 +1,13 @@
 ﻿using System.Drawing;
 using LanguageExt;
-using SharedKernel;
 using SharedKernel.Failures;
 
-namespace Zagejmi.Domain.Community.User.Verification;
+namespace Zagejmi.Domain.Community.People.Verification;
 
-public sealed class VerificationId(Image? imageFront, Image? imageBack) : Verification
+public sealed record VerificationId(Image? ImageFront, Image? ImageBack) : People.Verification.Verification
 {
-    public Image? ImageFront = imageFront;
-    public Image? ImageBack = imageBack;
+    public readonly Image? ImageFront = ImageFront;
+    public readonly Image? ImageBack = ImageBack;
 
     protected override IEnumerable<object?> GetAtomicValues()
     {

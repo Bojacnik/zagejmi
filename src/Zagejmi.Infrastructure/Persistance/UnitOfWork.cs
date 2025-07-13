@@ -7,7 +7,7 @@ using SharedKernel;
 using SharedKernel.Failures;
 using SharedKernel.Outbox;
 using Zagejmi.Application;
-using Zagejmi.Domain.Community.User;
+using Zagejmi.Domain.Community.People;
 using Zagejmi.Domain.Events.EventStore;
 using Zagejmi.Infrastructure.Ctx;
 
@@ -53,7 +53,7 @@ public class UnitOfWork : IUnitOfWork
         saveChangesToOutbox.IfLeft(failure =>
             Log.Error("Could not save to outbox because {e}", failure.Message)
         );
-        
+
         return Unit.Default;
     }
 
@@ -75,7 +75,8 @@ public class UnitOfWork : IUnitOfWork
         return MapDatabaseCodeToEither(resultAsInt);
     }
 
-    public async Task<Either<FailureMessageBus, Unit>> AddOutboxEventAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken = default)
+    public async Task<Either<FailureMessageBus, Unit>> AddOutboxEventAsync(OutboxEvent outboxEvent,
+        CancellationToken cancellationToken = default)
     {
         try
         {

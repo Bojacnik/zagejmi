@@ -1,4 +1,4 @@
-﻿namespace Zagejmi.Domain.Community.User;
+﻿namespace Zagejmi.Domain.Community.People;
 
 public enum PersonType
 {

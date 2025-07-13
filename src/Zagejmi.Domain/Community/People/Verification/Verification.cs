@@ -2,9 +2,9 @@
 using SharedKernel;
 using SharedKernel.Failures;
 
-namespace Zagejmi.Domain.Community.User.Verification;
+namespace Zagejmi.Domain.Community.People.Verification;
 
-public abstract class Verification : ValueObject
+public abstract record Verification : ValueObject
 {
     public VerificationType Type { get; init; }
 

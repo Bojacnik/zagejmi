@@ -2,7 +2,7 @@
 using SharedKernel;
 using SharedKernel.Failures;
 using SharedKernel.Outbox;
-using Zagejmi.Domain.Community.User;
+using Zagejmi.Domain.Community.People;
 
 namespace Zagejmi.Application;
 

@@ -1,6 +1,6 @@
 ﻿using System.Net.Mail;
 using SharedKernel;
-using Zagejmi.Domain.Community.User;
+using Zagejmi.Domain.Community.People;
 
 namespace Zagejmi.Domain.Events.People;
 
@@ -8,7 +8,7 @@ public record EventPersonUpdated(
     DateTime Timestamp,
     EventTypeDomain EventType,
     Guid AggregateId
-    ) : IPersonEvent<Person, Guid>
+) : IPersonEvent<Person, Guid>
 {
     public required string FirstName { get; init; }
     public required string LastName { get; init; }
@@ -24,7 +24,7 @@ public record EventPersonUpdated(
         aggregate.PersonalInformation.MailAddress = Email;
         aggregate.PersonalInformation.BirthDay = BirthDate;
         aggregate.PersonalInformation.Gender = Gender;
-        
+
         aggregate.PersonType = PersonType;
         return aggregate;
     }

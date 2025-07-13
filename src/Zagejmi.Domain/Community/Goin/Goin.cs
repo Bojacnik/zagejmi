@@ -2,7 +2,7 @@
 
 namespace Zagejmi.Domain.Community.Goin;
 
-public sealed class Goin : ValueObject
+public sealed record Goin : ValueObject
 {
     public readonly ulong Amount;
 

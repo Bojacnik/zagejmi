@@ -1,12 +1,11 @@
 ﻿using LanguageExt;
-using SharedKernel;
 using SharedKernel.Failures;
 
-namespace Zagejmi.Domain.Community.User.Verification;
+namespace Zagejmi.Domain.Community.People.Verification;
 
-public sealed class VerificationFace(string? path) : Verification
+public sealed record VerificationFace(string? Path) : People.Verification.Verification
 {
-    public string? Path = path;
+    public readonly string? Path = Path;
 
     protected override IEnumerable<object?> GetAtomicValues()
     {

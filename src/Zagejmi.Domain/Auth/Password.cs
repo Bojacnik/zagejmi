@@ -4,7 +4,7 @@ using Zagejmi.Domain.Auth.Hashing;
 
 namespace Zagejmi.Domain.Auth;
 
-public sealed class Password : ValueObject
+public sealed record Password : ValueObject
 {
     #region Password properties
 

@@ -1,9 +1,9 @@
 ﻿using System.Drawing;
 using SharedKernel;
 
-namespace Zagejmi.Domain.Community.User.Associate;
+namespace Zagejmi.Domain.Community.People.Associate;
 
-public record AssociateProfile : Entity<Guid>
+public sealed record AssociateProfile : Entity<Guid>
 {
     #region AssociateProfile properties
 

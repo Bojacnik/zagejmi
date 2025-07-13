@@ -1,6 +1,5 @@
 ﻿using SharedKernel;
-using Zagejmi.Domain.Community.Goin;
-using Zagejmi.Domain.Community.User;
+using Zagejmi.Domain.Community.People;
 
 namespace Zagejmi.Domain.Events.GoinTransactions;
 

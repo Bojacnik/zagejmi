@@ -15,7 +15,7 @@ public class RepositoryPersonRead : IRepositoryPersonRead
         _context = context;
     }
 
-    public async Task<Either<Failure, Domain.Community.User.Person>> GetByEmailAsync(
+    public async Task<Either<Failure, Domain.Community.People.Person>> GetByEmailAsync(
         string email,
         CancellationToken cancellationToken)
     {
@@ -36,10 +36,10 @@ public class RepositoryPersonRead : IRepositoryPersonRead
             return new FailureDatabaseEntityNotFound("Person not found");
         }
 
-        return Mapper.Map<Domain.Community.User.Person>(person);
+        return Mapper.Map<Domain.Community.People.Person>(person);
     }
 
-    public async Task<Either<Failure, Domain.Community.User.Person>> GetByUsernameAsync(
+    public async Task<Either<Failure, Domain.Community.People.Person>> GetByUsernameAsync(
         string username,
         CancellationToken cancellationToken)
     {
@@ -60,7 +60,7 @@ public class RepositoryPersonRead : IRepositoryPersonRead
             return new FailureDatabaseEntityNotFound("Person not found");
         }
 
-        return Mapper.Map<Domain.Community.User.Person>(person);
+        return Mapper.Map<Domain.Community.People.Person>(person);
     }
 
     private readonly ZagejmiContext _context;

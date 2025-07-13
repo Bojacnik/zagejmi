@@ -17,7 +17,7 @@ public class RepositoryPersonWrite : IRepositoryPersonWrite
     }
 
     public async Task<Either<Failure, Unit>> CreatePerson(
-        Domain.Community.User.Person person,
+        Domain.Community.People.Person person,
         CancellationToken cancellationToken)
     {
         var personModel = Mapper.Map<ModelPerson>(person);
@@ -100,8 +100,8 @@ public class RepositoryPersonWrite : IRepositoryPersonWrite
     }
 
     public async Task<Either<Failure, Unit>> UpdatePerson(
-        Domain.Community.User.Person personOld,
-        Domain.Community.User.Person personNew,
+        Domain.Community.People.Person personOld,
+        Domain.Community.People.Person personNew,
         CancellationToken cancellationToken)
     {
         var opersonModelOld = Mapper.Map<ModelPerson>(personOld);

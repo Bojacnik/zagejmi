@@ -1,9 +1,8 @@
 ﻿using SharedKernel;
-using Zagejmi.Domain.Events;
 
-namespace Zagejmi.Domain.Community.User;
+namespace Zagejmi.Domain.Community.People;
 
-public sealed class PersonalStatistics : ValueObject
+public sealed record PersonalStatistics : ValueObject
 {
     #region Personal Statistics Properties
 

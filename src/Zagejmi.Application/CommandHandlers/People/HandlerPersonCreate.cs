@@ -6,15 +6,15 @@ using SharedKernel;
 using SharedKernel.Failures;
 using SharedKernel.Outbox;
 using Zagejmi.Application.Commands.Person;
-using Zagejmi.Domain.Community.User;
+using Zagejmi.Domain.Community.People;
 using Zagejmi.Domain.Events.People;
 using Zagejmi.Domain.Repository; // Import the IUnitOfWork namespace
 using Gender = Zagejmi.Application.Commands.Person.Gender;
-using PersonType = Zagejmi.Domain.Community.User.PersonType;
+using PersonType = Zagejmi.Domain.Community.People.PersonType;
 
 namespace Zagejmi.Application.CommandHandlers.People;
 
-public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
+public sealed record HandlerPersonCreate : IConsumer<CommandPersonCreate>
 {
     // Inject the Unit of Work and the Repository
     private readonly IUnitOfWork _unitOfWork;
@@ -32,7 +32,7 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
         CancellationToken cancellationToken = context.CancellationToken;
 
         // 1. Create the domain entities (This part is unchanged)
-        var info = new PersonalInformation(
+        PersonalInformation info = new PersonalInformation(
             command.MailAddress,
             command.UserName,
             command.FirstName,
@@ -40,16 +40,17 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
             command.BirthDate,
             command.Gender switch
             {
-                Gender.Unknown => Domain.Community.User.Gender.Unknown,
-                Gender.Male => Domain.Community.User.Gender.Male,
-                Gender.Female => Domain.Community.User.Gender.Female,
-                Gender.Other => Domain.Community.User.Gender.Other,
+                Gender.Unknown => Domain.Community.People.Gender.Unknown,
+                Gender.Male => Domain.Community.People.Gender.Male,
+                Gender.Female => Domain.Community.People.Gender.Female,
+                Gender.Other => Domain.Community.People.Gender.Other,
                 _ => throw new ArgumentOutOfRangeException(nameof(command.Gender), "Invalid gender specified.")
             }
         );
-        var stats = new PersonalStatistics(0, 0, 0, 0, 0, 0, 0, 0, 0);
-        var personGuid = Guid.NewGuid();
-        var person = new Person(personGuid, PersonType.Customer, info, stats, [], null);
+        PersonalStatistics stats =
+            new PersonalStatistics(0, 0, 0, 0, 0, 0, 0, 0, 0);
+        Guid personGuid = Guid.NewGuid();
+        Person person = new Person(personGuid, PersonType.Customer, info, stats, [], null);
 
         // 2. Add the new Person via the repository.
         // The repository uses the same DbContext instance (managed by DI),
@@ -63,7 +64,7 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
         }
 
         // 3. Create the domain event
-        var personCreatedEvent = new EventPersonCreated(
+        EventPersonCreated personCreatedEvent = new EventPersonCreated(
             DateTime.UtcNow,
             EventTypeDomain.PersonCreated,
             personGuid)
@@ -79,7 +80,7 @@ public class HandlerPersonCreate : IConsumer<CommandPersonCreate>
         };
 
         // 4. Create the OutboxEvent
-        var outboxEvent = new OutboxEvent
+        OutboxEvent outboxEvent = new OutboxEvent
         {
             Id = Guid.NewGuid(),
             OccurredOnUtc = DateTime.UtcNow,

@@ -1,6 +1,6 @@
 ﻿using AnyMapper;
 using Zagejmi.Domain.Community.Goin;
-using Zagejmi.Domain.Community.User;
+using Zagejmi.Domain.Community.People;
 using Zagejmi.Infrastructure.Models;
 
 namespace Zagejmi.Infrastructure;
@@ -22,14 +22,14 @@ public class InfrastructureMappingProfile : Profile
         #endregion
 
         #region GoinWallet Mappings
-        
+
         CreateMap<GoinWallet, ModelGoinWallet>();
         CreateMap<ModelGoinWallet, GoinWallet>();
 
         #endregion
 
         #region GoinTransaction Mappings
-        
+
         CreateMap<GoinTransaction, ModelGoinTransaction>();
         CreateMap<ModelGoinTransaction, GoinTransaction>();
 

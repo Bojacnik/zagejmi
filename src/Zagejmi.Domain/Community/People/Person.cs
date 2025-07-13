@@ -1,10 +1,9 @@
 ﻿using SharedKernel;
-using Zagejmi.Domain.Events;
 using Zagejmi.Domain.Community.Goin;
-using Zagejmi.Domain.Community.User.Associate;
+using Zagejmi.Domain.Community.People.Associate;
 using Zagejmi.Domain.Events.People;
 
-namespace Zagejmi.Domain.Community.User;
+namespace Zagejmi.Domain.Community.People;
 
 public sealed record Person : AggregateRoot<Person, Guid>
 {
@@ -13,7 +12,7 @@ public sealed record Person : AggregateRoot<Person, Guid>
     public PersonType PersonType { get; set; }
     public PersonalInformation PersonalInformation { get; init; }
     public PersonalStatistics PersonalStatistics { get; init; }
-    public List<GoinWallet> Wallet { get; init; }
+    public List<GoinWallet> Wallets { get; init; }
 
     #endregion
 
@@ -28,13 +27,13 @@ public sealed record Person : AggregateRoot<Person, Guid>
         PersonType personType,
         PersonalInformation personalInformation,
         PersonalStatistics personalStatistics,
-        List<GoinWallet> wallet,
+        List<GoinWallet> wallets,
         AssociateProfile? associateProfile) : base(id)
     {
         PersonType = personType;
         PersonalInformation = personalInformation;
         PersonalStatistics = personalStatistics;
-        Wallet = wallet;
+        Wallets = wallets;
         AssociateProfile = associateProfile;
     }
 

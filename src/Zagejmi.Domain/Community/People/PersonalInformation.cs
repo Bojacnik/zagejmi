@@ -1,9 +1,9 @@
 ﻿using System.Net.Mail;
 using SharedKernel;
 
-namespace Zagejmi.Domain.Community.User;
+namespace Zagejmi.Domain.Community.People;
 
-public class PersonalInformation : ValueObject
+public sealed record PersonalInformation : ValueObject
 {
     public MailAddress? MailAddress;
     public string? UserName;

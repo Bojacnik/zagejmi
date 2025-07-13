@@ -1,4 +1,4 @@
-﻿namespace Zagejmi.Domain.Community.User.Verification;
+﻿namespace Zagejmi.Domain.Community.People.Verification;
 
 public enum VerificationType
 {

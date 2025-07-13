@@ -1,6 +1,6 @@
 ﻿using System.Net.Mail;
 using SharedKernel;
-using Zagejmi.Domain.Community.User;
+using Zagejmi.Domain.Community.People;
 
 namespace Zagejmi.Domain.Events.People;
 

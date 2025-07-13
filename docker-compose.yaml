@@ -1,11 +1,28 @@
-﻿version: '3.8'
-
-# Define the custom network
+﻿# Define the custom network
 networks:
   zagejmi_network:
     driver: bridge # 'bridge' is the default and usually sufficient
 
 services:
+  postgres:
+    image: postgres:17.5-alpine3.22
+    
+    container_name: my_writedatabase_instance
+    
+    environment:
+      POSTGRES_DB: my_postgres_write_db
+      POSTGRES_USER: my_postgres_write_user
+      POSTGRES_PASSWORD: my_postgres_write_password
+      POSTGRES_SHARED_BUFFERS: 512MB
+    
+    ports:
+      - "5432:5555"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    
+    restart: unless-stopped
+  
   timescaledb:
     image: timescale/timescaledb:2.14.2-pg16
     
@@ -85,6 +102,8 @@ services:
         condition: service_healthy
 
 volumes:
+  postgres_data:
+  postgres_logs:
   rabbitmq_data:
   rabbitmq_logs:
   timescaledb_data:

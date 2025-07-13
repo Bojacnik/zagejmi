@@ -1,13 +1,12 @@
 ﻿using LanguageExt;
-using SharedKernel;
 using SharedKernel.Failures;
 
-namespace Zagejmi.Domain.Community.User.Verification;
+namespace Zagejmi.Domain.Community.People.Verification;
 
-public sealed class VerificationPersonal(Person? verifier, string note) : Verification
+public sealed record VerificationPersonal(Person? Verifier, string Note) : Verification
 {
-    public Person? Verifier = verifier;
-    public string? Note = note;
+    public readonly Person? Verifier = Verifier;
+    public readonly string? Note = Note;
 
     protected override IEnumerable<object?> GetAtomicValues()
     {
