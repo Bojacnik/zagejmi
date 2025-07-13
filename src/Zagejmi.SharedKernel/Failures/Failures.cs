@@ -112,3 +112,9 @@ public class FailureEventStoreUnableToSave : FailureEventStore
     }
 }
 
+public class FailureLogin : Failure
+{
+    public FailureLogin(string message) : base(message)
+    {
+    }
+}
