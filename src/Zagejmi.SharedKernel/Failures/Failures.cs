@@ -28,7 +28,7 @@ public class VerificationFailureInvalidLogin : VerificationFailure
 
 public abstract class FailureFile(string message) : Failure(message);
 
-public  class FailureFileNotFound : FailureFile
+public class FailureFileNotFound : FailureFile
 {
     public FailureFileNotFound(string message) : base(message)
     {
@@ -108,13 +108,6 @@ public class FailureEventStoreConnectionLost : FailureEventStore
 public class FailureEventStoreUnableToSave : FailureEventStore
 {
     public FailureEventStoreUnableToSave(string message) : base(message)
-    {
-    }
-}
-
-public class FailureLogin : Failure
-{
-    public FailureLogin(string message) : base(message)
     {
     }
 }
