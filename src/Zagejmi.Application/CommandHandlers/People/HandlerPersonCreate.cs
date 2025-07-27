@@ -1,11 +1,15 @@
-﻿using System.Text.Json;
+﻿using System.Security.Cryptography;
+using System.Text.Json;
 using LanguageExt;
+using LanguageExt.UnitsOfMeasure;
 using MassTransit;
 using Serilog;
 using SharedKernel;
 using SharedKernel.Failures;
 using SharedKernel.Outbox;
 using Zagejmi.Application.Commands.Person;
+using Zagejmi.Domain.Auth;
+using Zagejmi.Domain.Auth.Hashing;
 using Zagejmi.Domain.Community.People;
 using Zagejmi.Domain.Events.People;
 using Zagejmi.Domain.Repository; // Import the IUnitOfWork namespace
@@ -16,10 +20,6 @@ namespace Zagejmi.Application.CommandHandlers.People;
 
 public sealed record HandlerPersonCreate : IConsumer<CommandPersonCreate>
 {
-    // Inject the Unit of Work and the Repository
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IRepositoryPersonWrite _repository;
-
     public HandlerPersonCreate(IUnitOfWork unitOfWork, IRepositoryPersonWrite repository)
     {
         _unitOfWork = unitOfWork;
@@ -50,7 +50,19 @@ public sealed record HandlerPersonCreate : IConsumer<CommandPersonCreate>
         PersonalStatistics stats =
             new PersonalStatistics(0, 0, 0, 0, 0, 0, 0, 0, 0);
         Guid personGuid = Guid.NewGuid();
-        Person person = new Person(personGuid, PersonType.Customer, info, stats, [], null);
+        Person person = new Person(
+            personGuid,
+            new User(
+                command.UserName,
+                new Password(command.Password, command.UserName + command.MailAddress.Address, HashType.Sha256),
+                command.MailAddress.Address
+            ),
+            PersonType.Customer,
+            info,
+            stats,
+            [],
+            null
+        );
 
         // 2. Add the new Person via the repository.
         // The repository uses the same DbContext instance (managed by DI),
@@ -70,6 +82,9 @@ public sealed record HandlerPersonCreate : IConsumer<CommandPersonCreate>
             personGuid)
         {
             AggregateId = personGuid,
+            Password = person.User.Password.Value,
+            Salt = person.User.Password.Salt,
+            HashType = person.User.Password.HashType,
             FirstName = person.PersonalInformation.FirstName!,
             LastName = person.PersonalInformation.LastName!,
             UserName = person.PersonalInformation.UserName!,
@@ -98,4 +113,7 @@ public sealed record HandlerPersonCreate : IConsumer<CommandPersonCreate>
         Log.Information("Person {PersonId} and OutboxEvent {EventId} saved to database transactionally.", person.Id,
             outboxEvent.Id);
     }
+    
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IRepositoryPersonWrite _repository;
 }

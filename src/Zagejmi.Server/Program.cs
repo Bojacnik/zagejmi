@@ -1,8 +1,23 @@
+using System.Text;
 using MassTransit;
+using MassTransit.Mediator;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using SharedKernel;
+using Zagejmi.Application;
 using Zagejmi.Application.CommandHandlers.People;
 using Zagejmi.Components;
+using Zagejmi.Domain.Community.People;
+using Zagejmi.Domain.Events.EventStore;
+using Zagejmi.Domain.Repository;
 using Zagejmi.Infrastructure.Ctx;
+using Zagejmi.Infrastructure.Persistance;
+using Zagejmi.Infrastructure.Repository.Person;
+using Zagejmi.Infrastructure.EventBus;
+using Zagejmi.Infrastructure.EventStore;
+using Zagejmi.Components.Services;
+
 
 namespace Zagejmi;
 
@@ -16,8 +31,38 @@ public class Program
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
 
-        
-        /*
+        builder.Services.AddDbContext<ZagejmiContext>(options => options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection")));
+
+        builder.Services
+            .AddScoped<IEventBusProducer<Person, Guid>, EventBusProducer>()
+            .AddScoped<IEventStore<Person, Guid>, EventStore<Person, Guid>>()
+            .AddScoped<IUnitOfWork, UnitOfWork>()
+            .AddScoped<IRepositoryPersonWrite, RepositoryPersonWrite>()
+            .AddScoped<IMediator, Mediator>()
+            .AddScoped<IServiceUser, ServiceUser>();
+
+        builder.Services
+            .AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey =
+                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                };
+            });
+
         builder.Services.AddMassTransit(x =>
         {
             // Add your consumers
@@ -41,12 +86,7 @@ public class Program
 
                 cfg.ConfigureEndpoints(context);
             });
-            
         });
-        */
-
-        builder.Services.AddDbContext<ZagejmiContext>(options => options.UseSqlServer(
-            builder.Configuration.GetConnectionString("DefaultConnection")));
 
         WebApplication app = builder.Build();
 

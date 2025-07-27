@@ -14,6 +14,7 @@
 
     <ItemGroup>
       <PackageReference Include="AnyMapper" Version="1.0.34" />
+      <PackageReference Include="JWT" Version="11.0.0" />
       <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
       <PackageReference Include="MassTransit" Version="8.5.0" />
       <PackageReference Include="Polly" Version="8.6.1" />

@@ -8,37 +8,32 @@ public sealed record Password : ValueObject
 {
     #region Password properties
 
-    [PasswordPropertyText] public string Salt;
-
-    [PasswordPropertyText] public string HashedPassword;
-
-    private readonly HashType _hashType;
-    private readonly IHashHandler _hashHandler;
+    [PasswordPropertyText] public readonly string Value;
+    [PasswordPropertyText] public readonly string Salt;
+    public readonly HashType HashType;
 
     #endregion
 
-    private string Hash(string password, string salt, HashType hashType)
+    private static string Hash(string password, string salt, HashType hashType, IHashHandler hashHandler)
     {
-        return _hashHandler.Hash(
+        return hashHandler.Hash(
             password,
             salt,
             hashType
         );
     }
 
-    public Password(string password, string salt, HashType hashType, IHashHandler hashHandler)
+    public Password(string password, string salt, HashType hashType)
     {
+        Value = password;
         Salt = salt;
-        _hashType = hashType;
-        _hashHandler = hashHandler;
-        HashedPassword = Hash(password, salt, hashType);
+        HashType = hashType;
     }
 
     protected override IEnumerable<object?> GetAtomicValues()
     {
+        yield return Value;
         yield return Salt;
-        yield return HashedPassword;
-        yield return _hashType;
-        yield return _hashHandler;
+        yield return HashType;
     }
 }

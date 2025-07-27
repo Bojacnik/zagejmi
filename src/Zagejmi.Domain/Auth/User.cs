@@ -4,24 +4,22 @@ using Zagejmi.Domain.Community.People;
 
 namespace Zagejmi.Domain.Auth;
 
-public sealed record User : AggregateRoot<User, Guid>
+public sealed record User : ValueObject
 {
     #region User Properties
 
-    private string _username;
-    private readonly Password _password;
-
-    [EmailAddress] public string Email;
+    public readonly string Username;
+    public readonly Password Password;
+    [EmailAddress] public readonly string Email;
 
     #endregion
 
     private readonly List<Person> _people = [];
 
-    public User(Guid id, string username, Password password, string email) : base(id)
+    public User(string username, Password password, string email)
     {
-        Id = id;
-        _username = username;
-        _password = password;
+        Username = username;
+        Password = password;
         Email = email;
     }
 
@@ -37,10 +35,13 @@ public sealed record User : AggregateRoot<User, Guid>
 
     public bool IsPasswordValid(Password password)
     {
-        return _password.Equals(password);
+        return Password.Equals(password);
     }
 
-    protected override void Apply(IDomainEvent<User, Guid> evt)
+    protected override IEnumerable<object?> GetAtomicValues()
     {
+        yield return Username;
+        yield return Password;
+        yield return Email;
     }
 }

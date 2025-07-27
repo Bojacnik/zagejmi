@@ -46,10 +46,9 @@ public sealed record PersonalStatistics : ValueObject
         GiftsSent = giftsSent;
     }
 
-    public PersonalStatistics()
-    {
-    }
-
+    // Private constructor for EF Core or deserialization.
+    private PersonalStatistics() { }
+    
     protected override IEnumerable<object?> GetAtomicValues()
     {
         yield return TotalScore;

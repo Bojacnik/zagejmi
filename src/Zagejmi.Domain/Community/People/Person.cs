@@ -1,4 +1,5 @@
 ﻿using SharedKernel;
+using Zagejmi.Domain.Auth;
 using Zagejmi.Domain.Community.Goin;
 using Zagejmi.Domain.Community.People.Associate;
 using Zagejmi.Domain.Events.People;
@@ -9,6 +10,7 @@ public sealed record Person : AggregateRoot<Person, Guid>
 {
     #region Person Properties
 
+    public User User { get; init; }
     public PersonType PersonType { get; set; }
     public PersonalInformation PersonalInformation { get; init; }
     public PersonalStatistics PersonalStatistics { get; init; }
@@ -24,12 +26,14 @@ public sealed record Person : AggregateRoot<Person, Guid>
 
     public Person(
         Guid id,
+        User user,
         PersonType personType,
         PersonalInformation personalInformation,
         PersonalStatistics personalStatistics,
         List<GoinWallet> wallets,
         AssociateProfile? associateProfile) : base(id)
     {
+        User = user;
         PersonType = personType;
         PersonalInformation = personalInformation;
         PersonalStatistics = personalStatistics;
@@ -42,7 +46,7 @@ public sealed record Person : AggregateRoot<Person, Guid>
         switch (evt.EventType)
         {
             case EventTypeDomain.PersonCreated:
-                var eventPersonCreated = (EventPersonCreated)evt;
+                EventPersonCreated eventPersonCreated = (EventPersonCreated)evt;
                 if (eventPersonCreated.AggregateId == Id)
                 {
                     throw new Exception("Person with this ID already exists");
@@ -51,7 +55,7 @@ public sealed record Person : AggregateRoot<Person, Guid>
                 eventPersonCreated.Apply(this);
                 break;
             case EventTypeDomain.PersonUpdated:
-                var eventPersonUpdated = (EventPersonUpdated)evt;
+                EventPersonUpdated eventPersonUpdated = (EventPersonUpdated)evt;
                 if (eventPersonUpdated.AggregateId == Id)
                 {
                     eventPersonUpdated.Apply(this);

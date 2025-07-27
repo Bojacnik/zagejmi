@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="JWT" Version="11.0.0" />
         <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
         <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="9.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.2"/>
