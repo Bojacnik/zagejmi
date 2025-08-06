@@ -1,35 +1,36 @@
-﻿using System.Security.Cryptography;
-using System.Text.Json;
-using LanguageExt;
-using LanguageExt.UnitsOfMeasure;
+﻿using LanguageExt;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 using Serilog;
-using SharedKernel;
-using SharedKernel.Failures;
-using SharedKernel.Outbox;
 using Zagejmi.Application.Commands.Person;
+using Zagejmi.Domain;
 using Zagejmi.Domain.Auth;
 using Zagejmi.Domain.Auth.Hashing;
-using Zagejmi.Domain.Community.People;
+using Zagejmi.Domain.Community.People.Person;
 using Zagejmi.Domain.Events.People;
-using Zagejmi.Domain.Repository; // Import the IUnitOfWork namespace
+using Zagejmi.Domain.Repository;
+using Zagejmi.SharedKernel.Failures;
 using Gender = Zagejmi.Application.Commands.Person.Gender;
-using PersonType = Zagejmi.Domain.Community.People.PersonType;
+using PersonType = Zagejmi.Domain.Community.People.Person.PersonType;
 
 namespace Zagejmi.Application.CommandHandlers.People;
 
 public sealed record HandlerPersonCreate : IConsumer<CommandPersonCreate>
 {
-    public HandlerPersonCreate(IUnitOfWork unitOfWork, IRepositoryPersonWrite repository)
+    // TODO: Inject a real IHashHandler implementation
+    private readonly IHashHandler _hashHandler = new StubHashHandler(); 
+    private readonly IEventStoreRepository<Person, Guid> _eventStoreRepository;
+    private readonly ILogger<HandlerPersonCreate> _logger;
+
+    public HandlerPersonCreate(IEventStoreRepository<Person, Guid> eventStoreRepository, ILogger<HandlerPersonCreate> logger)
     {
-        _unitOfWork = unitOfWork;
-        _repository = repository;
+        _eventStoreRepository = eventStoreRepository;
+        _logger = logger;
     }
 
     public async Task Consume(ConsumeContext<CommandPersonCreate> context)
     {
         CommandPersonCreate command = context.Message;
-        CancellationToken cancellationToken = context.CancellationToken;
 
         // 1. Create the domain entities (This part is unchanged)
         PersonalInformation info = new PersonalInformation(
@@ -40,80 +41,44 @@ public sealed record HandlerPersonCreate : IConsumer<CommandPersonCreate>
             command.BirthDate,
             command.Gender switch
             {
-                Gender.Unknown => Domain.Community.People.Gender.Unknown,
-                Gender.Male => Domain.Community.People.Gender.Male,
-                Gender.Female => Domain.Community.People.Gender.Female,
-                Gender.Other => Domain.Community.People.Gender.Other,
+                Gender.Unknown => Domain.Community.People.Person.Gender.Unknown,
+                Gender.Male => Domain.Community.People.Person.Gender.Male,
+                Gender.Female => Domain.Community.People.Person.Gender.Female,
+                Gender.Other => Domain.Community.People.Person.Gender.Other,
                 _ => throw new ArgumentOutOfRangeException(nameof(command.Gender), "Invalid gender specified.")
             }
         );
-        PersonalStatistics stats =
-            new PersonalStatistics(0, 0, 0, 0, 0, 0, 0, 0, 0);
-        Guid personGuid = Guid.NewGuid();
-        Person person = new Person(
-            personGuid,
-            new User(
-                command.UserName,
-                new Password(command.Password, command.UserName + command.MailAddress.Address, HashType.Sha256),
-                command.MailAddress.Address
-            ),
-            PersonType.Customer,
-            info,
-            stats,
-            [],
-            null
+
+        // Create the password securely
+        string salt = command.UserName + command.MailAddress.Address; // Note: A cryptographically random salt is better
+        Password password = Password.Create(command.Password, salt, _hashHandler);
+
+        User user = new User(
+            command.UserName,
+            password,
+            command.MailAddress.Address
         );
 
-        // 2. Add the new Person via the repository.
-        // The repository uses the same DbContext instance (managed by DI),
-        // so this adds the person to the Unit of Work's change tracker.
-        Either<Failure, Unit> resultOfCreate = await _repository.CreatePerson(person, cancellationToken);
+        // 2. Create the aggregate. This doesn't save anything, it just raises an event internally.
+        Person person = Person.Create(Guid.NewGuid(), user, info);
 
-        if (resultOfCreate.IsLeft)
+        // 3. Persist the new event(s) to the event store (TimescaleDB).
+        // This is our new "Unit of Work". It should be an atomic operation.
+        await _eventStoreRepository.SaveAsync(person, context.CancellationToken);
+
+        // 4. Publish the events to the message bus (RabbitMQ) for read-side projectors to consume.
+        foreach (var domainEvent in person.GetUncommittedEvents())
         {
-            Log.Error("Failed to create person: {Failure}", ((Failure)resultOfCreate).Message);
-            return;
+            // MassTransit can publish the raw event object directly.
+            await context.Publish(domainEvent, context.CancellationToken);
         }
 
-        // 3. Create the domain event
-        EventPersonCreated personCreatedEvent = new EventPersonCreated(
-            DateTime.UtcNow,
-            EventTypeDomain.PersonCreated,
-            personGuid)
-        {
-            AggregateId = personGuid,
-            Password = person.User.Password.Value,
-            Salt = person.User.Password.Salt,
-            HashType = person.User.Password.HashType,
-            FirstName = person.PersonalInformation.FirstName!,
-            LastName = person.PersonalInformation.LastName!,
-            UserName = person.PersonalInformation.UserName!,
-            Email = person.PersonalInformation.MailAddress!,
-            BirthDate = person.PersonalInformation.BirthDay,
-            Gender = person.PersonalInformation.Gender,
-            PersonType = person.PersonType,
-        };
-
-        // 4. Create the OutboxEvent
-        OutboxEvent outboxEvent = new OutboxEvent
-        {
-            Id = Guid.NewGuid(),
-            OccurredOnUtc = DateTime.UtcNow,
-            EventType = personCreatedEvent.EventType,
-            Content = JsonSerializer.Serialize(personCreatedEvent, personCreatedEvent.GetType())
-        };
-
-        // 5. Add the OutboxEvent via the Unit of Work
-        await _unitOfWork.AddOutboxEventAsync(outboxEvent, cancellationToken);
-
-        // 6. Commit the transaction via the Unit of Work
-        // This single call atomically saves the Person and the OutboxEvent.
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        Log.Information("Person {PersonId} and OutboxEvent {EventId} saved to database transactionally.", person.Id,
-            outboxEvent.Id);
+        _logger.LogInformation("Successfully created and published events for Person {PersonId}", person.Id);
     }
-    
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IRepositoryPersonWrite _repository;
+}
+
+// A temporary stub for demonstration purposes. You would have a real implementation.
+public class StubHashHandler : IHashHandler
+{
+    public string Hash(string password, string salt, HashType hashType) => $"hashed_{password}_with_{salt}";
 }

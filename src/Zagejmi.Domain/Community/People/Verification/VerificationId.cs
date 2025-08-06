@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 using LanguageExt;
-using SharedKernel.Failures;
+using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Domain.Community.People.Verification;
 

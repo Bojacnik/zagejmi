@@ -1,6 +1,6 @@
 ﻿using LanguageExt;
-using SharedKernel;
-using SharedKernel.Failures;
+using Zagejmi.Domain.Entity;
+using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Domain.Community.People.Verification;
 

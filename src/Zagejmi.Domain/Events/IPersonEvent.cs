@@ -1,4 +1,4 @@
-﻿using SharedKernel;
+﻿using Zagejmi.Domain.Entity;
 
 namespace Zagejmi.Domain.Events;
 

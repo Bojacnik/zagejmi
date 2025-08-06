@@ -1,10 +1,10 @@
 ﻿using AnyMapper;
 using LanguageExt;
 using Serilog;
-using SharedKernel.Failures;
 using Zagejmi.Domain.Repository;
 using Zagejmi.Infrastructure.Ctx;
 using Zagejmi.Infrastructure.Models;
+using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Infrastructure.Repository.GoinWallet;
 

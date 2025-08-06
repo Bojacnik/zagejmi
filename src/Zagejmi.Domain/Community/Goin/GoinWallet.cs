@@ -1,9 +1,8 @@
-﻿using SharedKernel;
-using Zagejmi.Domain.Events;
+﻿using Zagejmi.Domain.Entity;
 
 namespace Zagejmi.Domain.Community.Goin;
 
-public sealed record GoinWallet : Entity<Guid>
+public sealed class GoinWallet : Entity<Guid>
 {
     #region Wallet Properties
 

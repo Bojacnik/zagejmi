@@ -1,0 +1,70 @@
+﻿@inject ILogger Logger
+@page "/register"
+
+<div class="grid place-items-center">
+    <h3>Register</h3>
+    <div class="flex flex-col max-w-48 gap-2">
+        <h1>Username</h1>
+        <input type="email" class="border-2 bg-amber-50" @bind="Username"/>
+
+        <h1>Password</h1>
+        <input type="password" class="border-2 bg-amber-50" @bind="Password"/>
+
+        <h1>Password Again</h1>
+        <input type="password" class="border-2 bg-amber-50" @bind="PasswordAgain"/>
+
+        <div class="flex flex-row gap-4">
+            <button type="submit" class="p-2 bg-green-600 hover:bg-green-700 rounded-2xl">Submit</button>
+            <a href="/login">
+                <button type="button" class="p-2 bg-blue-500 hover:bg-blue-700 rounded-2xl" @onclick="_ => OnClick()">
+                    Login Instead
+                </button>
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Username { get; set; } = string.Empty;
+    [Parameter] public string Password { get; set; } = string.Empty;
+    [Parameter] public string PasswordAgain { get; set; } = string.Empty;
+
+    private bool ValidatePassword()
+    {
+        return Password.Equals(PasswordAgain);
+    }
+
+    public string RegisteredMessage { get; set; } = string.Empty;
+
+    private async void OnClick()
+    {
+        try
+        {
+            if (ValidatePassword())
+            {
+                (await UserService.Register(Username, Password))
+                    .Right(result =>
+                    {
+                        if (!result)
+                        {
+                            Logger.LogError("Failed to register! User already exists.");
+                        }
+
+                        RegisteredMessage = "User successfully registered!";
+                    })
+                    .Left(failure =>
+                    {
+                        Logger.LogError("Failed UserAction register for username {username} because {failure}.",
+                            Username,
+                            failure.Message
+                        );
+                    });
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.LogError("Register Task failed!");
+        }
+    }
+
+}

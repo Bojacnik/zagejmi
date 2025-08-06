@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Zagejmi.Domain.Community.People;
+using Zagejmi.Domain.Community.People.Person;
 
 namespace Zagejmi.Infrastructure.Models;
 

@@ -5,7 +5,7 @@
         <LangVersion>13</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>SharedKernel</RootNamespace>
+        <RootNamespace>Zagejmi.SharedKernel</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

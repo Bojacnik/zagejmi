@@ -1,113 +1,35 @@
-﻿namespace SharedKernel.Failures;
+﻿namespace Zagejmi.SharedKernel.Failures;
 
-public abstract class Failure
-{
-    public string Message { get; init; }
+public abstract record Failure(string Message);
 
-    protected Failure(string message)
-    {
-        Message = message;
-    }
-}
+public record FailureOperationCancelled(string Message) : Failure(Message);
 
-public class FailureOperationCancelled(string message) : Failure(message);
+public abstract record VerificationFailure(string Message) : Failure(Message);
 
-public abstract class VerificationFailure : Failure
-{
-    protected VerificationFailure(string message) : base(message)
-    {
-    }
-}
+public record VerificationFailureInvalidLogin(string Message) : VerificationFailure(Message);
 
-public class VerificationFailureInvalidLogin : VerificationFailure
-{
-    protected VerificationFailureInvalidLogin(string message) : base(message)
-    {
-    }
-}
+public abstract record FailureFile(string Message) : Failure(Message);
 
-public abstract class FailureFile(string message) : Failure(message);
+public record FailureFileNotFound(string Message) : FailureFile(Message);
 
-public class FailureFileNotFound : FailureFile
-{
-    public FailureFileNotFound(string message) : base(message)
-    {
-    }
-}
+public record FailureFileNotImage(string Message) : FailureFile(Message);
 
-public class FailureFileNotImage : FailureFile
-{
-    public FailureFileNotImage(string message) : base(message)
-    {
-    }
-}
+public record FailureFileInvalidImage(string Message) : FailureFile(Message);
 
-public class FailureFileInvalidImage : FailureFile
-{
-    public FailureFileInvalidImage(string message) : base(message)
-    {
-    }
-}
+public record FailureFileNotAuthorized(string Message) : FailureFile(Message);
 
-public class FailureFileNotAuthorized : FailureFile
-{
-    public FailureFileNotAuthorized(string message) : base(message)
-    {
-    }
-}
+public record FailureFileOther(string Message) : FailureFile(Message);
 
-public class FailureFileOther : FailureFile
-{
-    public FailureFileOther(string message) : base(message)
-    {
-    }
-}
+public abstract record FailureArgument(string Message) : Failure(Message);
 
-public abstract class FailureArgument : Failure
-{
-    public FailureArgument(string message) : base(message)
-    {
-    }
-}
+public record FailureArgumentInvalidValue(string Message) : FailureArgument(Message);
 
-public class FailureArgumentInvalidValue : FailureArgument
-{
-    public FailureArgumentInvalidValue(string message) : base(message)
-    {
-    }
-}
+public record FailureArgumentInvalidType(string Message) : FailureArgument(Message);
 
-public class FailureArgumentInvalidType : FailureArgument
-{
-    public FailureArgumentInvalidType(string message) : base(message)
-    {
-    }
-}
+public record FailureArgumentInvalidLength(string Message) : FailureArgument(Message);
 
-public class FailureArgumentInvalidLength : FailureArgument
-{
-    public FailureArgumentInvalidLength(string message) : base(message)
-    {
-    }
-}
+public abstract record FailureEventStore(string Message) : Failure(Message);
 
-public abstract class FailureEventStore : Failure
-{
-    protected FailureEventStore(string message) : base(message)
-    {
-    }
-}
+public record FailureEventStoreConnectionLost(string Message) : FailureEventStore(Message);
 
-public class FailureEventStoreConnectionLost : FailureEventStore
-{
-    public FailureEventStoreConnectionLost(string message) : base(message)
-    {
-    }
-}
-
-public class FailureEventStoreUnableToSave : FailureEventStore
-{
-    public FailureEventStoreUnableToSave(string message) : base(message)
-    {
-    }
-}
+public record FailureEventStoreUnableToSave(string Message) : FailureEventStore(Message);

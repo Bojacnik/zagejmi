@@ -1,6 +1,7 @@
 ﻿using AnyMapper;
 using Zagejmi.Domain.Community.Goin;
 using Zagejmi.Domain.Community.People;
+using Zagejmi.Domain.Community.People.Person;
 using Zagejmi.Infrastructure.Models;
 
 namespace Zagejmi.Infrastructure;

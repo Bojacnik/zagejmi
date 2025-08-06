@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using SharedKernel;
-using Zagejmi.Domain.Community.People;
+using Zagejmi.Domain.Community.People.Person;
+using Zagejmi.Domain.Entity;
 
 namespace Zagejmi.Domain.Auth;
 

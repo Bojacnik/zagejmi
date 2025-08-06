@@ -1,10 +1,10 @@
 ﻿using LanguageExt;
 using MassTransit;
 using Serilog;
-using SharedKernel.Failures;
 using Zagejmi.Application.Commands.GoinTransactions;
 using Zagejmi.Domain.Community.Goin;
 using Zagejmi.Domain.Repository;
+using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Application.CommandHandlers.GoinTransactions;
 

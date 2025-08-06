@@ -1,24 +1,7 @@
-﻿namespace SharedKernel.Failures;
+﻿namespace Zagejmi.SharedKernel.Failures;
 
-public abstract class FailureMessageBus : Failure
-{
-    protected FailureMessageBus(string message) : base(message)
-    {
-    }
-}
+public abstract record FailureMessageBus(string Message) : Failure(Message);
 
-public class FailureMessageBusUnavailable : FailureMessageBus
-{
-    public FailureMessageBusUnavailable(string message) : base(message)
-    {
-    }
-}
+public record FailureMessageBusUnavailable(string Message) : FailureMessageBus(Message);
 
-
-public class FailureMessageBusOperationCancelled : FailureMessageBus
-{
-    public FailureMessageBusOperationCancelled(string message) : base(message)
-    {
-    }
-}
-
+public record FailureMessageBusOperationCancelled(string Message) : FailureMessageBus(Message);

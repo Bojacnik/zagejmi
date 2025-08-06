@@ -1,8 +1,3 @@
-﻿namespace SharedKernel.Failures;
+﻿namespace Zagejmi.SharedKernel.Failures;
 
-public class FailureLogin : Failure
-{
-    public FailureLogin(string message) : base(message)
-    {
-    }
-}
+public record FailureLogin(string Message) : Failure(Message);

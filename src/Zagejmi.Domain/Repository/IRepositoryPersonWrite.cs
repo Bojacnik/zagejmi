@@ -1,16 +1,13 @@
-﻿using LanguageExt;
-using SharedKernel.Failures;
+﻿﻿using LanguageExt;
 using Zagejmi.Domain.Community.People;
+using Zagejmi.Domain.Community.People.Person;
+using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Domain.Repository;
 
 public interface IRepositoryPersonWrite
 {
-    public Task<Either<Failure, Unit>> CreatePerson(
-        Person person,
-        CancellationToken cancellationToken);
+    void Add(Person person);
 
-    public Task<Either<Failure, Unit>> UpdatePerson(
-        Person personOld, Person personNew,
-        CancellationToken cancellationToken);
+    void Update(Person person);
 }

@@ -1,7 +1,6 @@
 ﻿using LanguageExt;
-using SharedKernel;
-using SharedKernel.Failures;
 using Zagejmi.Domain.Community.Goin;
+using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Domain.Repository;
 

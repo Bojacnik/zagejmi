@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server", "src/Zagejmi.Server/Zagejmi.Server.csproj", "{2A35F764-C0D3-4289-AA80-BA8AD34AC426}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Client", "src/Zagejmi.Client/Zagejmi.Client.csproj", "{1EFA30E0-CA50-4466-94A3-237F0AB3180A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server.Write", "src\Zagejmi.Server.Write\Zagejmi.Server.Write.csproj", "{2A35F764-C0D3-4289-AA80-BA8AD34AC426}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1B09407A-477A-4D3F-8A67-8BF1280D247E}"
 	ProjectSection(SolutionItems) = preProject
@@ -17,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Infrastructure", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.SharedKernel", "src\Zagejmi.SharedKernel\Zagejmi.SharedKernel.csproj", "{6EDA48DB-1508-42E8-810F-535167FEDD68}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server.Read", "BlazorApp1\Zagejmi.Server.Read\Zagejmi.Server.Read.csproj", "{8E8098CC-1D83-4BAF-AD6D-27259F208B75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Client", "BlazorApp1\Zagejmi.Client\Zagejmi.Client.csproj", "{6F031E33-15BD-49A7-96A1-3EC4F50D7859}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,10 +29,6 @@ Global
 		{2A35F764-C0D3-4289-AA80-BA8AD34AC426}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2A35F764-C0D3-4289-AA80-BA8AD34AC426}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2A35F764-C0D3-4289-AA80-BA8AD34AC426}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1EFA30E0-CA50-4466-94A3-237F0AB3180A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1EFA30E0-CA50-4466-94A3-237F0AB3180A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1EFA30E0-CA50-4466-94A3-237F0AB3180A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1EFA30E0-CA50-4466-94A3-237F0AB3180A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{72CB788E-2B5F-4027-9507-C15276EF6F23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{72CB788E-2B5F-4027-9507-C15276EF6F23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72CB788E-2B5F-4027-9507-C15276EF6F23}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -47,5 +45,13 @@ Global
 		{6EDA48DB-1508-42E8-810F-535167FEDD68}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6EDA48DB-1508-42E8-810F-535167FEDD68}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6EDA48DB-1508-42E8-810F-535167FEDD68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E8098CC-1D83-4BAF-AD6D-27259F208B75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E8098CC-1D83-4BAF-AD6D-27259F208B75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E8098CC-1D83-4BAF-AD6D-27259F208B75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E8098CC-1D83-4BAF-AD6D-27259F208B75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F031E33-15BD-49A7-96A1-3EC4F50D7859}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F031E33-15BD-49A7-96A1-3EC4F50D7859}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F031E33-15BD-49A7-96A1-3EC4F50D7859}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F031E33-15BD-49A7-96A1-3EC4F50D7859}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

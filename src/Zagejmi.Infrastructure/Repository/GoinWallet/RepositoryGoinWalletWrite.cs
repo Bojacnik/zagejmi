@@ -4,10 +4,10 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using SharedKernel.Failures;
 using Zagejmi.Domain.Repository;
 using Zagejmi.Infrastructure.Ctx;
 using Zagejmi.Infrastructure.Models;
+using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Infrastructure.Repository.GoinWallet;
 

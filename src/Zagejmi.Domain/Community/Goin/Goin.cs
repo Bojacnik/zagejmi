@@ -1,15 +1,10 @@
-﻿using SharedKernel;
+﻿using Zagejmi.Domain.Entity;
 
 namespace Zagejmi.Domain.Community.Goin;
 
-public sealed record Goin : ValueObject
+public sealed record Goin(ulong Amount) : ValueObject
 {
-    public readonly ulong Amount;
-
-    public Goin(ulong amount)
-    {
-        Amount = amount;
-    }
+    public readonly ulong Amount = Amount;
 
     protected override IEnumerable<object?> GetAtomicValues()
     {

@@ -3,9 +3,9 @@ using LanguageExt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Serilog;
-using SharedKernel.Failures;
 using Zagejmi.Domain.Repository;
 using Zagejmi.Infrastructure.Models;
+using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Infrastructure.Repository.GoinTransaction;
 

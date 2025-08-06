@@ -1,11 +1,11 @@
-﻿namespace SharedKernel.Failures;
+﻿namespace Zagejmi.SharedKernel.Failures;
 
-public class FailureDatabase(string message) : Failure(message);
+public record FailureDatabase(string Message) : Failure(Message);
 
-public class FailureDatabaseEntityNotFound(string message) : FailureDatabase(message);
+public record FailureDatabaseEntityNotFound(string Message) : FailureDatabase(Message);
 
-public class FailureDatabaseConnection(string message) : FailureDatabase(message);
+public record FailureDatabaseConnection(string Message) : FailureDatabase(Message);
 
-public class FailureDatabaseQuery(string message) : FailureDatabase(message);
+public record FailureDatabaseQuery(string Message) : FailureDatabase(Message);
 
-public class FailureDatabaseWrite(string message) : FailureDatabase(message);
+public record FailureDatabaseWrite(string Message) : FailureDatabase(Message);

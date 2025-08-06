@@ -1,6 +1,5 @@
 ﻿using System.Net.Mail;
-using SharedKernel;
-using Zagejmi.Domain.Community.People;
+using Zagejmi.Domain.Community.People.Person;
 
 namespace Zagejmi.Domain.Events.People;
 
@@ -12,7 +11,7 @@ public record EventPersonUpdated(
 {
     public required string FirstName { get; init; }
     public required string LastName { get; init; }
-    public required MailAddress Email { get; init; }
+    public required string Email { get; init; }
     public required DateTime BirthDate { get; init; }
     public required Gender Gender { get; init; }
     public required PersonType PersonType { get; init; }

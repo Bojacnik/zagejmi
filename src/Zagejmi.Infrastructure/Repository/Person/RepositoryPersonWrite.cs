@@ -2,10 +2,10 @@
 using LanguageExt;
 using Microsoft.EntityFrameworkCore.Storage;
 using Serilog;
-using SharedKernel.Failures;
 using Zagejmi.Domain.Repository;
 using Zagejmi.Infrastructure.Ctx;
 using Zagejmi.Infrastructure.Models;
+using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Infrastructure.Repository.Person;
 
@@ -17,7 +17,7 @@ public class RepositoryPersonWrite : IRepositoryPersonWrite
     }
 
     public async Task<Either<Failure, Unit>> CreatePerson(
-        Domain.Community.People.Person person,
+        Domain.Community.People.Person.Person person,
         CancellationToken cancellationToken)
     {
         var personModel = Mapper.Map<ModelPerson>(person);
@@ -100,8 +100,8 @@ public class RepositoryPersonWrite : IRepositoryPersonWrite
     }
 
     public async Task<Either<Failure, Unit>> UpdatePerson(
-        Domain.Community.People.Person personOld,
-        Domain.Community.People.Person personNew,
+        Domain.Community.People.Person.Person personOld,
+        Domain.Community.People.Person.Person personNew,
         CancellationToken cancellationToken)
     {
         var opersonModelOld = Mapper.Map<ModelPerson>(personOld);

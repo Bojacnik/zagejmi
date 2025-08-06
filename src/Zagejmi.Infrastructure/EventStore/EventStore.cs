@@ -1,7 +1,8 @@
 ﻿using LanguageExt;
-using SharedKernel;
-using SharedKernel.Failures;
-using Zagejmi.Domain.Events.EventStore;
+using Zagejmi.Application.EventStore;
+using Zagejmi.Domain;
+using Zagejmi.Domain.Entity;
+using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Infrastructure.EventStore;
 
