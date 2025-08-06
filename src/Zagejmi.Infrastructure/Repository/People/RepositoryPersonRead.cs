@@ -6,7 +6,7 @@ using Zagejmi.Infrastructure.Ctx;
 using Zagejmi.Infrastructure.Models;
 using Zagejmi.SharedKernel.Failures;
 
-namespace Zagejmi.Infrastructure.Repository.Person;
+namespace Zagejmi.Infrastructure.Repository.People;
 
 public class RepositoryPersonRead : IRepositoryPersonRead
 {
