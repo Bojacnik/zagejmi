@@ -1,7 +1,6 @@
-﻿using System.Net.Mail;
-using Zagejmi.Domain.Entity;
+﻿using Zagejmi.Domain.Entity;
 
-namespace Zagejmi.Domain.Community.People.Person;
+namespace Zagejmi.Domain.Community.People;
 
 public sealed record PersonalInformation : ValueObject
 {

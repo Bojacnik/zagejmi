@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using Zagejmi.Domain.Community.People.Person;
+using Zagejmi.Domain.Community.People;
 using Zagejmi.Domain.Entity;
 
 namespace Zagejmi.Domain.Auth;

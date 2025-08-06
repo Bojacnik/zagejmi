@@ -1,7 +1,7 @@
 ﻿using LanguageExt;
 using Zagejmi.Application;
 using Zagejmi.Application.EventStore;
-using Zagejmi.Domain.Community.People.Person;
+using Zagejmi.Domain.Community.People;
 using Zagejmi.Infrastructure.Ctx;
 using Zagejmi.SharedKernel.Failures;
 

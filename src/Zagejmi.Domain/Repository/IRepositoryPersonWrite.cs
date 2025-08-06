@@ -1,7 +1,4 @@
-﻿﻿using LanguageExt;
-using Zagejmi.Domain.Community.People;
-using Zagejmi.Domain.Community.People.Person;
-using Zagejmi.SharedKernel.Failures;
+﻿using Zagejmi.Domain.Community.People;
 
 namespace Zagejmi.Domain.Repository;
 

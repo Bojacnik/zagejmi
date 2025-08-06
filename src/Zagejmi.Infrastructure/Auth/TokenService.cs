@@ -4,7 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Zagejmi.Application;
-using Zagejmi.Domain.Community.People.Person;
+using Zagejmi.Domain.Community.People;
 
 namespace Zagejmi.Infrastructure.Auth;
 

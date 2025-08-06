@@ -1,6 +1,6 @@
 ﻿using Zagejmi.Domain.Auth;
 using Zagejmi.Domain.Auth.Hashing;
-using Zagejmi.Domain.Community.People.Person;
+using Zagejmi.Domain.Community.People;
 
 namespace Zagejmi.Domain.Events.People;
 

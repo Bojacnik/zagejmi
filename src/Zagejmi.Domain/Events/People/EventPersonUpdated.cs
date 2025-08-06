@@ -1,5 +1,4 @@
-﻿using System.Net.Mail;
-using Zagejmi.Domain.Community.People.Person;
+﻿using Zagejmi.Domain.Community.People;
 
 namespace Zagejmi.Domain.Events.People;
 

@@ -8,7 +8,7 @@ using Zagejmi.Infrastructure.Ctx;
 
 namespace Zagejmi.Server.Write;
 
-public class Program
+public static class Program
 {
     public static void Main(string[] args)
     {

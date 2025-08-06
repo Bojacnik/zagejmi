@@ -1,12 +1,13 @@
 ﻿using AnyMapper;
 using LanguageExt;
 using Serilog;
+using Zagejmi.Domain.Community.People;
 using Zagejmi.Domain.Repository;
 using Zagejmi.Infrastructure.Ctx;
 using Zagejmi.Infrastructure.Models;
 using Zagejmi.SharedKernel.Failures;
 
-namespace Zagejmi.Infrastructure.Repository.Person;
+namespace Zagejmi.Infrastructure.Repository.People;
 
 public class RepositoryPersonRead : IRepositoryPersonRead
 {
@@ -15,7 +16,7 @@ public class RepositoryPersonRead : IRepositoryPersonRead
         _context = context;
     }
 
-    public async Task<Either<Failure, Domain.Community.People.Person.Person>> GetByEmailAsync(
+    public async Task<Either<Failure, Person>> GetByEmailAsync(
         string email,
         CancellationToken cancellationToken)
     {
@@ -36,10 +37,10 @@ public class RepositoryPersonRead : IRepositoryPersonRead
             return new FailureDatabaseEntityNotFound("Person not found");
         }
 
-        return Mapper.Map<Domain.Community.People.Person.Person>(person);
+        return Mapper.Map<Person>(person);
     }
 
-    public async Task<Either<Failure, Domain.Community.People.Person.Person>> GetByUsernameAsync(
+    public async Task<Either<Failure, Person>> GetByUsernameAsync(
         string username,
         CancellationToken cancellationToken)
     {
@@ -60,7 +61,7 @@ public class RepositoryPersonRead : IRepositoryPersonRead
             return new FailureDatabaseEntityNotFound("Person not found");
         }
 
-        return Mapper.Map<Domain.Community.People.Person.Person>(person);
+        return Mapper.Map<Person>(person);
     }
 
     private readonly ZagejmiContext _context;

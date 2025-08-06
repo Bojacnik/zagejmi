@@ -3,9 +3,9 @@ using Zagejmi.SharedKernel.Failures;
 
 namespace Zagejmi.Domain.Community.People.Verification;
 
-public sealed record VerificationPersonal(Person.Person? Verifier, string Note) : Verification
+public sealed record VerificationPersonal(Person? Verifier, string Note) : Verification
 {
-    public readonly Person.Person? Verifier = Verifier;
+    public readonly Person? Verifier = Verifier;
     public readonly string? Note = Note;
 
     protected override IEnumerable<object?> GetAtomicValues()

@@ -1,4 +1,4 @@
-﻿namespace Zagejmi.Domain.Community.People.Person;
+﻿namespace Zagejmi.Domain.Community.People;
 
 public enum Gender
 {

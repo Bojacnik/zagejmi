@@ -1,6 +1,6 @@
 ﻿using Zagejmi.Domain.Entity;
 
-namespace Zagejmi.Domain.Community.People.Person;
+namespace Zagejmi.Domain.Community.People;
 
 public sealed record PersonalStatistics : ValueObject
 {

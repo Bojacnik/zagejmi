@@ -2,9 +2,8 @@
 using Zagejmi.Domain.Community.Goin;
 using Zagejmi.Domain.Community.People.Associate;
 using Zagejmi.Domain.Entity;
-using Zagejmi.Domain.Events.People;
 
-namespace Zagejmi.Domain.Community.People.Person;
+namespace Zagejmi.Domain.Community.People;
 
 public sealed class Person : AggregateRoot<Person, Guid>
 {
