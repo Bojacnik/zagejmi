@@ -3,8 +3,8 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Zagejmi.Application.CommandHandlers.People;
-using Zagejmi.Infrastructure.Ctx;
+using Zagejmi.Server.Write.Application.CommandHandlers.People;
+using Zagejmi.Server.Write.Infrastructure.Ctx;
 
 namespace Zagejmi.Server.Write;
 

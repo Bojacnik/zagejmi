@@ -7,11 +7,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		docker-compose.yaml = docker-compose.yaml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Application", "src/Zagejmi.Application/Zagejmi.Application.csproj", "{72CB788E-2B5F-4027-9507-C15276EF6F23}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server.Write.Application", "src\Zagejmi.Server.Write.Application\Zagejmi.Server.Write.Application.csproj", "{72CB788E-2B5F-4027-9507-C15276EF6F23}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Domain", "src/Zagejmi.Domain/Zagejmi.Domain.csproj", "{5D84816D-E678-4942-B784-46172AAC2FBE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server.Write.Domain", "src\Zagejmi.Server.Write.Domain\Zagejmi.Server.Write.Domain.csproj", "{5D84816D-E678-4942-B784-46172AAC2FBE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Infrastructure", "src/Zagejmi.Infrastructure/Zagejmi.Infrastructure.csproj", "{635CCA25-A381-4A19-A695-4A0EBF0601E9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server.Write.Infrastructure", "src\Zagejmi.Server.Write.Infrastructure\Zagejmi.Server.Write.Infrastructure.csproj", "{635CCA25-A381-4A19-A695-4A0EBF0601E9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.SharedKernel", "src\Zagejmi.SharedKernel\Zagejmi.SharedKernel.csproj", "{6EDA48DB-1508-42E8-810F-535167FEDD68}"
 EndProject

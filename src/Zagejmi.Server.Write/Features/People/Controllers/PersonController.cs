@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Zagejmi.Server.Write.Features.Person.Models;
+using Zagejmi.Server.Write.Features.People.Models;
 
-namespace Zagejmi.Server.Write.Features.Person.Controllers;
+namespace Zagejmi.Server.Write.Features.People.Controllers;
 
 public class PersonController : Controller
 {

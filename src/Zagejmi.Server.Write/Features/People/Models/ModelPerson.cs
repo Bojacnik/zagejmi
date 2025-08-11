@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Zagejmi.Server.Write.Features.Person.Models;
+namespace Zagejmi.Server.Write.Features.People.Models;
 
 [JsonSerializable(typeof(ModelPerson))]
 public record ModelPerson
