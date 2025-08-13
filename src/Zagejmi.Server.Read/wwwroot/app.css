@@ -1,3 +1,43 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+    /* Main Colors (Dark Gray Gradient) */
+    --color-primary-950: #0a0a0a; /* Near black */
+    --color-primary-900: #171717; /* Very dark gray */
+
+    /* Accent Colors (Magical Violet Palette) */
+    --color-accent-50:  #f5f3ff;
+    --color-accent-100: #ede9fe;
+    --color-accent-200: #ddd6fe;
+    --color-accent-300: #c4b5fd;
+    --color-accent-400: #a78bfa;
+    --color-accent-500: #8b5cf6;
+    --color-accent-600: #7c3aed; /* The chosen magical accent */
+    --color-accent-700: #6d28d9;
+    --color-accent-800: #5b21b6;
+    --color-accent-900: #4c1d95;
+    --color-accent-950: #2e1065;
+
+    /* Text Colors */
+    --color-text-default: #fafafa;   /* Light text for dark backgrounds */
+    --color-text-muted:   #a3a3a3;   /* A dimmer, more subtle light text */
+    --color-text-accent:  var(--color-accent-400); /* A magical violet for highlighted text */
+    --color-text-dark:    #171717;   /* Dark text for light backgrounds (e.g., on default buttons) */
+
+    /* Button Colors */
+    --color-button-primary-bg-start: var(--color-primary-950);
+    --color-button-primary-bg-end:   var(--color-primary-900);
+    --color-button-primary-text:     var(--color-text-default);
+    --color-button-primary-hover-bg-start: #000000;
+    --color-button-primary-hover-bg-end:   #0d0d0d;
+
+    --color-button-secondary-bg:     var(--color-accent-600);
+    --color-button-secondary-text:   var(--color-text-default);
+    --color-button-secondary-hover-bg: var(--color-accent-700);
+
+    --color-button-default-bg:   #e5e7eb; /* Gray-200 for a neutral button */
+    --color-button-default-text: var(--color-text-dark);
+    --color-button-default-hover-bg: #d1d5db; /* Gray-300 */
+}

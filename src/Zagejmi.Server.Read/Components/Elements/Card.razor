@@ -1,8 +1,11 @@
-﻿<div class="relative aspect-square rounded-2xl border-4  overflow-hidden border-b-gray-900 @Class">
+﻿@namespace Zagejmi.Server.Read.Components.Elements
+
+<div class="relative rounded-2xl overflow-hidden bg-primary-900 border-2 border-accent-800/50 transition-all duration-300 @Class">
     @ChildContent
 </div>
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
-    [Parameter] public string? Class { get; set; }
+    [Parameter]
+    public string? Class { get; set; }
 }

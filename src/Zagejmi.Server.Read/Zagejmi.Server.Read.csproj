@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
         <ProjectReference Include="..\Zagejmi.Client\Zagejmi.Client.csproj" />
         <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.7"/>
@@ -44,10 +45,6 @@
       <AdditionalFiles Include="Components\Pages\Wallets.razor" />
       <AdditionalFiles Include="Components\Routes.razor" />
       <AdditionalFiles Include="Components\_Imports.razor" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="wwwroot\img\" />
     </ItemGroup>
 
 </Project>

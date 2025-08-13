@@ -1,33 +1,43 @@
 ﻿@page "/people"
-<div class="    
-    grid
-    sm:grid-cols-1
-    md:grid-cols-2
-    lg:grid-cols-3
-    xl:grid-cols-4
-    2xl:grid-cols-5
-    grid-flow-row-dense
-    gap-2
-    overflow-y-auto
-">
-    @for (var i = 0; i < 20; i++)
+
+<div class="w-full h-full grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 grid-flow-row-dense gap-4 p-4 overflow-y-auto">
+    @foreach (PersonModel person in PeopleList)
     {
-        <Zagejmi.Components.Elements.Card class="relative group bg-amber-700 hover:transition-transform duration-200 ease-in-out">
+        <div class="relative group rounded-lg overflow-hidden shadow-lg bg-primary-900 transform transition-transform duration-300 hover:scale-105 hover:shadow-accent-700/40">
             <div class="absolute inset-0">
-                <img src="img/cat.png" class="w-full h-full object-cover" alt="" />
+                <img src="@person.ImageUrl" class="w-full h-full object-cover" alt="Profile picture of @person.Name" />
             </div>
-            <div class="absolute left-0 bottom-0 z-10 flex flex-col items-center justify-center w-full h-[20%] bg-gradient-to-r from-blue-950 to-blue-900 opacity-85">
-                <p class="">
-                    Placeholder text
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+            <div class="absolute left-0 bottom-0 z-10 p-4 flex flex-col items-start w-full text-text-default">
+                <p class="font-bold text-lg">
+                    @person.Name
                 </p>
-                <div class="inline-flex p-1 rounded-2xl  bg-amber-600">
-                    <p>sample placeholder</p>
+                <div class="inline-flex px-2 py-1 mt-1 text-xs rounded-full bg-accent-600 text-text-default">
+                    <p>@person.Role</p>
                 </div>
             </div>
-        </Zagejmi.Components.Elements.Card>
+        </div>
     }
 </div>
 
 @code {
-    
+    private List<PersonModel> PeopleList = [];
+
+    protected override void OnInitialized()
+    {
+        // Simulate fetching data
+        PeopleList = Enumerable.Range(1, 20).Select(i => new PersonModel
+        {
+            Name = $"Person Name {i}",
+            Role = "Role or Title",
+            ImageUrl = $"https://picsum.photos/seed/{i}/400/600"
+        }).ToList();
+    }
+
+    public class PersonModel
+    {
+        public string Name { get; set; } = "";
+        public string Role { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+    }
 }

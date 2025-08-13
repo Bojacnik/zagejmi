@@ -1,6 +1,15 @@
+using Serilog;
 using Zagejmi.Server.Read.Components;
 
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console()
+    // .WriteTo.File("logs/myapp.txt", rollingInterval: RollingInterval.Day) // Example: Write logs to a file
+    .CreateLogger();
+
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
@@ -20,8 +29,7 @@ else
 }
 
 app.UseHttpsRedirection();
-
-
+app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
