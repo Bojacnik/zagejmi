@@ -1,0 +1,15 @@
+﻿{
+  "name": "zagejmi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "css:build": "tailwindcss -i ./src/Zagejmi.Server.Read/wwwroot/app.css -o ./src/Zagejmi.Server.Read/wwwroot/styles.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

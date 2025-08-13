@@ -8,7 +8,7 @@ internal static class Program
 {
     private static async Task Main(string[] args)
     {
-        var builder = WebAssemblyHostBuilder.CreateDefault(args);
+        WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 
         builder.Services.AddAuthorizationCore();
         builder.Services.AddCascadingAuthenticationState();

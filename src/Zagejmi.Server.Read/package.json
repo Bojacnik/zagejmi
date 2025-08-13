@@ -1,0 +1,15 @@
+﻿{
+  "name": "zagejmi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "css:build": "tailwindcss -i wwwroot/app.css -o wwwroot/styles.css"
+  },
+  "keywords": [],
+  "author": "Vít Němec",
+  "license": "MIT",
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

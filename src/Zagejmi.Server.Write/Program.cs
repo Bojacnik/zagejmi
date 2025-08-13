@@ -3,8 +3,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Zagejmi.Server.Write.Application.CommandHandlers.People;
-using Zagejmi.Server.Write.Infrastructure.Ctx;
+using Zagejmi.Server.Infrastructure.Ctx;
 
 namespace Zagejmi.Server.Write;
 
@@ -40,9 +39,6 @@ public static class Program
 
         builder.Services.AddMassTransit(x =>
         {
-            // Add your consumers
-            x.AddConsumer<HandlerPersonCreate>();
-
             x.AddEntityFrameworkOutbox<ZagejmiContext>(o =>
             {
                 // How often the outbox delivery service polls for new messages
