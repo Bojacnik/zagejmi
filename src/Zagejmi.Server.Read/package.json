@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "css:build": "tailwindcss -i wwwroot/app.css -o wwwroot/styles.css"
+    "css:build": "tailwindcss -i wwwroot/app.css -o wwwroot/styles.css",
+    "css:watch": "tailwindcss -i wwwroot/app.css -o wwwroot/styles.css --watch"
   },
   "keywords": [],
   "author": "Vít Němec",
