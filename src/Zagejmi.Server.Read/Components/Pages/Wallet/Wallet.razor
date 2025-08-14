@@ -1,0 +1,111 @@
+﻿@page "/wallets"
+@using Zagejmi.Server.Read.Components.Elements
+@using System.Globalization
+@using Zagejmi.Server.Read.Models
+
+<!-- 
+    Tailwind CSS Safelist:
+    stroke-accent-500 stroke-sky-500 stroke-emerald-500 stroke-amber-500 stroke-fuchsia-500
+    bg-accent-500 bg-sky-500 bg-emerald-500 bg-amber-500 bg-fuchsia-500
+    border-accent-500 border-sky-500 border-emerald-500 border-amber-500 border-fuchsia-500
+-->
+
+<PageTitle>Wallets</PageTitle>
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-text-default">My Wallets</h1>
+    <button class="px-4 py-2 bg-accent-600 text-text-default rounded-lg hover:bg-accent-700 transition-colors">
+        Add New Wallet
+    </button>
+</div>
+
+<!-- Total Balance Summary -->
+<div class="mb-6">
+    <Card Class="bg-primary-950 p-6 rounded-lg">
+        <p class="text-sm text-text-muted">Total Estimated Balance</p>
+        <p class="text-4xl font-bold text-text-default mt-2">@TotalBalanceUsd.ToString("C", new CultureInfo("en-US"))</p>
+    </Card>
+</div>
+
+<!-- Wallets Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    @foreach (var wallet in Wallets)
+    {
+        <Card
+            Class="@($"bg-primary-900 hover:bg-primary-800/50 flex flex-col justify-between p-4 aspect-video rounded-lg {wallet.ColorCssClass}")">
+            <div class="flex items-center w-full">
+                <img src="@wallet.IconUrl" alt="Wallet Icon" class="w-10 h-10 mr-3 rounded-full"/>
+                <div>
+                    <p class="text-lg font-semibold text-text-default">@wallet.Name</p>
+                    <p class="text-xs text-text-muted">@wallet.Id.ToString("N").Substring(0, 8)</p>
+                </div>
+            </div>
+            <div class="self-end">
+                <p class="text-2xl font-bold text-text-default">@wallet.Balance.ToString("N2")
+                    <span class="text-base font-normal text-text-muted">@wallet.Currency</span>
+                </p>
+            </div>
+        </Card>
+    }
+</div>
+
+<!-- Dashboard Bottom Section -->
+<div class="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
+    <!-- Recent Transactions -->
+    <div class="lg:col-span-3">
+        <h2 class="text-xl font-bold text-text-default mb-4">Recent Transactions</h2>
+        <div class="bg-primary-950 p-4 rounded-lg space-y-3">
+            @foreach (var tx in Transactions)
+            {
+                <div class="flex justify-between items-center p-3 bg-primary-900 rounded-lg hover:bg-primary-800/50">
+                    <div class="flex items-center">
+                        <div
+                            class="w-10 h-10 rounded-full bg-accent-800/50 flex items-center justify-center mr-4 flex-shrink-0">
+                            <p class="text-lg font-bold text-accent-300">@tx.WalletName[0]</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-text-default">@tx.Description</p>
+                            <p class="text-sm text-text-muted">@tx.Date.ToString("MMM dd, yyyy")</p>
+                        </div>
+                    </div>
+                    <div class="text-right ml-4">
+                        <p class="font-semibold @(tx.Amount > 0 ? "text-emerald-500" : "text-text-default")">
+                            @(tx.Amount > 0 ? "+" : "")@tx.Amount.ToString("N2")
+                        </p>
+                        <p class="text-sm text-text-muted">@tx.WalletName</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Wallet Distribution Chart -->
+    <div class="lg:col-span-2">
+        <h2 class="text-xl font-bold text-text-default mb-4">Wallet Distribution</h2>
+        <div class="bg-primary-950 p-4 rounded-lg flex flex-col items-center">
+            <svg width="150" height="150" viewBox="0 0 100 100" class="-rotate-90">
+                @foreach (ChartSegment segment in ChartSegments)
+                {
+                    <circle cx="50" cy="50" r="45" fill="transparent"
+                            stroke-width="10"
+                            class="@segment.StrokeColorCssClass"
+                            stroke-dasharray="@string.Format(CultureInfo.InvariantCulture, "{0} 283", (segment.Percentage / 100.0) * 283)"
+                            stroke-dashoffset="@string.Format(CultureInfo.InvariantCulture, "{0}", (segment.Offset / 100.0) * 283)"/>
+                }
+            </svg>
+            <div class="mt-4 w-full space-y-2">
+                @foreach (WalletViewModel wallet in Wallets.OrderByDescending(w => w.BalanceInUsd))
+                {
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 rounded-full mr-2 @wallet.BackgroundColorCssClass"></span>
+                            <span class="text-text-default">@wallet.Name</span>
+                        </div>
+                        <span
+                            class="font-medium text-text-muted">@((wallet.BalanceInUsd / TotalBalanceUsd).ToString("P0"))</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

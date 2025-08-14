@@ -42,7 +42,6 @@
       <AdditionalFiles Include="Components\Pages\Login.razor" />
       <AdditionalFiles Include="Components\Pages\People.razor" />
       <AdditionalFiles Include="Components\Pages\Register.razor" />
-      <AdditionalFiles Include="Components\Pages\Wallets.razor" />
       <AdditionalFiles Include="Components\Routes.razor" />
       <AdditionalFiles Include="Components\_Imports.razor" />
     </ItemGroup>

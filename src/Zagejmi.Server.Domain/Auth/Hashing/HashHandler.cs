@@ -23,7 +23,7 @@ public class HashHandler : IHashHandler
 
     public string Hash(string password, string salt, HashType hashType)
     {
-        var hasher = _findHasherByType(hashType);
+        IHasher hasher = _findHasherByType(hashType);
         return hasher.Hash(password, salt);
     }
 }

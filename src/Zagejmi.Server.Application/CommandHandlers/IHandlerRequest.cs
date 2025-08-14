@@ -1,6 +1,6 @@
 ﻿namespace Zagejmi.Server.Application.CommandHandlers;
 
-public interface IRequestHandler<in THandler, TResult>
+public interface IHandlerRequest<in THandler, TResult>
 {
     Task<TResult> Handle(THandler request, CancellationToken cancellationToken);
 

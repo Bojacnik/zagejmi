@@ -11,9 +11,9 @@ using PersonType = Zagejmi.Server.Write.Domain.Community.People.PersonType;
 
 namespace Zagejmi.Server.Application.CommandHandlers.People;
 
-public class HandlerPersonCreate : IRequestHandler<CommandPersonCreate, Either<Failure, Guid>>
+public class PersonCreate : IHandlerRequest<CommandPersonCreate, Either<Failure, Guid>>
 {
-    public HandlerPersonCreate(IRepositoryPersonWrite personRepository, IUnitOfWork unitOfWork,
+    public PersonCreate(IRepositoryPersonWrite personRepository, IUnitOfWork unitOfWork,
         IHashHandler hashHandler, IMapper mapper)
     {
         _personRepository = personRepository;

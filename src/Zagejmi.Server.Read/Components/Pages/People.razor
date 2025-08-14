@@ -1,9 +1,9 @@
 ﻿@page "/people"
 
-<div class="w-full h-full grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 grid-flow-row-dense gap-4 p-4 overflow-y-auto">
+<div class="w-full grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 grid-flow-row-dense gap-4 p-4">
     @foreach (PersonModel person in PeopleList)
     {
-        <div class="relative group rounded-lg overflow-hidden shadow-lg bg-primary-900 transform transition-transform duration-300 hover:scale-105 hover:shadow-accent-700/40">
+        <div class="relative group rounded-lg overflow-hidden shadow-lg bg-primary-900 transform transition-transform duration-300 hover:scale-105 hover:shadow-accent-700/40 aspect-square">
             <div class="absolute inset-0">
                 <img src="@person.ImageUrl" class="w-full h-full object-cover" alt="Profile picture of @person.Name" />
             </div>
