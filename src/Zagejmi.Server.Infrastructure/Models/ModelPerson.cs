@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Zagejmi.Server.Write.Domain.Community.People;
 
@@ -7,27 +8,17 @@ namespace Zagejmi.Server.Infrastructure.Models;
 [Table("Person")]
 public class ModelPerson
 {
-    [Key] public ulong Id { get; init; }
+    [Key] public Guid Id { get; set; }
 
-    public Guid DomainId { get; init; }
+    public Guid UserId { get; set; }
 
-    public PersonType PersonType { get; init; }
+    public PersonType PersonType { get; set; }
 
-    public ModelPersonalInformation ModelPersonalInfo { get; init; }
+    public ModelPersonalInformation PersonalInformation { get; set; }
 
-    public ModelPersonalStatistics ModelPersonalStatistics { get; init; }
+    public ModelPersonalStatistics PersonalStatistics { get; set; }
 
-    public ModelAssociateProfile? AssociateProfileModel { get; init; }
+    public ModelAssociateProfile? AssociateProfile { get; set; }
 
-    public ModelPerson(
-        ulong id,
-        PersonType personType,
-        ModelPersonalInformation modelPersonalInfo,
-        ModelPersonalStatistics modelPersonalStatistics)
-    {
-        Id = id;
-        PersonType = personType;
-        ModelPersonalInfo = modelPersonalInfo;
-        ModelPersonalStatistics = modelPersonalStatistics;
-    }
+    public ModelPerson() {}
 }

@@ -1,27 +1,78 @@
-﻿<div class="flex flex-row w-full h-full items-center">
-    <div class="flex justify-center h-full w-32 pl-4 shrink-0">
-        <img src="img/cat.jpg" class="aspect-square" alt="Zagejmi Logo"/>
+﻿@using System.Security.Claims
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavigationManager
+@inject Zagejmi.Server.Read.Services.SidebarStateService SidebarStateService
+@rendermode InteractiveServer
+
+<header class="sticky top-0 z-10 flex items-center justify-between h-16 px-4 bg-primary-950/80 backdrop-blur-sm border-b border-accent-800/50">
+    <div class="flex items-center gap-4">
+        <button @onclick="ToggleSidebar" class="p-2 rounded-md text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+        <a href="/" class="flex items-center gap-2">
+            <img src="img/cat.jpg" class="h-10 w-10 rounded-full" alt="Zagejmi Logo"/>
+            <span class="text-xl font-bold text-text-default">Zagejmi</span>
+        </a>
     </div>
 
-    <div class="pl-4 flex w-full h-full items-center">
-        <nav class="flex flex-row gap-4">
-            <NavLink href="" Match="NavLinkMatch.All" class="text-text-muted hover:text-text-default transition-colors">
-                Home
+    <nav class="hidden md:flex items-center gap-2">
+        <NavLink href="" Match="NavLinkMatch.All" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors" activeClass="text-text-default bg-accent-800/50">
+            Home
+        </NavLink>
+        <NavLink href="people" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors" activeClass="text-text-default bg-accent-800/50">
+            People
+        </NavLink>
+        <NavLink href="wallets" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors" activeClass="text-text-default bg-accent-800/50">
+            Wallets
+        </NavLink>
+        @if (isAuthenticated)
+        {
+            <NavLink href="profile" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors" activeClass="text-text-default bg-accent-800/50">
+                Profile
             </NavLink>
-            <NavLink href="people" class="text-text-muted hover:text-text-default transition-colors">
-                People
-            </NavLink>
-            <NavLink href="wallets" class="text-text-muted hover:text-text-default transition-colors">
-                Wallets
-            </NavLink>
-        </nav>
+        }
+    </nav>
 
-        <div class="flex gap-4 items-center ml-auto pr-4">
-            <a href="/login" class="text-text-muted hover:text-text-default transition-colors">Login</a>
+    <div class="flex items-center gap-4">
+        @if (isAuthenticated)
+        {
+            <span class="text-sm text-text-muted">Welcome, @username</span>
+            <form action="http://localhost:5178/api/user/logout" method="post">
+                <input type="hidden" name="ReturnUrl" value="@logoutReturnUrl" />
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
+                    Logout
+                </button>
+            </form>
+        }
+        else
+        {
+            <a href="/login" class="px-4 py-2 text-sm font-semibold text-text-default hover:bg-primary-800/50 rounded-lg transition-colors">Login</a>
             <a href="/register"
-               class="bg-accent-600 hover:bg-accent-700 text-text-default font-bold px-4 py-2 rounded-lg transition-colors shadow-lg shadow-accent-800/40">
+               class="px-4 py-2 text-sm font-semibold text-text-default bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40">
                 Register
             </a>
-        </div>
+        }
     </div>
-</div>
+</header>
+
+@code {
+    private bool isAuthenticated;
+    private string? username;
+    private string logoutReturnUrl = "";
+
+    protected override void OnInitialized()
+    {
+        logoutReturnUrl = NavigationManager.ToAbsoluteUri("/").ToString();
+        isAuthenticated = HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
+        if (isAuthenticated)
+        {
+            username = HttpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Name)?.Value;
+        }
+    }
+
+    private void ToggleSidebar()
+    {
+        SidebarStateService.ToggleSidebar();
+    }
+}

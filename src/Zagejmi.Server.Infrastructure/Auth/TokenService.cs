@@ -29,8 +29,6 @@ public class TokenService : ITokenService
             new(JwtRegisteredClaimNames.Sub, person.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, person.PersonalInformation.MailAddress ?? string.Empty),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            // You can add more claims here, like roles
-            // new Claim(ClaimTypes.Role, person.PersonType.ToString())
         ];
 
         JwtSecurityToken token = new JwtSecurityToken(

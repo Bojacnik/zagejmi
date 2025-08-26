@@ -1,20 +1,22 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Zagejmi.Server.Write.Domain.Community.Goin;
 
 namespace Zagejmi.Server.Infrastructure.Models;
 
 [Table("GoinTransaction")]
 public class ModelGoinTransaction
 {
-    [Key] public ulong Id { get; init; }
-    
-    public Guid DomainId { get; init; }
+    [Key] public Guid Id { get; set; }
 
-    [ForeignKey("GoinWallet")] public required ModelGoinWallet Sender { get; init; }
-    public ulong SenderId { get; init; }
+    [ForeignKey("SenderWallet")] public Guid SenderId { get; set; }
+    public ModelGoinWallet Sender { get; set; }
 
-    [ForeignKey("GoinWallet")] public required ModelGoinWallet Receiver { get; set; }
-    public ulong ReceiverId { get; init; }
+    [ForeignKey("ReceiverWallet")] public Guid ReceiverId { get; set; }
+    public ModelGoinWallet Receiver { get; set; }
 
-    public ulong Amount { get; init; }
+    public Goin Goin { get; set; }
+
+    public ModelGoinTransaction() {}
 }

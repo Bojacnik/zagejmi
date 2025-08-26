@@ -1,11 +1,11 @@
-﻿using System.Drawing;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
 
-namespace Zagejmi.Server.Write.Infrastructure.Utility;
+namespace Zagejmi.Server.Infrastructure.Utility;
 
 public class ImageConverter : ValueConverter<Image, byte[]>
 {
-    // TODO: Make platform independent
     public ImageConverter()
         : base(
             image => ImageToByteArray(image),
@@ -15,18 +15,13 @@ public class ImageConverter : ValueConverter<Image, byte[]>
 
     private static byte[] ImageToByteArray(Image image)
     {
-        using var ms = new MemoryStream();
-        // platform dependent
-        // TODO: Make platform independent
-        image.Save(ms, image.RawFormat);
+        using MemoryStream ms = new MemoryStream();
+        image.Save(ms, new PngEncoder());
         return ms.ToArray();
     }
 
     private static Image ByteArrayToImage(byte[] bytes)
     {
-        using var ms = new MemoryStream(bytes);
-        // platform dependent
-        // TODO: Make platform independent
-        return Image.FromStream(ms);
+        return Image.Load(bytes);
     }
 }

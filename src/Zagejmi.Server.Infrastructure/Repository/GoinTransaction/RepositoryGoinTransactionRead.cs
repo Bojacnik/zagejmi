@@ -1,27 +1,33 @@
-﻿using AnyMapper;
-using LanguageExt;
+﻿using LanguageExt;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Zagejmi.Server.Domain.Repository;
 using Zagejmi.Server.Infrastructure.Ctx;
 using Zagejmi.Server.Infrastructure.Models;
 using Zagejmi.SharedKernel.Failures;
+using Zagejmi.SharedKernel.Util;
 
 namespace Zagejmi.Server.Infrastructure.Repository.GoinTransaction;
 
 public class RepositoryGoinTransactionRead : IRepositoryGoinTransactionRead
 {
-    public RepositoryGoinTransactionRead(ZagejmiContext dbContext) => _dbContext = dbContext;
+    private readonly ZagejmiContext _dbContext;
+    private readonly IMapper _mapper;
 
-    public async Task<Either<Failure, Write.Domain.Community.Goin.GoinTransaction?>> GetByIdAsync(
+    public RepositoryGoinTransactionRead(ZagejmiContext dbContext, IMapper mapper)
+    {
+        _dbContext = dbContext;
+        _mapper = mapper;
+    }
+
+    public async Task<Either<Failure, Domain.Community.Goin.GoinTransaction?>> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken)
     {
         ModelGoinTransaction? transactionModel;
         try
         {
-            transactionModel = await _dbContext.Set<ModelGoinTransaction>()
-                .FindAsync([id, cancellationToken], cancellationToken);
+            transactionModel = await _dbContext.Set<ModelGoinTransaction>().FindAsync([id], cancellationToken);
         }
         catch (OperationCanceledException e)
         {
@@ -29,56 +35,82 @@ public class RepositoryGoinTransactionRead : IRepositoryGoinTransactionRead
             return new FailureOperationCancelled(e.Message);
         }
 
-        return transactionModel == null ? default(Either<Failure, Write.Domain.Community.Goin.GoinTransaction?>) : Mapper.Map<Write.Domain.Community.Goin.GoinTransaction>(transactionModel);
+        if (transactionModel == null)
+        {
+            return new FailureDatabaseEntityNotFound("Transaction not found");
+        }
+
+        Domain.Community.Goin.GoinTransaction? mappedTransaction =
+            _mapper.Map<ModelGoinTransaction, Domain.Community.Goin.GoinTransaction>(transactionModel);
+        if (mappedTransaction is null)
+        {
+            return new FailureMapper("Mapping from ModelGoinTransaction to GoinTransaction resulted in null.");
+        }
+
+        return mappedTransaction;
     }
 
-    public async Task<Either<Failure, List<Write.Domain.Community.Goin.GoinTransaction>>> GetBySenderIdAsync(
-        Guid sender,
+    public async Task<Either<Failure, List<Domain.Community.Goin.GoinTransaction>>> GetBySenderIdAsync(
+        Guid senderId,
         CancellationToken cancellationToken)
     {
-        var senderModel = Mapper.Map<ModelGoinWallet>(sender);
-
-        List<Write.Domain.Community.Goin.GoinTransaction> transactions;
         try
         {
-            transactions = await _dbContext.Set<ModelGoinTransaction>()
-                .Where(goinTransactionModel => goinTransactionModel.SenderId == senderModel.Id)
-                .OrderBy(model => model.Id)
-                .Select<ModelGoinTransaction, Write.Domain.Community.Goin.GoinTransaction>(model =>
-                    Mapper.Map<Write.Domain.Community.Goin.GoinTransaction>(model))
+            List<ModelGoinTransaction> transactionModels = await _dbContext.Set<ModelGoinTransaction>()
+                .Where(t => t.SenderId == senderId)
+                .OrderBy(t => t.Id)
                 .ToListAsync(cancellationToken);
+
+            var transactions = new List<Domain.Community.Goin.GoinTransaction>();
+            foreach (ModelGoinTransaction model in transactionModels)
+            {
+                Domain.Community.Goin.GoinTransaction? transaction = _mapper.Map<ModelGoinTransaction, Domain.Community.Goin.GoinTransaction>(model);
+                if (transaction is null)
+                {
+                    return new FailureMapper($"Mapping for transaction with id {model.Id} resulted in null.");
+                }
+
+                transactions.Add(transaction);
+            }
+
+            return transactions;
         }
         catch (OperationCanceledException e)
         {
             Log.Information(e, "Operation cancelled");
             return new FailureOperationCancelled(e.Message);
         }
-
-        return transactions;
     }
 
-    public async Task<Either<Failure, List<Write.Domain.Community.Goin.GoinTransaction>>> GetByReceiver(
-        Guid receiver,
+    public async Task<Either<Failure, List<Domain.Community.Goin.GoinTransaction>>> GetByReceiver(
+        Guid receiverId,
         CancellationToken cancellationToken)
     {
-        List<Write.Domain.Community.Goin.GoinTransaction> transactions;
         try
         {
-            transactions = await _dbContext.Set<ModelGoinTransaction>()
-                .Where(goinTransactionModel => goinTransactionModel.DomainId == receiver)
-                .OrderBy(model => model.Id)
-                .Select<ModelGoinTransaction, Write.Domain.Community.Goin.GoinTransaction>(model =>
-                    Mapper.Map<Write.Domain.Community.Goin.GoinTransaction>(model))
+            List<ModelGoinTransaction> transactionModels = await _dbContext.Set<ModelGoinTransaction>()
+                .Where(t => t.ReceiverId == receiverId)
+                .OrderBy(t => t.Id)
                 .ToListAsync(cancellationToken);
+
+            var transactions = new List<Domain.Community.Goin.GoinTransaction>();
+            foreach (ModelGoinTransaction model in transactionModels)
+            {
+                Domain.Community.Goin.GoinTransaction? transaction = _mapper.Map<ModelGoinTransaction, Domain.Community.Goin.GoinTransaction>(model);
+                if (transaction is null)
+                {
+                    return new FailureMapper($"Mapping for transaction with id {model.Id} resulted in null.");
+                }
+
+                transactions.Add(transaction);
+            }
+
+            return transactions;
         }
         catch (OperationCanceledException e)
         {
             Log.Information(e, "Operation cancelled");
             return new FailureOperationCancelled(e.Message);
         }
-
-        return transactions;
     }
-
-    private readonly ZagejmiContext _dbContext;
 }

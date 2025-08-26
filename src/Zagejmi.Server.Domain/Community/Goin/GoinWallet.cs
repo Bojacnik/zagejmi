@@ -1,6 +1,6 @@
 ﻿using Zagejmi.Server.Domain.Entity;
 
-namespace Zagejmi.Server.Write.Domain.Community.Goin;
+namespace Zagejmi.Server.Domain.Community.Goin;
 
 public sealed class GoinWallet : Entity<Guid>
 {

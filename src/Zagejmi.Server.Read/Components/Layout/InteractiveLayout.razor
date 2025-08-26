@@ -1,0 +1,35 @@
+﻿@inherits LayoutComponentBase
+@inject Services.SidebarStateService SidebarStateService
+@implements IDisposable
+@rendermode InteractiveServer
+
+<NavMenu />
+
+<div class="flex">
+    <aside class="@($"sticky top-16 h-[calc(100vh-4rem)] flex-shrink-0 border-r border-accent-800/50 transition-all duration-300 ease-in-out {(SidebarStateService.IsSidebarOpen ? "w-56 p-4" : "w-0 p-0")}")">
+        <div class="flex flex-col gap-2 overflow-hidden">
+            <span class="px-3 pt-2 pb-1 text-xs font-bold text-text-muted uppercase tracking-wider">Workspace</span>
+            <a href="#" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap">Dashboard</a>
+            <a href="#" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap">Analytics</a>
+            <a href="#" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap">Settings</a>
+        </div>
+    </aside>
+
+    <main class="flex-grow p-8 transition-all duration-300 ease-in-out">
+        <div class="max-w-7xl mx-auto">
+            @Body
+        </div>
+    </main>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        SidebarStateService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        SidebarStateService.OnChange -= StateHasChanged;
+    }
+}

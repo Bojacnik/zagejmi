@@ -7,14 +7,8 @@ namespace Zagejmi.Server.Infrastructure.Models;
 [Table("AssociateProfile")]
 public class ModelAssociateProfile
 {
-    [Key] public uint Id { get; init; }
-    public Image CardProfilePicture { get; init; }
+    [Key] public Guid Id { get; set; }
+    public Image CardProfilePicture { get; set; }
 
-    public ModelAssociateProfile(
-        uint id,
-        Image cardProfilePicture)
-    {
-        Id = id;
-        CardProfilePicture = cardProfilePicture;
-    }
+    public ModelAssociateProfile() {}
 }

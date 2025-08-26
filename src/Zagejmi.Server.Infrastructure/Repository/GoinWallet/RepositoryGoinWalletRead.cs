@@ -1,21 +1,25 @@
-﻿using AnyMapper;
-using LanguageExt;
+﻿using LanguageExt;
 using Serilog;
 using Zagejmi.Server.Domain.Repository;
 using Zagejmi.Server.Infrastructure.Ctx;
 using Zagejmi.Server.Infrastructure.Models;
 using Zagejmi.SharedKernel.Failures;
+using Zagejmi.SharedKernel.Util;
 
 namespace Zagejmi.Server.Infrastructure.Repository.GoinWallet;
 
 public class RepositoryGoinWalletRead : IRepositoryGoinWalletRead
 {
-    public RepositoryGoinWalletRead(ZagejmiContext context)
+    private readonly ZagejmiContext _context;
+    private readonly IMapper _mapper;
+
+    public RepositoryGoinWalletRead(ZagejmiContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
-    public async Task<Either<Failure, Write.Domain.Community.Goin.GoinWallet?>> GetByIdAsync(Guid id,
+    public async Task<Either<Failure, Domain.Community.Goin.GoinWallet?>> GetByIdAsync(Guid id,
         CancellationToken cancellationToken)
     {
         ModelGoinWallet? result;
@@ -31,8 +35,17 @@ public class RepositoryGoinWalletRead : IRepositoryGoinWalletRead
             return new FailureOperationCancelled(e.Message);
         }
 
-        return Mapper.Map<Write.Domain.Community.Goin.GoinWallet>(result);
-    }
+        if (result is null) 
+        {
+            return (Domain.Community.Goin.GoinWallet?)null;
+        }
 
-    private readonly ZagejmiContext _context;
+        var mappedWallet = _mapper.Map<ModelGoinWallet, Domain.Community.Goin.GoinWallet>(result);
+        if (mappedWallet is null)
+        {
+            return new FailureMapper("Mapping from ModelGoinWallet to GoinWallet resulted in null.");
+        }
+
+        return mappedWallet;
+    }
 }

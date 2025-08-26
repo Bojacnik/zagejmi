@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Zagejmi.Server.Write.Domain.Community.People;
@@ -6,26 +7,19 @@ using Zagejmi.Server.Write.Domain.Community.People;
 namespace Zagejmi.Server.Infrastructure.Models;
 
 [Table("PersonalInformation")]
-[Index("Email", IsUnique = true)]
+[Index("MailAddress", IsUnique = true)]
 public class ModelPersonalInformation
 {
-    [Key] public ulong Id { get; init; }
-    [StringLength(255)] public required string Email { get; init; }
-    [StringLength(255)] public required string UserName { get; init; }
+    [Key] public ulong Id { get; set; }
+    [StringLength(255)] public string? MailAddress { get; set; }
+    [StringLength(255)] public string? UserName { get; set; }
 
-    [StringLength(255)] public required string FirstName { get; init; }
-    [StringLength(255)] public required string LastName { get; init; }
-    public DateTime BirthDate { get; init; }
-    public Gender Gender { get; init; }
+    [StringLength(255)] public string? FirstName { get; set; }
+    [StringLength(255)] public string? LastName { get; set; }
+    public DateTime BirthDay { get; set; }
+    public Gender Gender { get; set; }
 
-    public bool IsVerified { get; init; }
+    public bool IsVerified { get; set; }
 
-    [ForeignKey("PersonalVerification")] public ulong PersonalVerificationModel { get; init; }
-    public ulong? PersonalVerificationId { get; init; }
-
-    [ForeignKey("IdVerification")] public ulong IdVerification { get; init; }
-    public ulong? IdVerificationId { get; init; }
-
-    [ForeignKey("FaceVerification")] public ulong FaceVerification { get; init; }
-    public ulong? FaceVerificationId { get; init; }
+    public ModelPersonalInformation() {}
 }

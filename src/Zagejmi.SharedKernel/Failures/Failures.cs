@@ -2,7 +2,6 @@
 
 public abstract record Failure(string Message);
 
-public record FailureOperationCancelled(string Message) : Failure(Message);
 
 public abstract record VerificationFailure(string Message) : Failure(Message);
 
@@ -21,8 +20,6 @@ public record FailureFileNotAuthorized(string Message) : FailureFile(Message);
 public record FailureFileOther(string Message) : FailureFile(Message);
 
 public abstract record FailureArgument(string Message) : Failure(Message);
-
-public record FailureArgumentInvalidValue(string Message) : FailureArgument(Message);
 
 public record FailureArgumentInvalidType(string Message) : FailureArgument(Message);
 

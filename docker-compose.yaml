@@ -4,25 +4,6 @@ networks:
     driver: bridge # 'bridge' is the default and usually sufficient
 
 services:
-  postgres:
-    image: postgres:17.5-alpine3.22
-    
-    container_name: my_writedatabase_instance
-    
-    environment:
-      POSTGRES_DB: my_postgres_write_db
-      POSTGRES_USER: my_postgres_write_user
-      POSTGRES_PASSWORD: my_postgres_write_password
-      POSTGRES_SHARED_BUFFERS: 512MB
-    
-    ports:
-      - "5432:5555"
-
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    
-    restart: unless-stopped
-  
   timescaledb:
     image: timescale/timescaledb:2.14.2-pg16
     
@@ -85,11 +66,11 @@ services:
     networks:
       - zagejmi_network
   
-  zagejmi.server:
-    image: zagejmi.server
+  zagejmi.server.write:
+    image: zagejmi.server.write
     build:
       context: .
-      dockerfile: src/Zagejmi.Server/Dockerfile
+      dockerfile: src/Zagejmi.Server.Write/Dockerfile
     
     networks:
       - zagejmi_network

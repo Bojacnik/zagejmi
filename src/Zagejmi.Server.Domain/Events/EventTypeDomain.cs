@@ -5,10 +5,11 @@ public enum EventTypeDomain
     PersonCreated,
     PersonUpdated,
     PersonDeleted,
-    TransactionCreated,
+    GoinTransactionCreated,
     GoinWalletCreated,
     GoinWalletUpdated,
     UserCreated,
     UserUpdated,
-    UserDeleted
+    UserDeleted,
+    UserEmailChanged
 }

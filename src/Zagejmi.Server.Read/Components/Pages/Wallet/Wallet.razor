@@ -3,6 +3,22 @@
 @using System.Globalization
 @using Zagejmi.Server.Read.Models
 
+<style>
+    .wallet-link {
+        display: block;
+        transition: transform 0.15s ease-out;
+    }
+
+    .wallet-link:hover {
+        transform: scale(1.03);
+    }
+
+    .wallet-link:active {
+        transform: scale(0.98);
+        transition-duration: 0.05s;
+    }
+</style>
+
 <!-- 
     Tailwind CSS Safelist:
     stroke-accent-500 stroke-sky-500 stroke-emerald-500 stroke-amber-500 stroke-fuchsia-500
@@ -29,23 +45,25 @@
 
 <!-- Wallets Grid -->
 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-    @foreach (var wallet in Wallets)
+    @foreach (WalletViewModel wallet in Wallets)
     {
-        <Card
-            Class="@($"bg-primary-900 hover:bg-primary-800/50 flex flex-col justify-between p-4 aspect-video rounded-lg {wallet.ColorCssClass}")">
-            <div class="flex items-center w-full">
-                <img src="@wallet.IconUrl" alt="Wallet Icon" class="w-10 h-10 mr-3 rounded-full"/>
-                <div>
-                    <p class="text-lg font-semibold text-text-default">@wallet.Name</p>
-                    <p class="text-xs text-text-muted">@wallet.Id.ToString("N").Substring(0, 8)</p>
+        <a href="/wallets/@wallet.Id" class="wallet-link">
+            <Card
+                Class="@($"bg-primary-900 hover:bg-primary-800/50 flex flex-col justify-between p-4 aspect-video rounded-lg {wallet.ColorCssClass}")">
+                <div class="flex items-center w-full">
+                    <img src="@wallet.IconUrl" alt="Wallet Icon" class="w-10 h-10 mr-3 rounded-full"/>
+                    <div>
+                        <p class="text-lg font-semibold text-text-default">@wallet.Name</p>
+                        <p class="text-xs text-text-muted">@wallet.Id.ToString("N")[..8]</p>
+                    </div>
                 </div>
-            </div>
-            <div class="self-end">
-                <p class="text-2xl font-bold text-text-default">@wallet.Balance.ToString("N2")
-                    <span class="text-base font-normal text-text-muted">@wallet.Currency</span>
-                </p>
-            </div>
-        </Card>
+                <div class="self-end">
+                    <p class="text-2xl font-bold text-text-default">@wallet.Balance.ToString("N2")
+                        <span class="text-base font-normal text-text-muted">@wallet.Currency</span>
+                    </p>
+                </div>
+            </Card>
+        </a>
     }
 </div>
 
@@ -55,26 +73,28 @@
     <div class="lg:col-span-3">
         <h2 class="text-xl font-bold text-text-default mb-4">Recent Transactions</h2>
         <div class="bg-primary-950 p-4 rounded-lg space-y-3">
-            @foreach (var tx in Transactions)
+            @foreach (TransactionViewModel tx in Transactions)
             {
-                <div class="flex justify-between items-center p-3 bg-primary-900 rounded-lg hover:bg-primary-800/50">
-                    <div class="flex items-center">
-                        <div
-                            class="w-10 h-10 rounded-full bg-accent-800/50 flex items-center justify-center mr-4 flex-shrink-0">
-                            <p class="text-lg font-bold text-accent-300">@tx.WalletName[0]</p>
+                <a href="/wallets/@tx.WalletId" class="wallet-link">
+                    <div class="flex justify-between items-center p-3 bg-primary-900 rounded-lg">
+                        <div class="flex items-center">
+                            <div
+                                class="w-10 h-10 rounded-full bg-accent-800/50 flex items-center justify-center mr-4 flex-shrink-0">
+                                <p class="text-lg font-bold text-accent-300">@tx.WalletName[0]</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-text-default">@tx.Description</p>
+                                <p class="text-sm text-text-muted">@tx.Date.ToString("MMM dd, yyyy")</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="font-semibold text-text-default">@tx.Description</p>
-                            <p class="text-sm text-text-muted">@tx.Date.ToString("MMM dd, yyyy")</p>
+                        <div class="text-right ml-4">
+                            <p class="font-semibold @(tx.Amount > 0 ? "text-emerald-500" : "text-text-default")">
+                                @(tx.Amount > 0 ? "+" : "")@tx.Amount.ToString("N2")
+                            </p>
+                            <p class="text-sm text-text-muted">@tx.WalletName</p>
                         </div>
                     </div>
-                    <div class="text-right ml-4">
-                        <p class="font-semibold @(tx.Amount > 0 ? "text-emerald-500" : "text-text-default")">
-                            @(tx.Amount > 0 ? "+" : "")@tx.Amount.ToString("N2")
-                        </p>
-                        <p class="text-sm text-text-muted">@tx.WalletName</p>
-                    </div>
-                </div>
+                </a>
             }
         </div>
     </div>

@@ -9,7 +9,7 @@ namespace Zagejmi.Server.Domain.Repository;
 /// <typeparam name="TAggregateRoot">The type of the aggregate root.</typeparam>
 /// <typeparam name="TId">The type of the aggregate's identifier.</typeparam>
 public interface IEventStoreRepository<TAggregateRoot, in TId> 
-    where TAggregateRoot : AggregateRoot<TAggregateRoot, TId>
+    where TAggregateRoot : Aggregate<TAggregateRoot, TId>
     where TId : notnull
 {
     Task SaveAsync(TAggregateRoot aggregate, CancellationToken cancellationToken = default);

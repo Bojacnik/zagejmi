@@ -1,0 +1,66 @@
+﻿@page "/wallets/{WalletId:guid}"
+@using Zagejmi.Server.Read.Models
+@using System.Globalization
+
+<PageTitle>Wallet Details</PageTitle>
+
+@if (Wallet is not null)
+{
+    <div class="flex justify-between items-center mb-6">
+        <a href="/wallets" class="text-accent-500 hover:text-accent-400 transition-colors">
+            &lt; Back to Wallets
+        </a>
+        <h1 class="text-2xl font-bold text-text-default">@Wallet.Name</h1>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-1">
+            <div @onclick="() => Console.WriteLine(Wallet.Id)"
+                 class="@($"bg-primary-900 hover:bg-primary-800/50 flex flex-col justify-between p-4 aspect-video rounded-lg hero-card {Wallet.ColorCssClass}")">
+                <div class="flex items-center w-full">
+                    <img src="@Wallet.IconUrl" alt="Wallet Icon" class="w-10 h-10 mr-3 rounded-full"/>
+                    <div>
+                        <p class="text-lg font-semibold text-text-default">@Wallet.Name</p>
+                        <p class="text-xs text-text-muted">@Wallet.Id.ToString("N")[..8]</p>
+                    </div>
+                </div>
+                <div class="self-end">
+                    <p class="text-2xl font-bold text-text-default">@Wallet.Balance.ToString("N2")
+                        <span class="text-base font-normal text-text-muted">@Wallet.Currency</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2">
+            <h2 class="text-xl font-bold text-text-default mb-4">Transactions</h2>
+            <div class="bg-primary-950 p-4 rounded-lg space-y-3">
+                @foreach (TransactionViewModel tx in Wallet.Transactions)
+                {
+                    <div class="flex justify-between items-center p-3 bg-primary-900 rounded-lg hover:bg-primary-800/50">
+                        <div class="flex items-center">
+                            <div
+                                class="w-10 h-10 rounded-full bg-accent-800/50 flex items-center justify-center mr-4 flex-shrink-0">
+                                <p class="text-lg font-bold text-accent-300">@tx.WalletName[0]</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-text-default">@tx.Description</p>
+                                <p class="text-sm text-text-muted">@tx.Date.ToString("MMM dd, yyyy")</p>
+                            </div>
+                        </div>
+                        <div class="text-right ml-4">
+                            <p class="font-semibold @(tx.Amount > 0 ? "text-emerald-500" : "text-text-default")">
+                                @(tx.Amount > 0 ? "+" : "")@tx.Amount.ToString("N2")
+                            </p>
+                            <p class="text-sm text-text-muted">@tx.WalletName</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p>Loading wallet details...</p>
+}

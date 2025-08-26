@@ -1,7 +1,13 @@
-﻿namespace Zagejmi.Server.Infrastructure.Models;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
+namespace Zagejmi.Server.Infrastructure.Models;
+
+[Table("PersonalStatistics")]
 public class ModelPersonalStatistics
 {
+    [Key]
+    public ulong Id { get; set; }
     public ulong TotalScore { get; set; }
     public ulong Level { get; set; }
 
@@ -11,7 +17,9 @@ public class ModelPersonalStatistics
     public uint ChatsSent { get; set; }
 
     public ulong CzkSpent { get; set; }
-    public ulong GoingSpent { get; set; }
-    public ulong TransactionAmount { get; set; }
+    public ulong GoinSpent { get; set; }
+    public ulong TransactionsAmount { get; set; }
     public ulong GiftsSent { get; set; }
+
+    public ModelPersonalStatistics() {}
 }

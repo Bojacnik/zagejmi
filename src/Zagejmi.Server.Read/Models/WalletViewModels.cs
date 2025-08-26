@@ -12,8 +12,14 @@ public class WalletViewModel
     public decimal BalanceInUsd { get; set; }
 }
 
+public class WalletDetailViewModel : WalletViewModel
+{
+    public List<TransactionViewModel> Transactions { get; set; } = new();
+}
+
 public class TransactionViewModel
 {
+    public Guid WalletId { get; set; }
     public string WalletName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public DateTime Date { get; set; }

@@ -9,8 +9,8 @@ public interface IDomainEvent
 }
 
 public interface IDomainEvent<TAggregateRoot, TAggregateId> : IDomainEvent
-    where TAggregateRoot : AggregateRoot<TAggregateRoot, TAggregateId>
+    where TAggregateRoot : Aggregate<TAggregateRoot, TAggregateId>
     where TAggregateId : notnull
 {
-    public TAggregateRoot Apply(TAggregateRoot aggregate);
+    TAggregateId AggregateId { get; }
 }
