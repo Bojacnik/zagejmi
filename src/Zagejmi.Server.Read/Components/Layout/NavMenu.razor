@@ -1,35 +1,47 @@
 ﻿@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Routing
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavigationManager
 @inject Zagejmi.Server.Read.Services.SidebarStateService SidebarStateService
+@implements IDisposable
 @rendermode InteractiveServer
 
-<header class="sticky top-0 z-10 flex items-center justify-between h-16 px-4 bg-primary-950/80 backdrop-blur-sm border-b border-accent-800/50">
+<header
+    class="sticky top-0 z-10 flex items-center justify-between h-16 px-4 bg-primary-950/80 backdrop-blur-sm border-b border-accent-800/50">
     <div class="flex items-center gap-4">
-        <button @onclick="ToggleSidebar" class="p-2 rounded-md text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        <button @onclick="ToggleSidebar"
+                class="p-2 rounded-md text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                 xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
         </button>
-        <a href="/" class="flex items-center gap-2">
+        <a href="/" @onclick='() => NavigateToSection("Home")' @onclick:preventDefault class="flex items-center gap-2">
             <img src="img/cat.jpg" class="h-10 w-10 rounded-full" alt="Zagejmi Logo"/>
             <span class="text-xl font-bold text-text-default">Zagejmi</span>
         </a>
     </div>
 
     <nav class="hidden md:flex items-center gap-2">
-        <NavLink href="" Match="NavLinkMatch.All" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors" activeClass="text-text-default bg-accent-800/50">
+        <a @onclick='() => NavigateToSection("Home")' @onclick:preventDefault href="#"
+           class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Home") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
             Home
-        </NavLink>
-        <NavLink href="people" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors" activeClass="text-text-default bg-accent-800/50">
+        </a>
+        <a @onclick='() => NavigateToSection("People")' @onclick:preventDefault href="#"
+           class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("People") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
             People
-        </NavLink>
-        <NavLink href="wallets" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors" activeClass="text-text-default bg-accent-800/50">
+        </a>
+        <a @onclick='() => NavigateToSection("Wallets")' @onclick:preventDefault href="#"
+           class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Wallets") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
             Wallets
-        </NavLink>
+        </a>
         @if (isAuthenticated)
         {
-            <NavLink href="profile" class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors" activeClass="text-text-default bg-accent-800/50">
+            <a @onclick='() => NavigateToSection("Profile")' @onclick:preventDefault href="#"
+               class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Profile") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
                 Profile
-            </NavLink>
+            </a>
         }
     </nav>
 
@@ -38,7 +50,7 @@
         {
             <span class="text-sm text-text-muted">Welcome, @username</span>
             <form action="http://localhost:5178/api/user/logout" method="post">
-                <input type="hidden" name="ReturnUrl" value="@logoutReturnUrl" />
+                <input type="hidden" name="ReturnUrl" value="@logoutReturnUrl"/>
                 <button type="submit"
                         class="px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
                     Logout
@@ -47,9 +59,10 @@
         }
         else
         {
-            <a href="/login" class="px-4 py-2 text-sm font-semibold text-text-default hover:bg-primary-800/50 rounded-lg transition-colors">Login</a>
+            <a href="/login"
+               class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors @(IsActive("Login") ? "bg-accent-800/50 text-text-default" : "hover:bg-primary-800/50 text-text-default")">Login</a>
             <a href="/register"
-               class="px-4 py-2 text-sm font-semibold text-text-default bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40">
+               class="px-4 py-2 text-sm font-semibold text-text-default rounded-lg transition-colors shadow-lg shadow-accent-800/40 @(IsActive("Register") ? "bg-accent-700" : "bg-accent-600 hover:bg-accent-700")">
                 Register
             </a>
         }
@@ -69,10 +82,44 @@
         {
             username = HttpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Name)?.Value;
         }
+
+        SidebarStateService.OnChange += StateHasChanged;
+        NavigationManager.LocationChanged += OnLocationChanged;
+        SidebarStateService.SetSelectedPageFromUri(NavigationManager.Uri);
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        SidebarStateService.SetSelectedPageFromUri(e.Location);
+        StateHasChanged();
     }
 
     private void ToggleSidebar()
     {
         SidebarStateService.ToggleSidebar();
     }
+
+    private void NavigateToSection(string section)
+    {
+        string url = section switch
+        {
+            "People" => "people",
+            "Wallets" => "wallets",
+            "Profile" => "profile/view",
+            _ => "/"
+        };
+        NavigationManager.NavigateTo(url);
+    }
+
+    private bool IsActive(string section)
+    {
+        return SidebarStateService.SelectedPage == section;
+    }
+
+    public void Dispose()
+    {
+        SidebarStateService.OnChange -= StateHasChanged;
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
 }

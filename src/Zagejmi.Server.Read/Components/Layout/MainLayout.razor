@@ -1,4 +1,7 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject Zagejmi.Server.Read.Services.SidebarStateService SidebarStateService
+@implements IDisposable
 
 <div class="min-h-screen bg-gradient-to-r from-primary-950 to-primary-900 text-text-default">
     <NavMenu/>
@@ -13,3 +16,47 @@
         </main>
     </div>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        SetSelectedPageFromUri(NavigationManager.Uri);
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        SetSelectedPageFromUri(e.Location);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void SetSelectedPageFromUri(string uri)
+    {
+        var relativePath = new Uri(uri).AbsolutePath.Trim('/').ToLower();
+        if (relativePath.StartsWith("people"))
+        {
+            SidebarStateService.SetSelectedPage("People");
+        }
+        else if (relativePath.StartsWith("wallets"))
+        {
+            SidebarStateService.SetSelectedPage("Wallets");
+        }
+        else if (relativePath.StartsWith("profile"))
+        {
+            SidebarStateService.SetSelectedPage("Profile");
+        }
+        else if (relativePath == "login" || relativePath == "register")
+        {
+            SidebarStateService.SetSelectedPage(""); // No sidebar content
+        }
+        else
+        {
+            SidebarStateService.SetSelectedPage("Home");
+        }
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
+    }
+}

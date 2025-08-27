@@ -14,8 +14,8 @@
           class="w-full max-w-sm p-8 space-y-6 bg-primary-900 rounded-xl border border-accent-700/50 shadow-2xl shadow-accent-900/30">
         
         <header class="text-center">
-            <h1 class="text-4xl font-bold text-text-default">Create Account</h1>
-            <p class="text-text-muted mt-2">Begin your journey with us.</p>
+            <h1 class="text-4xl font-bold text-gray-100">Create Account</h1>
+            <p class="text-gray-400 mt-2">Begin your journey with us.</p>
         </header>
 
         @if (!string.IsNullOrEmpty(errorMessage))
@@ -38,31 +38,31 @@
                 <div>
                     <label for="username" class="sr-only">Username</label>
                     <input @bind="registerModel.Username" type="text" id="username" placeholder="Username" required disabled="@isSubmitting"
-                           class="w-full px-4 py-3 bg-primary-800/50 border-2 border-accent-800/50 rounded-lg text-text-default placeholder:text-text-muted focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
+                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
                 </div>
     
                 <div>
                     <label for="email" class="sr-only">Email</label>
                     <input @bind="registerModel.Email" type="email" id="email" placeholder="Email" required disabled="@isSubmitting"
-                           class="w-full px-4 py-3 bg-primary-800/50 border-2 border-accent-800/50 rounded-lg text-text-default placeholder:text-text-muted focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
+                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
                 </div>
     
                 <div>
                     <label for="password" class="sr-only">Password</label>
                     <input @bind="registerModel.Password" type="password" id="password" placeholder="Password" required disabled="@isSubmitting"
-                           class="w-full px-4 py-3 bg-primary-800/50 border-2 border-accent-800/50 rounded-lg text-text-default placeholder:text-text-muted focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
+                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
                 </div>
     
                 <div>
                     <label for="password-again" class="sr-only">Confirm Password</label>
                     <input @bind="registerModel.PasswordAgain" type="password" id="password-again" placeholder="Confirm Password" required disabled="@isSubmitting"
-                           class="w-full px-4 py-3 bg-primary-800/50 border-2 border-accent-800/50 rounded-lg text-text-default placeholder:text-text-muted focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
+                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
                 </div>
             </div>
     
             <div class="flex flex-col gap-4 pt-4">
                 <button type="submit" disabled="@isSubmitting"
-                        class="w-full px-4 py-3 font-bold text-lg text-text-default bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-900 focus:ring-accent-500 disabled:bg-accent-800 disabled:cursor-not-allowed">
+                        class="w-full px-4 py-3 font-bold text-lg text-white bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-900 focus:ring-accent-500 disabled:bg-accent-800 disabled:cursor-not-allowed">
                     @if (isSubmitting)
                     {
                         <span class="animate-pulse">Creating account...</span>
@@ -113,7 +113,7 @@
             return;
         }
 
-        if (!Regex.IsMatch(registerModel.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        if (!Regex.IsMatch(registerModel.Email, @"^[^@\s]+\.[^@\s]+\.[^@\s]+$"))
         {
             errorMessage = "Please enter a valid email address.";
             return;
