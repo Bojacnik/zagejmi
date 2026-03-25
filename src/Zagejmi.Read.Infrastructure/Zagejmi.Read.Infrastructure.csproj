@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Zagejmi.Shared\Zagejmi.Shared.csproj" />
+      <ProjectReference Include="..\Zagejmi.Contracts\Zagejmi.Contracts.csproj" />
+    </ItemGroup>
+
+</Project>

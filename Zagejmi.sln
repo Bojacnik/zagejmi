@@ -1,23 +1,34 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server.Write", "src\Zagejmi.Server.Write\Zagejmi.Server.Write.csproj", "{2A35F764-C0D3-4289-AA80-BA8AD34AC426}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Write.Api", "src\Zagejmi.Write.Api\Zagejmi.Write.Api.csproj", "{2A35F764-C0D3-4289-AA80-BA8AD34AC426}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1B09407A-477A-4D3F-8A67-8BF1280D247E}"
 	ProjectSection(SolutionItems) = preProject
 		docker-compose.yaml = docker-compose.yaml
+		LICENSE = LICENSE
+		Directory.Packages.props = Directory.Packages.props
+		Directory.Build.props = Directory.Build.props
+		.editorconfig = .editorconfig
+		stylecop.json = stylecop.json
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server.Application", "src\Zagejmi.Server.Application\Zagejmi.Server.Application.csproj", "{72CB788E-2B5F-4027-9507-C15276EF6F23}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Write.Application", "src\Zagejmi.Write.Application\Zagejmi.Write.Application.csproj", "{72CB788E-2B5F-4027-9507-C15276EF6F23}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server.Domain", "src\Zagejmi.Server.Domain\Zagejmi.Server.Domain.csproj", "{5D84816D-E678-4942-B784-46172AAC2FBE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Write.Domain", "src\Zagejmi.Write.Domain\Zagejmi.Write.Domain.csproj", "{5D84816D-E678-4942-B784-46172AAC2FBE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server.Infrastructure", "src\Zagejmi.Server.Infrastructure\Zagejmi.Server.Infrastructure.csproj", "{635CCA25-A381-4A19-A695-4A0EBF0601E9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Write.Infrastructure", "src\Zagejmi.Write.Infrastructure\Zagejmi.Write.Infrastructure.csproj", "{635CCA25-A381-4A19-A695-4A0EBF0601E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.SharedKernel", "src\Zagejmi.SharedKernel\Zagejmi.SharedKernel.csproj", "{6EDA48DB-1508-42E8-810F-535167FEDD68}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Contracts", "src\Zagejmi.Contracts\Zagejmi.Contracts.csproj", "{6EDA48DB-1508-42E8-810F-535167FEDD68}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Client", "src\Zagejmi.Client\Zagejmi.Client.csproj", "{75CD7007-6BD6-4176-830B-D6F94BC3FF9D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Read.Client", "src\Zagejmi.Read.Client\Zagejmi.Read.Client.csproj", "{75CD7007-6BD6-4176-830B-D6F94BC3FF9D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Server.Read", "src\Zagejmi.Server.Read\Zagejmi.Server.Read.csproj", "{B98E2BC7-8E04-482C-B583-9A07A688F66C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Read.Api", "src\Zagejmi.Read.Api\Zagejmi.Read.Api.csproj", "{B98E2BC7-8E04-482C-B583-9A07A688F66C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Read.Infrastructure", "src\Zagejmi.Read.Infrastructure\Zagejmi.Read.Infrastructure.csproj", "{ECB1799D-1580-41A6-8ED1-B360B76D9B9B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Read.Application", "src\Zagejmi.Read.Application\Zagejmi.Read.Application.csproj", "{AE9C136C-E0E4-4CB7-A469-14318EA2FB1A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Shared", "src\Zagejmi.Shared\Zagejmi.Shared.csproj", "{5C81076E-55FE-4B88-BC92-4D74D8321AFD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,5 +64,17 @@ Global
 		{B98E2BC7-8E04-482C-B583-9A07A688F66C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B98E2BC7-8E04-482C-B583-9A07A688F66C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B98E2BC7-8E04-482C-B583-9A07A688F66C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECB1799D-1580-41A6-8ED1-B360B76D9B9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECB1799D-1580-41A6-8ED1-B360B76D9B9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECB1799D-1580-41A6-8ED1-B360B76D9B9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECB1799D-1580-41A6-8ED1-B360B76D9B9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE9C136C-E0E4-4CB7-A469-14318EA2FB1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE9C136C-E0E4-4CB7-A469-14318EA2FB1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE9C136C-E0E4-4CB7-A469-14318EA2FB1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE9C136C-E0E4-4CB7-A469-14318EA2FB1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C81076E-55FE-4B88-BC92-4D74D8321AFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C81076E-55FE-4B88-BC92-4D74D8321AFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C81076E-55FE-4B88-BC92-4D74D8321AFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C81076E-55FE-4B88-BC92-4D74D8321AFD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

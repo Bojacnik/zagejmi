@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+        <PackageReference Include="Microsoft.IdentityModel.Tokens" />
+        <PackageReference Include="Serilog.AspNetCore" />
+        <ProjectReference Include="..\Zagejmi.Read.Client\Zagejmi.Read.Client.csproj" />
+        <PackageReference Include="LanguageExt.Core" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+        <ProjectReference Include="..\Zagejmi.Write.Application\Zagejmi.Write.Application.csproj" />
+        <ProjectReference Include="..\Zagejmi.Write.Infrastructure\Zagejmi.Write.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Components\App.razor" />
+      <_ContentIncludedByDefault Remove="Components\Layout\MainLayout.razor" />
+      <_ContentIncludedByDefault Remove="Components\Layout\NavMenu.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Error.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Home.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Weather.razor" />
+      <_ContentIncludedByDefault Remove="Components\Routes.razor" />
+      <_ContentIncludedByDefault Remove="Components\_Imports.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <AdditionalFiles Include="Components\App.razor" />
+      <AdditionalFiles Include="Components\Elements\Card.razor" />
+      <AdditionalFiles Include="Components\Layout\MainLayout.razor" />
+      <AdditionalFiles Include="Components\Layout\NavMenu.razor" />
+      <AdditionalFiles Include="Components\Pages\Error.razor" />
+      <AdditionalFiles Include="Components\Pages\Home.razor" />
+      <AdditionalFiles Include="Components\Pages\Login.razor" />
+      <AdditionalFiles Include="Components\Pages\People.razor" />
+      <AdditionalFiles Include="Components\Pages\Register.razor" />
+      <AdditionalFiles Include="Components\Routes.razor" />
+      <AdditionalFiles Include="Components\_Imports.razor" />
+    </ItemGroup>
+
+</Project>

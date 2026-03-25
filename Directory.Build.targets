@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup Condition="'$(UsingMicrosoftNETSdk)' == 'true'">
+    <!-- Re-assert analyzer settings late so project files cannot silently opt out. -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <RunAnalyzers>true</RunAnalyzers>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UsingMicrosoftNETSdk)' == 'true'">
+    <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all" IncludeAssets="analyzers;build;buildtransitive" />
+  </ItemGroup>
+
+  <Target Name="EnforceRepoAnalyzerPolicy" BeforeTargets="CoreCompile" Condition="'$(UsingMicrosoftNETSdk)' == 'true'">
+    <Error
+      Condition="'$(EnableNETAnalyzers)' != 'true' or '$(RunAnalyzers)' != 'true' or '$(RunAnalyzersDuringBuild)' != 'true'"
+      Text="Repository policy requires analyzers to run for every project." />
+  </Target>
+</Project>
+

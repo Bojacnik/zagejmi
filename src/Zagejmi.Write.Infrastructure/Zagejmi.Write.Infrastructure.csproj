@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Zagejmi.Shared\Zagejmi.Shared.csproj" />
+      <ProjectReference Include="..\Zagejmi.Write.Application\Zagejmi.Write.Application.csproj" />
+      <ProjectReference Include="..\Zagejmi.Write.Domain\Zagejmi.Write.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
+      <PackageReference Include="LanguageExt.Core" />
+      <PackageReference Include="MassTransit.EntityFrameworkCore" />
+      <PackageReference Include="MassTransit.RabbitMQ" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.IdentityModel.Tokens" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+      <PackageReference Include="RabbitMQ.Client" />
+      <PackageReference Include="Serilog" />
+      <PackageReference Include="SixLabors.ImageSharp" />
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Migrations\" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,75 @@
+﻿@inject SidebarStateService SidebarStateService
+@using Zagejmi.Read.Api.Services
+@implements IDisposable
+@rendermode InteractiveServer
+
+<aside
+    class="@($"sticky top-16 h-[calc(100vh-4rem)] flex-shrink-0 border-r border-accent-800/50 transition-all duration-300 ease-in-out {(SidebarStateService.IsSidebarOpen ? "w-56 p-4" : "w-0 p-0")}")">
+    <div class="flex flex-col gap-2 overflow-hidden">
+        @switch (SidebarStateService.SelectedPage)
+        {
+            case "Home":
+                <span class="px-3 pt-2 pb-1 text-xs font-bold text-text-muted uppercase tracking-wider">Workspace</span>
+                <NavLink href="dashboard"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Dashboard
+                </NavLink>
+                <NavLink href="analytics"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Analytics
+                </NavLink>
+                <NavLink href="settings"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Settings
+                </NavLink>
+                break;
+            case "People":
+                <span class="px-3 pt-2 pb-1 text-xs font-bold text-text-muted uppercase tracking-wider">People</span>
+                <NavLink href="people/all"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">All People
+                </NavLink>
+                <NavLink href="people/add"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Add Person
+                </NavLink>
+                break;
+            case "Wallets":
+                <span class="px-3 pt-2 pb-1 text-xs font-bold text-text-muted uppercase tracking-wider">Wallets</span>
+                <NavLink href="wallets/all"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">All Wallets
+                </NavLink>
+                <NavLink href="wallets/add"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Add Wallet
+                </NavLink>
+                break;
+            case "Profile":
+                <span class="px-3 pt-2 pb-1 text-xs font-bold text-text-muted uppercase tracking-wider">Profile</span>
+                <NavLink href="profile/view"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">View Profile
+                </NavLink>
+                <NavLink href="profile/edit"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Edit Profile
+                </NavLink>
+                break;
+        }
+    </div>
+</aside>
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        SidebarStateService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        SidebarStateService.OnChange -= StateHasChanged;
+    }
+
+}
