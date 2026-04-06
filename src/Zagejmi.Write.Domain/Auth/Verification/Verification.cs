@@ -1,6 +1,5 @@
 ﻿using LanguageExt;
-
-using Zagejmi.Contracts.Failures;
+using Zagejmi.Shared.Failures;
 using Zagejmi.Write.Domain.Abstractions;
 
 namespace Zagejmi.Write.Domain.Auth.Verification;

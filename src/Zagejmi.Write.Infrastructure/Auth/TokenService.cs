@@ -6,40 +6,53 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-using Zagejmi.Write.Application;
-using Zagejmi.Write.Domain.Profile;
+using Zagejmi.Write.Application.Abstractions;
+using Zagejmi.Write.Domain.Auth;
 
 namespace Zagejmi.Write.Infrastructure.Auth;
 
+/// <summary>
+///     Service for generating JWT authentication tokens for user profiles.
+/// </summary>
 public class TokenService : ITokenService
 {
-    private readonly IConfiguration _configuration;
+    /// <summary>
+    ///     Configuration for accessing JWT settings such as secret key, issuer, and audience.
+    /// </summary>
+    private readonly IConfiguration configuration;
 
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="TokenService" /> class with the specified configuration.
+    /// </summary>
+    /// <param name="configuration">
+    ///     The configuration object used to access JWT settings such as secret key, issuer, and
+    ///     audience.
+    /// </param>
     public TokenService(IConfiguration configuration)
     {
-        this._configuration = configuration;
+        this.configuration = configuration;
     }
 
-    public string GenerateToken(Profile profile)
+    /// <summary>
+    ///     Generates a JWT token for the given user.
+    /// </summary>
+    /// <param name="user"> The user for which to generate the token.</param>
+    /// <returns>Generated token for the user.</returns>
+    public string GenerateToken(User user)
     {
-        SymmetricSecurityKey securityKey = new(Encoding.UTF8.GetBytes(this._configuration["Jwt:Key"]!));
+        SymmetricSecurityKey securityKey = new(Encoding.UTF8.GetBytes(this.configuration["Jwt:Key"]!));
         SigningCredentials credentials = new(securityKey, SecurityAlgorithms.HmacSha256);
-
-        if (profile.PersonalInformation.MailAddress == null)
-        {
-            throw new NotImplementedException();
-        }
 
         Claim[] claims =
         [
-            new(JwtRegisteredClaimNames.Sub, profile.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, profile.PersonalInformation.MailAddress ?? string.Empty),
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.AuthCredentials.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         ];
 
         JwtSecurityToken token = new(
-            this._configuration["Jwt:Issuer"],
-            this._configuration["Jwt:Audience"],
+            this.configuration["Jwt:Issuer"],
+            this.configuration["Jwt:Audience"],
             claims,
             expires: DateTime.Now.AddMinutes(120),
             signingCredentials: credentials);

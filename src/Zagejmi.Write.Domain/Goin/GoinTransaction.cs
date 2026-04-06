@@ -1,6 +1,9 @@
-﻿namespace Zagejmi.Write.Domain.Goin;
+﻿using System;
+using Zagejmi.Write.Domain.Abstractions;
 
-public sealed class GoinTransaction : Aggregate<GoinTransaction, Guid>
+namespace Zagejmi.Write.Domain.Goin;
+
+public sealed class GoinTransaction : Aggregate
 {
     public GoinTransaction(
         Guid id,
@@ -8,9 +11,9 @@ public sealed class GoinTransaction : Aggregate<GoinTransaction, Guid>
         GoinWallet receiver,
         Goin goin) : base(id)
     {
-        this.Sender = sender;
-        this.Receiver = receiver;
-        this.Goin = goin;
+        Sender = sender;
+        Receiver = receiver;
+        Goin = goin;
         EventGoinTransactionCreated evt = new EventGoinTransactionCreated(id, sender, receiver, goin);
     }
 

@@ -1,96 +1,136 @@
-﻿using LanguageExt;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
-using Zagejmi.Write.Application.EventStore;
-using Zagejmi.Write.Domain.Events;
-using Zagejmi.SharedKernel.Failures;
+
+using Microsoft.EntityFrameworkCore;
+
+using Zagejmi.Write.Application.Abstractions;
 using Zagejmi.Write.Domain.Abstractions;
 using Zagejmi.Write.Infrastructure.Ctx;
-using StoredEventEntity = Zagejmi.Write.Infrastructure.StoredEvent;
 
 namespace Zagejmi.Write.Infrastructure.EventStore;
 
-public class EventStore<TAggregateRoot, TAggregateRootId> : IEventStore<TAggregateRoot, TAggregateRootId>
-    where TAggregateRoot : Aggregate<TAggregateRoot, TAggregateRootId>
-    where TAggregateRootId : notnull
+/// <summary>
+///     Implements the event store for persisting and retrieving domain events associated with aggregates.
+///     Uses event sourcing patterns to maintain the complete history of domain events.
+/// </summary>
+public class EventStore : IEventStore
 {
-    private readonly ZagejmiContext _context;
-    private readonly JsonSerializerOptions _jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
+    /// <summary>
+    ///     The database context used for storing and retrieving events.
+    /// </summary>
+    private readonly ZagejmiContext context;
 
+    /// <summary>
+    ///     The JSON serializer options used for deserializing domain events.
+    ///     Configured for case-insensitive property matching to handle variations in property naming conventions.
+    /// </summary>
+    private readonly JsonSerializerOptions jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="EventStore" /> class.
+    /// </summary>
+    /// <param name="context">The database context for accessing stored events.</param>
     public EventStore(ZagejmiContext context)
     {
-        _context = context;
+        this.context = context;
     }
 
-    public async Task<Option<TAggregateRoot>> LoadAggregateAsync(TAggregateRootId aggregateId, CancellationToken cancellationToken = default)
+    /// <summary>
+    ///     Asynchronously loads the domain events for a given aggregate ID.
+    /// </summary>
+    /// <param name="aggregateId">Unique identifier of the aggregate for which to load events.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>
+    ///     A read-only list of domain events associated with the specified aggregate ID, ordered from earliest to latest.
+    /// </returns>
+    public async Task<IReadOnlyList<IDomainEvent>> LoadAsync(
+        Guid aggregateId,
+        CancellationToken cancellationToken = default)
     {
-        var storedEvents = await _context.StoredEvents
-            .Where(e => e.AggregateId == Guid.Parse(aggregateId.ToString()!))
+        List<Infrastructure.StoredEvent> storedEvents = await this.context.StoredEvents
+            .Where(e => e.AggregateId == aggregateId)
             .OrderBy(e => e.Timestamp)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        if (storedEvents.Count == 0)
-        {
-            return Option<TAggregateRoot>.None;
-        }
+        List<IDomainEvent> domainEvents = [];
 
-        var aggregate = (TAggregateRoot)Activator.CreateInstance(typeof(TAggregateRoot), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { aggregateId }, null)!;
-
-        var history = new List<IDomainEvent<TAggregateRoot, TAggregateRootId>>();
-        foreach (var storedEvent in storedEvents)
+        foreach (Infrastructure.StoredEvent storedEvent in storedEvents)
         {
-            var eventType = Type.GetType(storedEvent.EventType);
+            Type? eventType = Type.GetType(storedEvent.EventType);
             if (eventType == null)
             {
-                // Log or handle the case where the event type cannot be found
                 continue;
             }
 
-            var domainEvent = (IDomainEvent<TAggregateRoot, TAggregateRootId>)JsonSerializer.Deserialize(storedEvent.Data, eventType, _jsonSerializerOptions)!;
-            history.Add(domainEvent);
-        }
-
-        aggregate.LoadFromHistory(history);
-
-        return aggregate;
-    }
-    
-    public Task<Either<FailureEventStore, Unit>> SaveAsync(TAggregateRoot aggregate, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var domainEvents = aggregate.DomainEvents.ToList();
-            if (!domainEvents.Any())
+            try
             {
-                return Task.FromResult<Either<FailureEventStore, Unit>>(Unit.Default);
-            }
+                IDomainEvent? domainEvent = (IDomainEvent?)JsonSerializer.Deserialize(
+                    storedEvent.Data,
+                    eventType,
+                    this.jsonSerializerOptions);
 
-            foreach (var @event in domainEvents)
-            {
-                var storedEvent = new Infrastructure.StoredEvent
+                if (domainEvent != null)
                 {
-                    Id = Guid.NewGuid(),
-                    AggregateId = Guid.Parse(@event.AggregateId.ToString()!),
-                    EventType = @event.GetType().AssemblyQualifiedName!,
-                    Data = JsonSerializer.Serialize(@event, @event.GetType()),
-                    Timestamp = DateTime.UtcNow
-                };
-                _context.StoredEvents.Add(storedEvent);
+                    domainEvents.Add(domainEvent);
+                }
             }
-
-            aggregate.ClearEvents();
-
-            return Task.FromResult<Either<FailureEventStore, Unit>>(Unit.Default);
+            catch
+            {
+                // Skip events that cannot be deserialized
+            }
         }
-        catch (Exception e)
+
+        return domainEvents.AsReadOnly();
+    }
+
+    /// <summary>
+    ///     Asynchronously appends a collection of domain events to the event store for a given aggregate ID,
+    ///     with optimistic concurrency control based on the expected version.
+    /// </summary>
+    /// <param name="aggregateId">Unique identifier of the aggregate to which the events belong.</param>
+    /// <param name="expectedVersion">
+    ///     The expected version of the aggregate's event stream. Used for optimistic concurrency control
+    ///     to ensure events are only appended if the current version matches.
+    /// </param>
+    /// <param name="events">A collection of domain events to be appended to the event store.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the asynchronous operation of appending events.</returns>
+    public async Task AppendAsync(
+        Guid aggregateId,
+        long expectedVersion,
+        IReadOnlyCollection<IDomainEvent> events,
+        CancellationToken cancellationToken = default)
+    {
+        // Get current event count for optimistic concurrency check
+        int currentEventCount = await this.context.StoredEvents
+            .CountAsync(e => e.AggregateId == aggregateId, cancellationToken);
+
+        if (currentEventCount != expectedVersion)
         {
-            return Task.FromResult<Either<FailureEventStore, Unit>>(new FailureEventStoreUnableToSave(e.Message));
+            throw new InvalidOperationException(
+                $"Concurrency conflict: Expected version {expectedVersion} but found {currentEventCount} events for aggregate {aggregateId}");
         }
+
+        // Append new events to the store
+        foreach (IDomainEvent @event in events)
+        {
+            Infrastructure.StoredEvent storedEvent = new()
+            {
+                Id = Guid.NewGuid(),
+                AggregateId = aggregateId,
+                EventType = @event.GetType().AssemblyQualifiedName!,
+                Data = JsonSerializer.Serialize(@event, @event.GetType()),
+                Timestamp = DateTimeOffset.UtcNow
+            };
+
+            this.context.StoredEvents.Add(storedEvent);
+        }
+
+        await this.context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -9,6 +9,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\Zagejmi.Shared\Zagejmi.Shared.csproj"/>
         <ProjectReference Include="..\Zagejmi.Contracts\Zagejmi.Contracts.csproj"/>
+        <ProjectReference Include="..\Zagejmi.Shared\Zagejmi.Shared.csproj"/>
     </ItemGroup>
 
 </Project>

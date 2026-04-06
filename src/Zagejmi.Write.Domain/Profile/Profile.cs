@@ -3,17 +3,26 @@ using System.Collections.Generic;
 
 using LanguageExt;
 
-using Zagejmi.Contracts.Failures;
+using Zagejmi.Shared.Failures;
+using Zagejmi.Write.Domain.Abstractions;
 using Zagejmi.Write.Domain.Auth;
 using Zagejmi.Write.Domain.Goin;
 using Zagejmi.Write.Domain.Profile.Associate;
 
 namespace Zagejmi.Write.Domain.Profile;
 
-public sealed class Profile : Aggregate<Profile, Guid>
+public sealed class Profile : Aggregate
 {
-    // Private constructor for rehydration and creation
-    private Profile(Guid id) : base(id)
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="Profile" /> class with the specified unique identifier.
+    ///     This constructor is private to enforce the use of the static factory method for creating instances of the
+    ///     Profile aggregate. The factory method ensures that all necessary validations and event raisings are performed
+    ///     during the creation process, maintaining the integrity of the aggregate's state and adhering to the principles
+    ///     of domain-driven design.
+    /// </summary>
+    /// <param name="id">Unique identifier for the profile aggregate.</param>
+    private Profile(Guid id)
+        : base(id)
     {
     }
 
@@ -27,13 +36,9 @@ public sealed class Profile : Aggregate<Profile, Guid>
         DateTime birthDate,
         Gender gender)
     {
-        if (userId == Guid.Empty)
-        {
-            return new FailureArgumentInvalidValue("A person must be associated with a user.");
-        }
-
         Profile profile = new(personId);
-        PersonalInformation personalInfo = new PersonalInformation(
+        PersonalInformation personalInfo;
+        personalInfo = new PersonalInformation(
             email,
             userName,
             firstName,

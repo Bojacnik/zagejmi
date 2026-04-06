@@ -1,6 +1,10 @@
-﻿namespace Zagejmi.Write.Domain.Auth.Events;
+﻿using System;
 
-public sealed record EventUserCreated : IDomainEvent<User, Guid>
+using Zagejmi.Write.Domain.Abstractions;
+
+namespace Zagejmi.Write.Domain.Auth.Events;
+
+public sealed record EventUserCreated : IDomainEvent
 {
     public EventUserCreated(Guid userId, string username, string password, string salt, string email)
     {

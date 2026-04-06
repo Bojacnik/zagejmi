@@ -1,8 +1,7 @@
-﻿using System.Drawing;
-
+﻿using System.Collections.Generic;
+using System.Drawing;
 using LanguageExt;
-
-using Zagejmi.Contracts.Failures;
+using Zagejmi.Shared.Failures;
 
 namespace Zagejmi.Write.Domain.Auth.Verification;
 
@@ -13,13 +12,13 @@ public sealed record VerificationId(Image? ImageFront, Image? ImageBack) : Verif
 
     protected override IEnumerable<object?> GetAtomicValues()
     {
-        yield return this.Type;
-        yield return this.ImageFront;
-        yield return this.ImageBack;
+        yield return Type;
+        yield return ImageFront;
+        yield return ImageBack;
     }
 
     public override Either<Failure, bool> Verify(params object?[] args)
     {
-        return this.ImageFront != null && this.ImageBack != null;
+        return ImageFront != null && ImageBack != null;
     }
 }
