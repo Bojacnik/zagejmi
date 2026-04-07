@@ -1,7 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Write.Api", "src\Zagejmi.Write.Api\Zagejmi.Write.Api.csproj", "{2A35F764-C0D3-4289-AA80-BA8AD34AC426}"
-EndProject
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1B09407A-477A-4D3F-8A67-8BF1280D247E}"
 	ProjectSection(SolutionItems) = preProject
 		docker-compose.yaml = docker-compose.yaml
@@ -11,6 +8,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		stylecop.json = stylecop.json
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Write.Api", "src\Zagejmi.Write.Api\Zagejmi.Write.Api.csproj", "{2A35F764-C0D3-4289-AA80-BA8AD34AC426}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zagejmi.Write.Application", "src\Zagejmi.Write.Application\Zagejmi.Write.Application.csproj", "{72CB788E-2B5F-4027-9507-C15276EF6F23}"
 EndProject

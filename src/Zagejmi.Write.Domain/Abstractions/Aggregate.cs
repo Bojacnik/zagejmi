@@ -64,14 +64,14 @@ public abstract class Aggregate : Entity
     ///     The event is applied to the aggregate state, the version is incremented, and the event is added to the list of
     ///     domain events to be persisted and published later.
     /// </summary>
-    protected void RaiseEvent(IDomainEvent evt)
+    protected void RaiseEvent(IDomainEvent domainEvent)
     {
-        this.Apply(evt);
-        this.domainEvents.Add(evt);
+        this.Apply(domainEvent);
+        this.domainEvents.Add(domainEvent);
     }
 
     /// <summary>
     ///     Apply a domain event to the aggregate state. Must be implemented in concrete aggregates.
     /// </summary>
-    protected abstract void Apply(IDomainEvent @event);
+    protected abstract void Apply(IDomainEvent domainEvent);
 }

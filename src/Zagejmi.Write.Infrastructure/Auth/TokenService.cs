@@ -46,8 +46,9 @@ public class TokenService : ITokenService
         Claim[] claims =
         [
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.AuthCredentials.Email),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Email, user.AuthCredentials?.Email ?? "unknown"),
+            new(JwtRegisteredClaimNames.UniqueName, user.AuthCredentials?.UserName ?? "unknown"),
+            new(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString())
         ];
 
         JwtSecurityToken token = new(

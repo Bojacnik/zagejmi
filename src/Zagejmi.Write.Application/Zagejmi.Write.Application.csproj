@@ -1,17 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-      <ProjectReference Include="..\Zagejmi.Write.Domain\Zagejmi.Write.Domain.csproj" />
+        <ProjectReference Include="..\Zagejmi.Shared\Zagejmi.Shared.csproj"/>
+        <ProjectReference Include="..\Zagejmi.Write.Domain\Zagejmi.Write.Domain.csproj"/>
+        <ProjectReference Include="..\Zagejmi.Contracts\Zagejmi.Contracts.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="LanguageExt.Core" />
-      <PackageReference Include="MassTransit" />
-      <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
-      <PackageReference Include="Microsoft.IdentityModel.Tokens" />
-      <PackageReference Include="Polly" />
-      <PackageReference Include="Serilog" />
-      <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+        <PackageReference Include="Konscious.Security.Cryptography.Argon2"/>
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt"/>
+        <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens"/>
+        <PackageReference Include="Microsoft.IdentityModel.Tokens"/>
+        <PackageReference Include="Serilog"/>
+        <PackageReference Include="Polly"/>
+        <PackageReference Include="LanguageExt.Core"/>
     </ItemGroup>
 
 </Project>

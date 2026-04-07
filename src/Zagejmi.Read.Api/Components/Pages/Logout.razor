@@ -1,19 +1,35 @@
 ﻿@page "/logout"
-@using Microsoft.AspNetCore.Authentication
-@using Microsoft.AspNetCore.Authentication.Cookies
-@using Microsoft.AspNetCore.Http
-@inject IHttpContextAccessor HttpContextAccessor
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 
-<p>Logging out...</p>
+<div class="w-full h-full flex flex-col justify-center items-center p-4">
+    <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-100">Logging out...</h1>
+    </div>
+</div>
 
 @code {
 
     protected override async Task OnInitializedAsync()
     {
-        if (HttpContextAccessor.HttpContext?.Request.Method == "POST")
+        await HandleLogout();
+    }
+
+    private async Task HandleLogout()
+    {
+        try
         {
-            await HttpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpClient client = HttpClientFactory.CreateClient();
+            string logoutUrl = NavigationManager.ToAbsoluteUri("/api/v1/auth/logout").ToString();
+            await client.PostAsync(logoutUrl, null);
+
+            // Redirect to homepage with full page reload
+            NavigationManager.NavigateTo("/", true);
+        }
+        catch
+        {
+            // On error, still redirect
             NavigationManager.NavigateTo("/", true);
         }
     }

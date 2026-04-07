@@ -1,18 +1,17 @@
-﻿# Define the custom network
-networks:
+﻿networks:
   zagejmi_network:
-    driver: bridge # 'bridge' is the default and usually sufficient
+    driver: bridge
 
 services:
   timescaledb:
-    image: timescale/timescaledb:2.14.2-pg16
+    image: timescale/timescaledb:2.26.1-pg18-oss
     
     container_name: my_timescaledb_instance
     
     environment:
-      POSTGRES_DB: my_timescale_db      # The name of the database to create
-      POSTGRES_USER: my_timescale_user  # The superuser for the database
-      POSTGRES_PASSWORD: my_strong_password # The password for the superuser
+      POSTGRES_DB: my_timescale_db
+      POSTGRES_USER: my_timescale_user
+      POSTGRES_PASSWORD: my_strong_password
       POSTGRES_SHARED_BUFFERS: 512MB
     
     ports:
@@ -34,7 +33,7 @@ services:
       - zagejmi_network
   
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    image: rabbitmq:4.2.5-management-alpine
     hostname: rabbitmq-host
     container_name: zagejmi.rabbitmq-container
     
@@ -43,12 +42,11 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
       RABBITMQ_DEFAULT_VHOST: /my_vhost
       
-      # RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 0.7 # 70% of total memory
       RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log_levels [{connection,info}]
     
     ports:
       - "5672:5672"   # AMQP protocol port (for client connections)
-      - "15672:15672" # Management UI port (access via browser at http://localhost:15672)
+      - "15672:15672" # Management UI port (access via browser)
     
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq/mnesia
@@ -74,11 +72,10 @@ services:
     
     networks:
       - zagejmi_network
-      
-      # Optional: Define dependencies to ensure services start in order
+    
     depends_on:
       timescaledb:
-        condition: service_healthy # Or service_started if healthcheck is not sufficient
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
 

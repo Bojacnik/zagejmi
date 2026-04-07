@@ -1,8 +1,8 @@
-﻿@inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager NavigationManager
+﻿@inject NavigationManager NavigationManager
 @inject SidebarStateService SidebarStateService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Diagnostics
 @using System.Security.Claims
-@using Microsoft.AspNetCore.Http
 @using Zagejmi.Read.Api.Services
 @implements IDisposable
 @rendermode InteractiveServer
@@ -49,14 +49,11 @@
     <div class="flex items-center gap-4">
         @if (isAuthenticated)
         {
-            <span class="text-sm text-text-muted">Welcome, @username</span>
-            <form action="http://localhost:5178/api/user/logout" method="post">
-                <input type="hidden" name="ReturnUrl" value="@logoutReturnUrl"/>
-                <button type="submit"
-                        class="px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
-                    Logout
-                </button>
-            </form>
+            <span class="text-sm text-text-default font-semibold">@username</span>
+            <button @onclick="HandleLogout"
+                    class="px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
+                Logout
+            </button>
         }
         else
         {
@@ -73,26 +70,89 @@
 @code {
     private bool isAuthenticated;
     private string? username;
-    private string logoutReturnUrl = "";
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        logoutReturnUrl = NavigationManager.ToAbsoluteUri("/").ToString();
-        isAuthenticated = HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
-        if (isAuthenticated)
-        {
-            username = HttpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Name)?.Value;
-        }
+        Debug.WriteLine("NavMenu: OnInitializedAsync called");
+        await RefreshAuthenticationState();
+        Debug.WriteLine($"NavMenu: After refresh - isAuthenticated={isAuthenticated}, username={username}");
 
         SidebarStateService.OnChange += StateHasChanged;
         NavigationManager.LocationChanged += OnLocationChanged;
         SidebarStateService.SetSelectedPageFromUri(NavigationManager.Uri);
     }
 
+    private async Task RefreshAuthenticationState()
+    {
+        bool wasAuthenticated = isAuthenticated;
+
+        try
+        {
+            // Get authentication state from AuthenticationStateProvider
+            AuthenticationState authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            ClaimsPrincipal user = authState.User;
+            isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+            Debug.WriteLine($"NavMenu: RefreshAuthenticationState - wasAuthenticated={wasAuthenticated}, now isAuthenticated={isAuthenticated}");
+
+            if (isAuthenticated)
+            {
+                // Try to get the username from ClaimTypes.Name first
+                username = user.FindFirst(ClaimTypes.Name)?.Value;
+
+                // If no name claim, try unique_name claim
+                if (string.IsNullOrEmpty(username))
+                {
+                    username = user.FindFirst("unique_name")?.Value;
+                }
+
+                // If still no username, fallback to email
+                if (string.IsNullOrEmpty(username))
+                {
+                    username = user.FindFirst(ClaimTypes.Email)?.Value;
+                }
+
+                Debug.WriteLine($"NavMenu: User authenticated - username={username}");
+
+                // Log all claims for debugging
+                IEnumerable<Claim> allClaims = user.Claims;
+                foreach (Claim claim in allClaims)
+                {
+                    Debug.WriteLine($"NavMenu: Claim - Type: {claim.Type}, Value: {claim.Value}");
+                }
+            }
+            else
+            {
+                username = null;
+                Debug.WriteLine("NavMenu: User not authenticated");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NavMenu: Error in RefreshAuthenticationState: {ex.Message}");
+            isAuthenticated = false;
+            username = null;
+        }
+    }
+
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        SidebarStateService.SetSelectedPageFromUri(e.Location);
-        StateHasChanged();
+        _ = HandleLocationChangedAsync(e.Location);
+    }
+
+    private async Task HandleLocationChangedAsync(string location)
+    {
+        try
+        {
+            // Refresh authentication state on every navigation to detect login/logout changes
+            await RefreshAuthenticationState();
+            SidebarStateService.SetSelectedPageFromUri(location);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NavMenu: Error in location change handling: {ex.Message}");
+        }
     }
 
     private void ToggleSidebar()
@@ -110,6 +170,23 @@
             _ => "/"
         };
         NavigationManager.NavigateTo(url);
+    }
+
+    private void HandleLogout()
+    {
+        Debug.WriteLine("HandleLogout: Starting logout - navigating to logout endpoint");
+
+        if (AuthenticationStateProvider is CookieAuthenticationStateProvider authProvider)
+        {
+            authProvider.ClearAuthenticatedUser();
+        }
+
+        isAuthenticated = false;
+        username = null;
+
+        // Navigate to the logout endpoint which will handle cookie clearing and redirect
+        // Use forceLoad: true to ensure a full page reload from the server
+        NavigationManager.NavigateTo("/api/v1/auth/logout", true);
     }
 
     private bool IsActive(string section)

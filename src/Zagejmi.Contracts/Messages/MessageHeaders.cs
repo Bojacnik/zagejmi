@@ -9,10 +9,10 @@ namespace Zagejmi.Contracts.Messages;
 public sealed record MessageHeaders
 {
     /// <summary>
-    ///     Gets the unique identifier for the message.
+    ///     Gets the unique identifier for the message using UUIDv7.
     ///     This ID is generated when the message is created and is used to track the message throughout its lifecycle.
     /// </summary>
-    public Guid MessageId { get; init; } = Guid.NewGuid();
+    public Guid MessageId { get; init; } = Guid.CreateVersion7();
 
     /// <summary>
     ///     Gets the correlation ID for the message, which is used to group related messages together.
@@ -25,9 +25,9 @@ public sealed record MessageHeaders
     public Guid? CausationId { get; init; }
 
     /// <summary>
-    ///     Gets the timestamp indicating when the message was created.
+    ///     Gets the timestamp in UTC indicating when the message was created.
     /// </summary>
-    public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
+    public DateTime CreatedAt { get; init; } = new(DateTime.UtcNow.Ticks, DateTimeKind.Unspecified);
 
     /// <summary>
     ///     Gets the source of the message, which can be used to identify where the message originated from (e.g., a specific

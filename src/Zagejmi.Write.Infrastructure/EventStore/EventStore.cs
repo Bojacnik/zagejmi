@@ -20,23 +20,23 @@ namespace Zagejmi.Write.Infrastructure.EventStore;
 public class EventStore : IEventStore
 {
     /// <summary>
-    ///     The database context used for storing and retrieving events.
-    /// </summary>
-    private readonly ZagejmiContext context;
-
-    /// <summary>
     ///     The JSON serializer options used for deserializing domain events.
     ///     Configured for case-insensitive property matching to handle variations in property naming conventions.
     /// </summary>
     private readonly JsonSerializerOptions jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
 
     /// <summary>
+    ///     The database context used for storing and retrieving events.
+    /// </summary>
+    private readonly ZagejmiWriteContext writeContext;
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="EventStore" /> class.
     /// </summary>
-    /// <param name="context">The database context for accessing stored events.</param>
-    public EventStore(ZagejmiContext context)
+    /// <param name="writeContext">The database context for accessing stored events.</param>
+    public EventStore(ZagejmiWriteContext writeContext)
     {
-        this.context = context;
+        this.writeContext = writeContext;
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ public class EventStore : IEventStore
         Guid aggregateId,
         CancellationToken cancellationToken = default)
     {
-        List<Infrastructure.StoredEvent> storedEvents = await this.context.StoredEvents
+        List<Infrastructure.StoredEvent> storedEvents = await this.writeContext.StoredEvents
             .Where(e => e.AggregateId == aggregateId)
             .OrderBy(e => e.Timestamp)
             .AsNoTracking()
@@ -107,7 +107,7 @@ public class EventStore : IEventStore
         CancellationToken cancellationToken = default)
     {
         // Get current event count for optimistic concurrency check
-        int currentEventCount = await this.context.StoredEvents
+        int currentEventCount = await this.writeContext.StoredEvents
             .CountAsync(e => e.AggregateId == aggregateId, cancellationToken);
 
         if (currentEventCount != expectedVersion)
@@ -119,18 +119,19 @@ public class EventStore : IEventStore
         // Append new events to the store
         foreach (IDomainEvent @event in events)
         {
+            Type eventType = @event.GetType();
             Infrastructure.StoredEvent storedEvent = new()
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
+                Timestamp = new DateTime(DateTime.UtcNow.Ticks, DateTimeKind.Unspecified),
                 AggregateId = aggregateId,
-                EventType = @event.GetType().AssemblyQualifiedName!,
-                Data = JsonSerializer.Serialize(@event, @event.GetType()),
-                Timestamp = DateTimeOffset.UtcNow
+                EventType = $"{eventType.FullName}, {eventType.Assembly.GetName().Name}",
+                Data = JsonSerializer.Serialize(@event, eventType)
             };
 
-            this.context.StoredEvents.Add(storedEvent);
+            this.writeContext.StoredEvents.Add(storedEvent);
         }
 
-        await this.context.SaveChangesAsync(cancellationToken);
+        await this.writeContext.SaveChangesAsync(cancellationToken);
     }
 }

@@ -5,16 +5,16 @@ namespace Zagejmi.Write.Infrastructure.Ctx;
 /// <summary>
 ///     The DbContext for the application.
 /// </summary>
-public class ZagejmiContext : DbContext
+public class ZagejmiWriteContext : DbContext
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ZagejmiContext" /> class with the specified options.
+    ///     Initializes a new instance of the <see cref="ZagejmiWriteContext" /> class with the specified options.
     /// </summary>
     /// <param name="options">
     ///     The options to be used by the DbContext, typically including the connection string and other
     ///     configuration settings for the database.
     /// </param>
-    public ZagejmiContext(DbContextOptions<ZagejmiContext> options)
+    public ZagejmiWriteContext(DbContextOptions<ZagejmiWriteContext> options)
         : base(options)
     {
     }
@@ -40,6 +40,32 @@ public class ZagejmiContext : DbContext
     /// <param name="modelBuilder">The ModelBuilder used to configure the model for the DbContext.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<StoredEvent>(entity =>
+        {
+            entity.Property(x => x.Id)
+                .IsRequired()
+                .HasColumnOrder(0);
+
+            entity.Property(x => x.AggregateId)
+                .IsRequired()
+                .HasColumnOrder(1);
+
+            entity.Property(x => x.Timestamp)
+                .IsRequired()
+                .HasColumnType("timestamp without time zone")
+                .HasColumnOrder(2);
+
+            entity.Property(x => x.EventType)
+                .IsRequired()
+                .HasMaxLength(1000)
+                .HasColumnOrder(3);
+
+            entity.Property(x => x.Data)
+                .IsRequired()
+                .HasMaxLength(-1)
+                .HasColumnOrder(4);
+        });
+
         base.OnModelCreating(modelBuilder);
     }
 }

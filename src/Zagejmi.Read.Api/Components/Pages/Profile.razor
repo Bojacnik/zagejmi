@@ -1,28 +1,29 @@
 ﻿@page "/profile"
-@using System.Security.Claims
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@using Zagejmi.Write.Infrastructure.Ctx
-@using Zagejmi.Write.Infrastructure.Projections
 @rendermode InteractiveServer
 @attribute [Authorize]
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject ZagejmiContext DbContext
+@inject HttpClient Http
 
 <PageTitle>Profile</PageTitle>
 
 <div class="w-full max-w-4xl mx-auto p-8">
+
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-4xl font-bold text-text-default">Your Profile</h1>
-        <form action="http://localhost:5178/api/user/logout" method="post">
-            <input type="hidden" name="ReturnUrl" value="@logoutReturnUrl"/>
-            <button type="submit"
-                    class="px-4 py-2 font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
-                Logout
-            </button>
-        </form>
+        <button @onclick="HandleLogout" disabled="@isLoggingOut"
+                class="px-4 py-2 font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+            @if (isLoggingOut)
+            {
+                <span>Logging out...</span>
+            }
+            else
+            {
+                <span>Logout</span>
+            }
+        </button>
     </div>
 
     @if (isLoading)
@@ -38,7 +39,7 @@
             <p>@errorMessage</p>
         </div>
     }
-    else if (person != null)
+    else if ( /*person != null*/ true)
     {
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="md:col-span-1">
@@ -46,8 +47,8 @@
                     class="bg-primary-900/50 rounded-2xl border border-accent-700/50 shadow-xl p-6 text-center flex flex-col items-center">
                     <img class="w-32 h-32 rounded-full mb-4 border-4 border-accent-600 shadow-lg" src="img/cat.jpg"
                          alt="Profile Picture">
-                    <h2 class="text-2xl font-bold text-text-default">@person.FirstName @person.LastName</h2>
-                    <p class="text-text-muted">@@@person.UserName</p>
+                    <h2 class="text-2xl font-bold text-text-default"><!--@person.FirstName @person.LastName--></h2>
+                    <p class="text-text-muted"><!--@@@person.UserName--></p>
                 </div>
             </div>
             <div class="md:col-span-2">
@@ -58,23 +59,23 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-text-muted">First Name</label>
-                                <p class="text-text-default text-lg">@person.FirstName</p>
+                                <p class="text-text-default text-lg"><!--@person.FirstName--></p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-text-muted">Last Name</label>
-                                <p class="text-text-default text-lg">@person.LastName</p>
+                                <p class="text-text-default text-lg"><!--@person.LastName--></p>
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="block text-sm font-medium text-text-muted">Email</label>
-                                <p class="text-text-default text-lg">@person.Email</p>
+                                <p class="text-text-default text-lg"><!--@person.Email--></p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-text-muted">Birth Date</label>
-                                <p class="text-text-default text-lg">@person.BirthDate.ToShortDateString()</p>
+                                <p class="text-text-default text-lg"><!--@person.BirthDate.ToShortDateString()--></p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-text-muted">Gender</label>
-                                <p class="text-text-default text-lg">@person.Gender</p>
+                                <p class="text-text-default text-lg"><!--@person.Gender--></p>
                             </div>
                         </div>
                     </div>
@@ -84,7 +85,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-text-muted">Goin Balance</label>
-                                <p class="text-3xl font-bold text-accent-400">@person.GoinAmount</p>
+                                <p class="text-3xl font-bold text-accent-400"><!--@person.GoinAmount--></p>
                             </div>
                         </div>
                     </div>
@@ -95,16 +96,18 @@
 </div>
 
 @code {
-    private string logoutReturnUrl = "";
-    private PersonProjection? person;
+
+    private bool isLoggingOut;
+
+    //private PersonProjection? person;
     private bool isLoading = true;
     private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        logoutReturnUrl = NavigationManager.ToAbsoluteUri("/").ToString();
         isLoading = true;
 
+        /*
         try
         {
             AuthenticationState authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -142,6 +145,27 @@
         finally
         {
             isLoading = false;
+        }
+        */
+    }
+
+    private async Task HandleLogout()
+    {
+        if (isLoggingOut) return;
+
+        isLoggingOut = true;
+
+        try
+        {
+            await Http.PostAsync("api/v1/auth/logout", null);
+
+            // Redirect regardless of success
+            NavigationManager.NavigateTo("/", true);
+        }
+        catch
+        {
+            // On error, still redirect
+            NavigationManager.NavigateTo("/", true);
         }
     }
 

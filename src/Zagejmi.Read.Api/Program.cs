@@ -2,12 +2,10 @@ using System;
 using System.IO;
 
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -15,8 +13,6 @@ using Serilog;
 
 using Zagejmi.Read.Api.Components;
 using Zagejmi.Read.Api.Services;
-using Zagejmi.Write.Infrastructure.Ctx;
-using Zagejmi.Write.Infrastructure.Projections;
 
 using _Imports = Zagejmi.Read.Client._Imports;
 
@@ -32,24 +28,50 @@ builder.Host.UseSerilog();
 // Add HttpContextAccessor to access the current HttpContext from services
 builder.Services.AddHttpContextAccessor();
 
-// Correctly register HttpClient for server-side rendering.
+// Register controllers
+builder.Services.AddControllers();
+
+// Register HttpClient factory
 builder.Services.AddHttpClient();
 
-// Configure the named HttpClient for the write-side API
-builder.Services.AddHttpClient("WriteAPI", client => { client.BaseAddress = new Uri("http://localhost:5178"); });
+// Get Write.Api base address from configuration
+string? writeApiBaseAddress = builder.Configuration["WriteApi:BaseAddress"];
+if (string.IsNullOrWhiteSpace(writeApiBaseAddress))
+{
+    throw new InvalidOperationException(
+        "Write API base address is not configured. Please ensure 'WriteApi:BaseAddress' is set in appsettings.json");
+}
+
+if (!writeApiBaseAddress.EndsWith('/'))
+{
+    writeApiBaseAddress += "/";
+}
+
+// Register the WriteAPI named HttpClient
+builder.Services.AddHttpClient("WriteAPI", client => { client.BaseAddress = new Uri(writeApiBaseAddress); });
 
 builder.Services.AddScoped<SidebarStateService>();
+
+// Add custom AuthenticationStateProvider for Blazor InteractiveServer
+builder.Services.AddScoped<AuthenticationStateProvider, CookieAuthenticationStateProvider>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
 // Add DbContext for ZagejmiContext
-builder.Services.AddDbContext<ZagejmiContext>(options =>
+/*
+builder.Services.AddDbContext<ZagejmiReadContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    */
 
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(@"D:\temp-keys"))
+    .PersistKeysToFileSystem(
+        new DirectoryInfo(
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Zagejmi",
+                "DataProtection")))
     .SetApplicationName("ZagejmiShared");
 
 // Add simple cookie-based Authentication
@@ -68,7 +90,6 @@ builder.Services.AddAuthentication(options =>
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.Domain = "localhost";
         options.Cookie.Path = "/";
     });
 
@@ -95,17 +116,8 @@ app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Add Minimal API endpoint for UserProjection
-app.MapGet(
-    "/api/users/{username}",
-    [Authorize] async (string username, ZagejmiContext context) =>
-    {
-        UserProjection? user = await context.UserProjections
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.UserName == username);
-
-        return user == null ? Results.NotFound() : Results.Ok(user);
-    });
+// Map controllers for API endpoints
+app.MapControllers();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

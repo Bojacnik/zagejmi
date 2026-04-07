@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using Zagejmi.Write.Domain.Abstractions;
+using Zagejmi.Write.Domain.Auth.Events;
 
 namespace Zagejmi.Write.Domain.Auth;
 
@@ -47,19 +48,7 @@ public sealed class User : Aggregate
     ///     sensitive information and should be protected to prevent unauthorized access, ensuring the security and integrity
     ///     of user accounts within the system.
     /// </summary>
-    public AuthCredentials AuthCredentials { get; private set; }
-
-    /// <summary>
-    ///     Gets the email address associated with the user. The Email property is used for communication and identification
-    ///     purposes, allowing the system to send notifications, password reset instructions, and other relevant
-    ///     information to the user. It is important to validate the email address format and ensure that it is unique across
-    ///     all user accounts to prevent conflicts and ensure proper user management. The Email property should be treated as a
-    ///     case-insensitive value to provide a better user experience and avoid issues with case sensitivity during
-    ///     email-based operations. Additionally, the Email property is a critical component of the user's identity and should
-    ///     be protected to prevent unauthorized access, ensuring the security and integrity of user accounts within the
-    ///     system.
-    /// </summary>
-    public string Email { get; private set; }
+    public AuthCredentials? AuthCredentials { get; private set; }
 
     /// <summary>
     ///     Gets a read-only list of person IDs associated with the user. The PersonIds property provides a way to manage the
@@ -73,6 +62,23 @@ public sealed class User : Aggregate
     public IReadOnlyList<Guid> PersonIds => this._personIds.AsReadOnly();
 
     /// <summary>
+    ///     Factory method to create a new user with the specified authentication credentials.
+    ///     This method creates a new User aggregate with the provided credentials and raises a UserCreatedEvent
+    ///     to represent the user creation in the domain model.
+    /// </summary>
+    /// <param name="username">The username for the new user.</param>
+    /// <param name="passwordHash">The securely hashed password for the new user.</param>
+    /// <param name="email">The email address for the new user.</param>
+    /// <returns>A new User aggregate instance with the specified credentials.</returns>
+    public static User Create(string username, string passwordHash, string email)
+    {
+        Guid userId = Guid.CreateVersion7();
+        User user = new(userId);
+        user.RaiseEvent(new UserCreatedEvent(userId, username, passwordHash, email));
+        return user;
+    }
+
+    /// <summary>
     ///     Applies the specified domain event to the user aggregate, updating its state based on the event's data. This method
     ///     is responsible for handling the logic of how the user aggregate should react to different types of domain events,
     ///     ensuring that the state of the user is consistent with the events that have occurred. The Apply method should be
@@ -81,7 +87,7 @@ public sealed class User : Aggregate
     ///     correctly, the user aggregate can maintain its integrity and ensure that all operations on the user account adhere
     ///     to the business rules defined for user management.
     /// </summary>
-    /// <param name="event">
+    /// <param name="domainEvent">
     ///     The domain event to apply to the user aggregate. This parameter should be an instance of a class that implements
     ///     the IDomainEvent interface and contains the necessary data to update the state of the user aggregate. The Apply
     ///     method should handle different types of domain events related to the user aggregate, such as user creation, updates
@@ -89,8 +95,27 @@ public sealed class User : Aggregate
     ///     user is consistent with the events that have occurred and that all operations on the user account adhere to the
     ///     business rules defined for user management.
     /// </param>
-    protected override void Apply(IDomainEvent @event)
+    protected override void Apply(IDomainEvent domainEvent)
     {
-        throw new NotImplementedException();
+        switch (domainEvent)
+        {
+            case UserCreatedEvent userCreatedEvent:
+                this.ApplyUserCreated(userCreatedEvent);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown event type: {domainEvent.GetType().Name}");
+        }
+    }
+
+    /// <summary>
+    ///     Applies a UserCreatedEvent to the aggregate state.
+    /// </summary>
+    private void ApplyUserCreated(UserCreatedEvent @event)
+    {
+        this.AuthCredentials = new AuthCredentials(
+            @event.AggregateId,
+            @event.Username,
+            @event.PasswordHash,
+            @event.Email);
     }
 }

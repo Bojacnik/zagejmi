@@ -1,15 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <PackageReference Include="LanguageExt.Core"/>
-        <PackageReference Include="Serilog"/>
-        <PackageReference Include="System.Drawing.Common"/>
+        <ProjectReference Include="..\Zagejmi.Shared\Zagejmi.Shared.csproj"/>
+        <ProjectReference Include="..\Zagejmi.Contracts\Zagejmi.Contracts.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Zagejmi.Shared\Zagejmi.Shared.csproj"/>
-        <ProjectReference Include="..\Zagejmi.Contracts\Zagejmi.Contracts.csproj"/>
-        <ProjectReference Include="..\Zagejmi.Shared\Zagejmi.Shared.csproj"/>
+        <PackageReference Include="LanguageExt.Core"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="SixLabors.ImageSharp">
+            <HintPath>..\..\..\..\..\..\home\bojacnik\.nuget\packages\sixlabors.imagesharp\3.1.12\lib\net6.0\SixLabors.ImageSharp.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Profile\Events\"/>
     </ItemGroup>
 
 </Project>

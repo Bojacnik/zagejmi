@@ -17,32 +17,21 @@ public sealed record PersonalInformation : ValueObject
     ///     record for a profile, ensuring that all relevant details are captured and can be used for various purposes such as
     ///     communication, personalization, and demographic analysis.
     /// </summary>
-    /// <param name="mailAddress">
-    ///     The email address associated with the profile, used for communication and identification
-    ///     purposes.
-    /// </param>
     /// <param name="firstName">The first name of the profile, which is used for personalization and display purposes.</param>
     /// <param name="lastName">The last name of the profile, which is used for personalization and display purposes.</param>
     /// <param name="birthDay">The birthdate of the profile, which can be used for personalization and demographic purposes.</param>
     /// <param name="gender">The gender of the profile, which can be used for personalization and demographic purposes.</param>
     public PersonalInformation(
-        string mailAddress,
         string firstName,
         string lastName,
         DateOnly birthDay,
         Gender gender)
     {
-        this.MailAddress = mailAddress;
         this.FirstName = firstName;
         this.LastName = lastName;
         this.BirthDay = birthDay;
         this.Gender = gender;
     }
-
-    /// <summary>
-    ///     Gets the email address associated with the profile, used for communication and identification purposes.
-    /// </summary>
-    public string MailAddress { get; }
 
     /// <summary>
     ///     Gets the first name of the profile, which is used for personalization and display purposes.
@@ -57,7 +46,7 @@ public sealed record PersonalInformation : ValueObject
     /// <summary>
     ///     Gets the username of the profile, which is used for identification and login purposes.
     /// </summary>
-    public DateOnly BirthDay { get; }
+    public DateOnly? BirthDay { get; }
 
     /// <summary>
     ///     Gets the gender of the profile, which can be used for personalization and demographic purposes.
@@ -77,7 +66,6 @@ public sealed record PersonalInformation : ValueObject
     /// </returns>
     protected override IEnumerable<object?> GetAtomicValues()
     {
-        yield return this.MailAddress;
         yield return this.FirstName;
         yield return this.LastName;
         yield return this.BirthDay;

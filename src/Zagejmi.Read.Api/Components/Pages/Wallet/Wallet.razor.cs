@@ -1,4 +1,8 @@
-﻿using Zagejmi.Read.Api.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using Zagejmi.Read.Api.Models;
 
 namespace Zagejmi.Read.Api.Components.Pages.Wallet;
 
@@ -63,7 +67,7 @@ public partial class Wallet
 
         this.TotalBalanceUsd = this.Wallets.Sum(w => w.BalanceInUsd);
 
-        var walletIdLut = this.Wallets.ToDictionary(w => w.Name, w => w.Id);
+        Dictionary<string, Guid> walletIdLut = this.Wallets.ToDictionary(w => w.Name, w => w.Id);
 
         this.Transactions =
         [

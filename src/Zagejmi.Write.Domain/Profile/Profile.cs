@@ -1,16 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using LanguageExt;
-
-using Zagejmi.Shared.Failures;
 using Zagejmi.Write.Domain.Abstractions;
 using Zagejmi.Write.Domain.Auth;
-using Zagejmi.Write.Domain.Goin;
 using Zagejmi.Write.Domain.Profile.Associate;
 
 namespace Zagejmi.Write.Domain.Profile;
 
+/// <summary>
+///     Represents a user profile within the Zagejmi application, encapsulating personal information, statistics, wallets,
+///     and
+///     associations with other profiles. This aggregate root is responsible for managing the state and behavior of user
+///     profiles,
+///     ensuring that all operations and changes to the profile are consistent with the business rules and domain logic of
+///     the application. The Profile aggregate handles events related to profile creation, updates, and associations,
+///     maintaining the integrity of the profile's state and ensuring that all changes are properly recorded and applied
+///     through domain events. It serves as the central point of interaction for any operations related to user profiles,
+///     including the management of personal information, statistics, wallets, and associations with other profiles, while
+///     adhering to the principles of domain-driven design and ensuring that all business rules and invariants are
+///     maintained throughout the lifecycle of the profile.
+/// </summary>
 public sealed class Profile : Aggregate
 {
     /// <summary>
@@ -26,64 +35,6 @@ public sealed class Profile : Aggregate
     {
     }
 
-    public static Either<Failure, Profile> Create(
-        Guid personId,
-        Guid userId,
-        string email,
-        string userName,
-        string firstName,
-        string lastName,
-        DateTime birthDate,
-        Gender gender)
-    {
-        Profile profile = new(personId);
-        PersonalInformation personalInfo;
-        personalInfo = new PersonalInformation(
-            email,
-            userName,
-            firstName,
-            lastName,
-            birthDate,
-            gender);
-
-        profile.RaiseEvent(
-            new EventPersonCreated(
-                personId,
-                userId,
-                PersonType.Customer, // Assuming Customer is the default
-                personalInfo,
-                new PersonalStatistics(), // Assuming stats start empty
-                new List<GoinWallet>(), // Assuming wallets start empty
-                null // Assuming no associate profile at creation
-            ));
-
-        return profile;
-    }
-
-    protected override void Apply(IDomainEvent<Profile, Guid> evt)
-    {
-        switch (evt)
-        {
-            case EventPersonCreated e:
-                this.OnPersonCreated(e);
-                break;
-        }
-    }
-
-    private void OnPersonCreated(EventPersonCreated e)
-    {
-        this.Id = e.PersonId;
-        this.UserId = e.UserId;
-        this.PersonType = e.PersonType;
-        this.PersonalInformation = e.PersonalInformation;
-        this.PersonalStatistics = e.PersonalStatistics;
-        this.Wallets = e.Wallets;
-        this.AssociateProfile = e.AssociateProfile;
-        this.Deleted = false;
-    }
-
-    #region Person Properties
-
     public Guid UserId { get; private set; }
 
     public PersonType PersonType { get; private set; }
@@ -92,11 +43,13 @@ public sealed class Profile : Aggregate
 
     public PersonalStatistics PersonalStatistics { get; private set; }
 
-    public List<GoinWallet> Wallets { get; private set; } = new();
+    public List<Guid> Wallets { get; private set; } = [];
 
     public AssociateProfile? AssociateProfile { get; private set; }
 
     public bool Deleted { get; private set; }
 
-    #endregion
+    protected override void Apply(IDomainEvent domainEvent)
+    {
+    }
 }

@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\src\Zagejmi.Contracts\Zagejmi.Contracts.csproj" />
     <ProjectReference Include="..\Zagejmi.Shared\Zagejmi.Shared.csproj" />
+    <ProjectReference Include="..\Zagejmi.Contracts\Zagejmi.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="LanguageExt.Core" />
+    <PackageReference Include="Serilog" />
   </ItemGroup>
 </Project>

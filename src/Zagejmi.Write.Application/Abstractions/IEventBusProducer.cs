@@ -19,6 +19,6 @@ public interface IEventBusProducer
     /// <param name="cancellationToken"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public Task PublishAsync<T>(string channel, T message, CancellationToken cancellationToken = default)
+    public Task PublishAsync<T>(string channel, string message, CancellationToken cancellationToken = default)
         where T : IDomainEvent;
 }

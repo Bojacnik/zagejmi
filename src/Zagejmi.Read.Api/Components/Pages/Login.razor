@@ -1,13 +1,21 @@
 ﻿@page "/login"
+@using System.Collections.Specialized
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+@using System.Text.Json
 @using System.Web
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Zagejmi.Contracts.Api.V1.Requests
+@using Zagejmi.Read.Api.Components
+@using Zagejmi.Shared.Models
+@rendermode InteractiveServer
 @inject NavigationManager NavManager
+@inject IHttpClientFactory HttpClientFactory
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="w-full h-full flex flex-col justify-center items-center p-4">
-    <form action="http://localhost:5178/api/user/login" method="post"
+    <form @onsubmit="HandleLogin" @onsubmit:preventDefault novalidate
           class="w-full max-w-sm p-8 space-y-6 bg-primary-900 rounded-xl border border-accent-700/50 shadow-2xl shadow-accent-900/30">
-
-        <input type="hidden" name="SuccessUrl" value="@_successUrl" />
-        <input type="hidden" name="FailureUrl" value="@_failureUrl" />
 
         <header class="text-center">
             <h1 class="text-4xl font-bold text-gray-100">Welcome Back</h1>
@@ -23,25 +31,36 @@
 
         <div class="space-y-4">
             <div>
-                <label for="username" class="sr-only">Username</label>
-                <input name="Username" type="text" id="username" placeholder="Username" required
+                <label for="useridentifier" class="sr-only">Username or Email</label>
+                <input @bind="userIdentifier" type="text" id="useridentifier" placeholder="Username or Email" required
+                       disabled="@isLoading"
                        class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
             </div>
 
             <div>
                 <label for="password" class="sr-only">Password</label>
-                <input name="Password" type="password" id="password" placeholder="Password" required
+                <input @bind="password" type="password" id="password" placeholder="Password" required
+                       disabled="@isLoading"
                        class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
             </div>
         </div>
 
         <div class="flex flex-col gap-4 pt-4">
             <button type="submit"
-                    class="w-full px-4 py-3 font-bold text-lg text-white bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-900 focus:ring-accent-500">
-                Login
+                    disabled="@isLoading"
+                    class="w-full px-4 py-3 font-bold text-lg text-white bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-900 focus:ring-accent-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                @if (isLoading)
+                {
+                    <span>Logging in...</span>
+                }
+                else
+                {
+                    <span>Login</span>
+                }
             </button>
             <div class="text-center">
-                <a href="/register" class="text-sm font-medium text-accent-400 hover:text-accent-300 hover:underline transition-colors">
+                <a href="/register"
+                   class="text-sm font-medium text-accent-400 hover:text-accent-300 hover:underline transition-colors">
                     Don't have an account? Register
                 </a>
             </div>
@@ -50,28 +69,148 @@
 </div>
 
 @code {
-    [SupplyParameterFromQuery]
-    private string? ReturnUrl { get; set; }
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
 
     [SupplyParameterFromQuery(Name = "error")]
     private string? ErrorMessage { get; set; }
 
-    private string _successUrl = "";
-    private string _failureUrl = "";
+    private string userIdentifier = string.Empty;
+    private string password = string.Empty;
+    private bool isLoading;
+    private string successUrl = string.Empty;
+    private string failureUrl = string.Empty;
 
     protected override void OnInitialized()
     {
-        _successUrl = NavManager.ToAbsoluteUri(ReturnUrl ?? "/profile").ToString();
+        successUrl = NavManager.ToAbsoluteUri(ReturnUrl ?? "/").ToString();
 
-        var failureUri = new UriBuilder(NavManager.ToAbsoluteUri(NavManager.Uri));
-        var query = HttpUtility.ParseQueryString(failureUri.Query);
+        UriBuilder failureUri = new(NavManager.ToAbsoluteUri(NavManager.Uri));
+        NameValueCollection query = HttpUtility.ParseQueryString(failureUri.Query);
         query.Remove("error");
-        if (!string.IsNullOrEmpty(ReturnUrl)) {
+
+        if (!string.IsNullOrEmpty(ReturnUrl))
+        {
             query["ReturnUrl"] = ReturnUrl;
-        } else {
+        }
+        else
+        {
             query.Remove("ReturnUrl");
         }
+
         failureUri.Query = query.ToString();
-        _failureUrl = failureUri.ToString();
+        failureUrl = failureUri.ToString();
     }
+
+    private async Task HandleLogin()
+    {
+        if (string.IsNullOrWhiteSpace(userIdentifier) || string.IsNullOrWhiteSpace(password))
+        {
+            ErrorMessage = "Username/Email and password are required.";
+            return;
+        }
+
+        isLoading = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            LoginRequest request = new()
+            {
+                UserIdentifier = userIdentifier,
+                Password = password,
+                SuccessUrl = successUrl,
+                FailureUrl = failureUrl
+            };
+
+            HttpClient client = HttpClientFactory.CreateClient();
+            string loginUrl = new Uri(new Uri(NavManager.BaseUri), "api/v1/auth/login").ToString();
+            HttpResponseMessage response = await client.PostAsJsonAsync(loginUrl, request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string content = await response.Content.ReadAsStringAsync();
+                JsonElement result = JsonSerializer.Deserialize<JsonElement>(content);
+
+                if (result.TryGetProperty("token", out JsonElement tokenElement))
+                {
+                    string? jwtToken = tokenElement.GetString();
+                    if (!string.IsNullOrWhiteSpace(jwtToken)
+                        && AuthenticationStateProvider is CookieAuthenticationStateProvider authProvider)
+                    {
+                        JwtSecurityTokenHandler handler = new();
+                        if (handler.ReadToken(jwtToken) is JwtSecurityToken jsonToken)
+                        {
+                            ClaimsIdentity identity = new(
+                                jsonToken.Claims,
+                                CookieAuthenticationDefaults.AuthenticationScheme);
+                            authProvider.SetAuthenticatedUser(new ClaimsPrincipal(identity));
+                        }
+                    }
+                }
+
+                NavManager.NavigateTo(successUrl);
+                return;
+            }
+
+            string errorContent = await response.Content.ReadAsStringAsync();
+            string? parsedError = TryParseErrors(errorContent);
+            ErrorMessage = string.IsNullOrWhiteSpace(parsedError)
+                ? "Invalid username/email or password."
+                : parsedError;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static string? TryParseErrors(string errorContent)
+    {
+        if (string.IsNullOrWhiteSpace(errorContent))
+        {
+            return null;
+        }
+
+        ValidationErrorResponse? errorResponse = JsonSerializer.Deserialize<ValidationErrorResponse>(errorContent, JsonOptions);
+        if (errorResponse?.Errors.Count > 0)
+        {
+            return string.Join(", ", errorResponse.Errors);
+        }
+
+        JsonElement root = JsonSerializer.Deserialize<JsonElement>(errorContent);
+        if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("errors", out JsonElement errorsElement) &&
+            errorsElement.ValueKind == JsonValueKind.Array)
+        {
+            List<string> errors = [];
+            foreach (JsonElement item in errorsElement.EnumerateArray())
+            {
+                if (item.ValueKind == JsonValueKind.String)
+                {
+                    string? value = item.GetString();
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        errors.Add(value);
+                    }
+                }
+            }
+
+            if (errors.Count > 0)
+            {
+                return string.Join(", ", errors);
+            }
+        }
+
+        return null;
+    }
+
 }

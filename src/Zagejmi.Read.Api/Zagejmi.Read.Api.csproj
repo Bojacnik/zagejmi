@@ -5,45 +5,69 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
-        <PackageReference Include="Microsoft.IdentityModel.Tokens" />
-        <PackageReference Include="Serilog.AspNetCore" />
-        <ProjectReference Include="..\Zagejmi.Read.Client\Zagejmi.Read.Client.csproj" />
-        <PackageReference Include="LanguageExt.Core" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
-        <ProjectReference Include="..\Zagejmi.Write.Application\Zagejmi.Write.Application.csproj" />
-        <ProjectReference Include="..\Zagejmi.Write.Infrastructure\Zagejmi.Write.Infrastructure.csproj" />
+        <ProjectReference Include="..\Zagejmi.Shared\Zagejmi.Shared.csproj"/>
+        <ProjectReference Include="..\Zagejmi.Contracts\Zagejmi.Contracts.csproj"/>
+        <ProjectReference Include="..\Zagejmi.Read.Client\Zagejmi.Read.Client.csproj"/>
+        <ProjectReference Include="..\Zagejmi.Read.Application\Zagejmi.Read.Application.csproj"/>
+        <ProjectReference Include="..\Zagejmi.Read.Infrastructure\Zagejmi.Read.Infrastructure.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server"/>
+        <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens"/>
+        <PackageReference Include="Microsoft.IdentityModel.Tokens"/>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
+        <PackageReference Include="Serilog"/>
+        <PackageReference Include="Serilog.AspNetCore"/>
+        <PackageReference Include="LanguageExt.Core"/>
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt"/>
     </ItemGroup>
 
     <ItemGroup>
-      <_ContentIncludedByDefault Remove="Components\App.razor" />
-      <_ContentIncludedByDefault Remove="Components\Layout\MainLayout.razor" />
-      <_ContentIncludedByDefault Remove="Components\Layout\NavMenu.razor" />
-      <_ContentIncludedByDefault Remove="Components\Pages\Error.razor" />
-      <_ContentIncludedByDefault Remove="Components\Pages\Home.razor" />
-      <_ContentIncludedByDefault Remove="Components\Pages\Weather.razor" />
-      <_ContentIncludedByDefault Remove="Components\Routes.razor" />
-      <_ContentIncludedByDefault Remove="Components\_Imports.razor" />
+        <Content Include="..\..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
-      <AdditionalFiles Include="Components\App.razor" />
-      <AdditionalFiles Include="Components\Elements\Card.razor" />
-      <AdditionalFiles Include="Components\Layout\MainLayout.razor" />
-      <AdditionalFiles Include="Components\Layout\NavMenu.razor" />
-      <AdditionalFiles Include="Components\Pages\Error.razor" />
-      <AdditionalFiles Include="Components\Pages\Home.razor" />
-      <AdditionalFiles Include="Components\Pages\Login.razor" />
-      <AdditionalFiles Include="Components\Pages\People.razor" />
-      <AdditionalFiles Include="Components\Pages\Register.razor" />
-      <AdditionalFiles Include="Components\Routes.razor" />
-      <AdditionalFiles Include="Components\_Imports.razor" />
+        <_ContentIncludedByDefault Remove="Components\App.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Layout\MainLayout.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Layout\NavMenu.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Pages\Error.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Pages\Home.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Pages\Weather.razor"/>
+        <_ContentIncludedByDefault Remove="Components\Routes.razor"/>
+        <_ContentIncludedByDefault Remove="Components\_Imports.razor"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="Components\App.razor"/>
+        <AdditionalFiles Include="Components\Elements\Card.razor"/>
+        <AdditionalFiles Include="Components\Layout\MainLayout.razor"/>
+        <AdditionalFiles Include="Components\Layout\NavMenu.razor"/>
+        <AdditionalFiles Include="Components\Pages\Error.razor"/>
+        <AdditionalFiles Include="Components\Pages\Home.razor"/>
+        <AdditionalFiles Include="Components\Pages\Login.razor"/>
+        <AdditionalFiles Include="Components\Pages\People.razor"/>
+        <AdditionalFiles Include="Components\Pages\Register.razor"/>
+        <AdditionalFiles Include="Components\Routes.razor"/>
+        <AdditionalFiles Include="Components\_Imports.razor"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="wwwroot\js\"/>
     </ItemGroup>
 
 </Project>

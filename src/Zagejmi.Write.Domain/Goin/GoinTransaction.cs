@@ -1,29 +1,26 @@
 ﻿using System;
+
 using Zagejmi.Write.Domain.Abstractions;
 
 namespace Zagejmi.Write.Domain.Goin;
 
 public sealed class GoinTransaction : Aggregate
 {
-    public GoinTransaction(
-        Guid id,
-        GoinWallet sender,
-        GoinWallet receiver,
-        Goin goin) : base(id)
+    public GoinTransaction(Guid id, Guid sender, Guid receiver, Goin goin)
+        : base(id)
     {
-        Sender = sender;
-        Receiver = receiver;
-        Goin = goin;
-        EventGoinTransactionCreated evt = new EventGoinTransactionCreated(id, sender, receiver, goin);
+        this.Sender = sender;
+        this.Receiver = receiver;
+        this.Goin = goin;
     }
 
-    public GoinWallet Sender { get; private set; }
+    public Guid Sender { get; private set; }
 
-    public GoinWallet Receiver { get; private set; }
+    public Guid Receiver { get; private set; }
 
     public Goin Goin { get; private set; }
 
-    protected override void Apply(IDomainEvent<GoinTransaction, Guid> @event)
+    protected override void Apply(IDomainEvent domainEvent)
     {
     }
 }
