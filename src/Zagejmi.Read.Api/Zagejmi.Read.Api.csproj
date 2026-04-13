@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,7 +32,11 @@
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
         <PackageReference Include="Serilog"/>
         <PackageReference Include="Serilog.AspNetCore"/>
+        <PackageReference Include="RabbitMQ.Client"/>
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen"/>
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI"/>
         <PackageReference Include="LanguageExt.Core"/>
+        <PackageReference Include="Konscious.Security.Cryptography.Argon2"/>
         <PackageReference Include="System.IdentityModel.Tokens.Jwt"/>
     </ItemGroup>
 
@@ -64,10 +69,6 @@
         <AdditionalFiles Include="Components\Pages\Register.razor"/>
         <AdditionalFiles Include="Components\Routes.razor"/>
         <AdditionalFiles Include="Components\_Imports.razor"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="wwwroot\js\"/>
     </ItemGroup>
 
 </Project>

@@ -1,5 +1,6 @@
 ﻿@page "/logout"
 @rendermode InteractiveServer
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 
@@ -20,9 +21,13 @@
     {
         try
         {
-            HttpClient client = HttpClientFactory.CreateClient();
-            string logoutUrl = NavigationManager.ToAbsoluteUri("/api/v1/auth/logout").ToString();
-            await client.PostAsync(logoutUrl, null);
+            if (AuthenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
+            {
+                await jwtProvider.ClearTokensAsync();
+            }
+
+            HttpClient client = HttpClientFactory.CreateClient("WriteAPI");
+            await client.PostAsync("api/v1/auth/logout", null);
 
             // Redirect to homepage with full page reload
             NavigationManager.NavigateTo("/", true);

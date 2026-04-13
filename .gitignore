@@ -810,3 +810,8 @@ fabric.properties
 #Custom additions
 
 styles.css
+
+# Environment files
+.env
+.env.*
+!.env.example

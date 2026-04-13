@@ -22,14 +22,6 @@
             </div>
         }
 
-        @if (isSuccess)
-        {
-            <div class="p-4 text-sm text-green-400 bg-green-900/30 border border-green-400/50 rounded-lg" role="alert">
-                <p>Registration successful! You can now <a href="/login" class="font-bold hover:underline">log in</a>.
-                </p>
-            </div>
-        }
-
         @if (!isSuccess)
         {
             <div class="space-y-4">
@@ -147,6 +139,8 @@
             if (response.IsSuccessStatusCode)
             {
                 isSuccess = true;
+                string encodedEmail = Uri.EscapeDataString(registerModel.Email);
+                NavigationManager.NavigateTo($"/login?registered=1&email={encodedEmail}", true);
             }
             else
             {

@@ -1,7 +1,7 @@
 ﻿namespace Zagejmi.Shared.Failures;
 
-public abstract record FailureMessageBus(string message) : Failure(message);
+public abstract record FailureMessageBus(string Message) : Failure(Message);
 
-public record FailureMessageBusUnavailable(string message) : FailureMessageBus(message);
+public record FailureMessageBusUnavailable(string Message) : FailureMessageBus(Message);
 
-public record FailureMessageBusOperationCancelled(string message) : FailureMessageBus(message);
+public record FailureMessageBusOperationCancelled(string Message) : FailureMessageBus(Message);

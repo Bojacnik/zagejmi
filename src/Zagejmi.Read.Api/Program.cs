@@ -1,24 +1,31 @@
 using System;
+using System.Globalization;
 using System.IO;
+using System.Reflection;
+using System.Text;
 
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 
 using Serilog;
 
 using Zagejmi.Read.Api.Components;
+using Zagejmi.Read.Api.Ctx;
 using Zagejmi.Read.Api.Services;
 
 using _Imports = Zagejmi.Read.Client._Imports;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
-    .WriteTo.Console()
+    .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
     .CreateLogger();
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -30,6 +37,24 @@ builder.Services.AddHttpContextAccessor();
 
 // Register controllers
 builder.Services.AddControllers();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    string basePath = AppContext.BaseDirectory;
+    string readXml = Path.Combine(basePath, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
+    string contractsXml = Path.Combine(basePath, "Zagejmi.Contracts.xml");
+
+    if (File.Exists(readXml))
+    {
+        options.IncludeXmlComments(readXml);
+    }
+
+    if (File.Exists(contractsXml))
+    {
+        options.IncludeXmlComments(contractsXml);
+    }
+});
 
 // Register HttpClient factory
 builder.Services.AddHttpClient();
@@ -51,19 +76,19 @@ if (!writeApiBaseAddress.EndsWith('/'))
 builder.Services.AddHttpClient("WriteAPI", client => { client.BaseAddress = new Uri(writeApiBaseAddress); });
 
 builder.Services.AddScoped<SidebarStateService>();
+builder.Services.AddScoped<ProfileStateService>();
+builder.Services.AddScoped<ProfileProjectionApplier>();
+builder.Services.Configure<RabbitMqProjectionOptions>(builder.Configuration.GetSection("RabbitMq"));
+builder.Services.AddHostedService<ProfileProjectionBootstrapService>();
+builder.Services.AddHostedService<ProfileProjectionRabbitMqConsumerService>();
 
 // Add custom AuthenticationStateProvider for Blazor InteractiveServer
-builder.Services.AddScoped<AuthenticationStateProvider, CookieAuthenticationStateProvider>();
+builder.Services.AddScoped<ProtectedLocalStorage>();
+builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthenticationStateProvider>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
-
-// Add DbContext for ZagejmiContext
-/*
-builder.Services.AddDbContext<ZagejmiReadContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-    */
 
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(
@@ -74,33 +99,44 @@ builder.Services.AddDataProtection()
                 "DataProtection")))
     .SetApplicationName("ZagejmiShared");
 
-// Add simple cookie-based Authentication
-builder.Services.AddAuthentication(options =>
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    })
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/login";
-        options.LogoutPath = "/api/user/logout";
-        options.AccessDeniedPath = "/";
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
-        options.SlidingExpiration = true;
-        options.Cookie.HttpOnly = true;
-        options.Cookie.IsEssential = true;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.Path = "/";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+        };
     });
 
 builder.Services.AddAuthorization();
 
+// Register DbContext for ZagejmiReadContext
+builder.Services.AddDbContext<ZagejmiReadContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "read")));
+
+// Read-side login is delegated to Write.Api; keep projection services for read features only.
 WebApplication app = builder.Build();
+
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    ZagejmiReadContext dbContext = scope.ServiceProvider.GetRequiredService<ZagejmiReadContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 else
 {
@@ -112,7 +148,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-// Add Authentication and Authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
 

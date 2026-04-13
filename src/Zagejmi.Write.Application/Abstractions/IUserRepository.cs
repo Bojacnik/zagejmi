@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,6 +12,14 @@ namespace Zagejmi.Write.Application.Abstractions;
 /// </summary>
 public interface IUserRepository
 {
+    /// <summary>
+    ///     Gets a user by aggregate ID.
+    /// </summary>
+    /// <param name="userId">The aggregate ID to search for.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>The user if found, null otherwise.</returns>
+    Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
     /// <summary>
     ///     Gets a user by username.
     /// </summary>

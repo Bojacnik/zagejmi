@@ -3,6 +3,7 @@
     <PropertyGroup>
         <UserSecretsId>aspnet-Zagejmi-6d328d51-07da-47e4-b73f-4e7db672fcc7</UserSecretsId>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -42,5 +43,5 @@
             <Link>.dockerignore</Link>
         </Content>
     </ItemGroup>
-    
+
 </Project>

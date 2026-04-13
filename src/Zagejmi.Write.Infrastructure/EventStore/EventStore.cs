@@ -25,6 +25,8 @@ public class EventStore : IEventStore
     /// </summary>
     private readonly JsonSerializerOptions jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
 
+    private readonly IStoredEventPublisher storedEventPublisher;
+
     /// <summary>
     ///     The database context used for storing and retrieving events.
     /// </summary>
@@ -34,9 +36,10 @@ public class EventStore : IEventStore
     ///     Initializes a new instance of the <see cref="EventStore" /> class.
     /// </summary>
     /// <param name="writeContext">The database context for accessing stored events.</param>
-    public EventStore(ZagejmiWriteContext writeContext)
+    public EventStore(ZagejmiWriteContext writeContext, IStoredEventPublisher storedEventPublisher)
     {
         this.writeContext = writeContext;
+        this.storedEventPublisher = storedEventPublisher;
     }
 
     /// <summary>
@@ -61,7 +64,7 @@ public class EventStore : IEventStore
 
         foreach (Infrastructure.StoredEvent storedEvent in storedEvents)
         {
-            Type? eventType = Type.GetType(storedEvent.EventType);
+            Type? eventType = EventTypeNameResolver.Resolve(storedEvent.EventType);
             if (eventType == null)
             {
                 continue;
@@ -117,6 +120,8 @@ public class EventStore : IEventStore
         }
 
         // Append new events to the store
+        List<Infrastructure.StoredEvent> appendedEvents = [];
+
         foreach (IDomainEvent @event in events)
         {
             Type eventType = @event.GetType();
@@ -125,13 +130,15 @@ public class EventStore : IEventStore
                 Id = Guid.CreateVersion7(),
                 Timestamp = new DateTime(DateTime.UtcNow.Ticks, DateTimeKind.Unspecified),
                 AggregateId = aggregateId,
-                EventType = $"{eventType.FullName}, {eventType.Assembly.GetName().Name}",
+                EventType = EventTypeNameResolver.ToStoredName(eventType),
                 Data = JsonSerializer.Serialize(@event, eventType)
             };
 
             this.writeContext.StoredEvents.Add(storedEvent);
+            appendedEvents.Add(storedEvent);
         }
 
         await this.writeContext.SaveChangesAsync(cancellationToken);
+        await this.storedEventPublisher.PublishAsync(appendedEvents, cancellationToken);
     }
 }

@@ -21,7 +21,7 @@ public sealed class User : Aggregate
     ///     be associated with multiple person entities, and this list allows for efficient management of those associations
     ///     while keeping the internal state of the user aggregate consistent and encapsulated.
     /// </summary>
-    private readonly List<Guid> _personIds = [];
+    private readonly List<Guid> personIds = [];
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="User" /> class with the specified unique identifier. This constructor
@@ -59,7 +59,7 @@ public sealed class User : Aggregate
     ///     encapsulated. The PersonIds property is essential for tracking and managing the relationships between users and
     ///     person entities, allowing for efficient retrieval and updates of those associations within the system.
     /// </summary>
-    public IReadOnlyList<Guid> PersonIds => this._personIds.AsReadOnly();
+    public IReadOnlyList<Guid> PersonIds => this.personIds.AsReadOnly();
 
     /// <summary>
     ///     Factory method to create a new user with the specified authentication credentials.
@@ -76,6 +76,33 @@ public sealed class User : Aggregate
         User user = new(userId);
         user.RaiseEvent(new UserCreatedEvent(userId, username, passwordHash, email));
         return user;
+    }
+
+    public void RequestEmailVerification(string tokenHash, DateTimeOffset expiresAtUtc)
+    {
+        this.RaiseEvent(new UserEmailVerificationRequestedEvent(this.Id, tokenHash, expiresAtUtc));
+    }
+
+    public bool CanConfirmEmail(string tokenHash, DateTimeOffset nowUtc)
+    {
+        if (this.AuthCredentials == null || this.AuthCredentials.EmailVerifiedAtUtc.HasValue)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(this.AuthCredentials.PendingEmailVerificationTokenHash) ||
+            !this.AuthCredentials.PendingEmailVerificationExpiresAtUtc.HasValue)
+        {
+            return false;
+        }
+
+        return this.AuthCredentials.PendingEmailVerificationTokenHash == tokenHash &&
+               this.AuthCredentials.PendingEmailVerificationExpiresAtUtc.Value >= nowUtc;
+    }
+
+    public void ConfirmEmailOwnership()
+    {
+        this.RaiseEvent(new UserEmailVerifiedEvent(this.Id));
     }
 
     /// <summary>
@@ -102,6 +129,12 @@ public sealed class User : Aggregate
             case UserCreatedEvent userCreatedEvent:
                 this.ApplyUserCreated(userCreatedEvent);
                 break;
+            case UserEmailVerificationRequestedEvent verificationRequestedEvent:
+                this.ApplyUserEmailVerificationRequested(verificationRequestedEvent);
+                break;
+            case UserEmailVerifiedEvent emailVerifiedEvent:
+                this.ApplyUserEmailVerified(emailVerifiedEvent);
+                break;
             default:
                 throw new InvalidOperationException($"Unknown event type: {domainEvent.GetType().Name}");
         }
@@ -117,5 +150,28 @@ public sealed class User : Aggregate
             @event.Username,
             @event.PasswordHash,
             @event.Email);
+    }
+
+    private void ApplyUserEmailVerificationRequested(UserEmailVerificationRequestedEvent @event)
+    {
+        if (this.AuthCredentials == null)
+        {
+            return;
+        }
+
+        this.AuthCredentials.PendingEmailVerificationTokenHash = @event.TokenHash;
+        this.AuthCredentials.PendingEmailVerificationExpiresAtUtc = @event.ExpiresAtUtc;
+    }
+
+    private void ApplyUserEmailVerified(UserEmailVerifiedEvent @event)
+    {
+        if (this.AuthCredentials == null)
+        {
+            return;
+        }
+
+        this.AuthCredentials.EmailVerifiedAtUtc = @event.OccurredOn;
+        this.AuthCredentials.PendingEmailVerificationTokenHash = null;
+        this.AuthCredentials.PendingEmailVerificationExpiresAtUtc = null;
     }
 }

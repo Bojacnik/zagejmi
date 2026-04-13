@@ -8,12 +8,26 @@ using Zagejmi.Read.Api.Models;
 
 namespace Zagejmi.Read.Api.Components.Pages.Wallet;
 
+/// <summary>
+///     Displays details and transaction history for a selected wallet.
+/// </summary>
 public partial class WalletDetail : ComponentBase
 {
-    [Parameter] public Guid WalletId { get; set; }
+    /// <summary>
+    ///     Gets or sets the wallet identifier to display.
+    /// </summary>
+    [Parameter]
+    public Guid WalletId { get; set; }
 
+    /// <summary>
+    ///     Gets or sets the loaded wallet details.
+    /// </summary>
     public WalletDetailViewModel? Wallet { get; set; }
 
+    /// <summary>
+    ///     Loads wallet details for the selected wallet.
+    /// </summary>
+    /// <returns>A task that completes when the wallet details are initialized.</returns>
     protected override async Task OnInitializedAsync()
     {
         // In a real application, you would fetch the wallet data from a service.

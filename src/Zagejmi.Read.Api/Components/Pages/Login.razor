@@ -1,12 +1,5 @@
 ﻿@page "/login"
-@using System.Collections.Specialized
-@using System.IdentityModel.Tokens.Jwt
-@using System.Security.Claims
 @using System.Text.Json
-@using System.Web
-@using Microsoft.AspNetCore.Authentication.Cookies
-@using Zagejmi.Contracts.Api.V1.Requests
-@using Zagejmi.Read.Api.Components
 @using Zagejmi.Shared.Models
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
@@ -14,7 +7,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="w-full h-full flex flex-col justify-center items-center p-4">
-    <form @onsubmit="HandleLogin" @onsubmit:preventDefault novalidate
+    <form @onsubmit="HandleLoginAsync" @onsubmit:preventDefault novalidate
           class="w-full max-w-sm p-8 space-y-6 bg-primary-900 rounded-xl border border-accent-700/50 shadow-2xl shadow-accent-900/30">
 
         <header class="text-center">
@@ -29,33 +22,56 @@
             </div>
         }
 
+        @if (!string.IsNullOrEmpty(resendMessage))
+        {
+            <div class="p-4 text-sm text-green-400 bg-green-900/30 border border-green-400/50 rounded-lg" role="status">
+                <p>@resendMessage</p>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(registeredMessage))
+        {
+            <div class="p-4 text-sm text-green-400 bg-green-900/30 border border-green-400/50 rounded-lg" role="status">
+                <p>@registeredMessage</p>
+            </div>
+        }
+
         <div class="space-y-4">
             <div>
                 <label for="useridentifier" class="sr-only">Username or Email</label>
-                <input @bind="userIdentifier" type="text" id="useridentifier" placeholder="Username or Email" required
-                       disabled="@isLoading"
+                <input @bind="userIdentifier" type="text" id="useridentifier"
+                       placeholder="Username or Email" required
                        class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
             </div>
 
             <div>
                 <label for="password" class="sr-only">Password</label>
                 <input @bind="password" type="password" id="password" placeholder="Password" required
-                       disabled="@isLoading"
                        class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
             </div>
         </div>
 
         <div class="flex flex-col gap-4 pt-4">
             <button type="submit"
-                    disabled="@isLoading"
+                    disabled="@isSubmitting"
                     class="w-full px-4 py-3 font-bold text-lg text-white bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-900 focus:ring-accent-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                @if (isLoading)
+                <span>@(isSubmitting ? "Logging in..." : "Login")</span>
+            </button>
+            <button type="button"
+                    @onclick="ResendVerificationEmail"
+                    disabled="@isResending || string.IsNullOrWhiteSpace(userIdentifier)"
+                    class="w-full px-4 py-3 font-semibold text-white bg-primary-700 hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                @if (isResending)
                 {
-                    <span>Logging in...</span>
+                    <span>Sending verification email...</span>
+                }
+                else if (showResendVerification)
+                {
+                    <span>Resend verification email (account not verified)</span>
                 }
                 else
                 {
-                    <span>Login</span>
+                    <span>Resend verification email</span>
                 }
             </button>
             <div class="text-center">
@@ -69,100 +85,80 @@
 </div>
 
 @code {
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-
     [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "registered")]
+    private int? Registered { get; set; }
+
+    [SupplyParameterFromQuery(Name = "email")]
+    private string? RegisteredEmail { get; set; }
 
     [SupplyParameterFromQuery(Name = "error")]
     private string? ErrorMessage { get; set; }
 
     private string userIdentifier = string.Empty;
     private string password = string.Empty;
-    private bool isLoading;
-    private string successUrl = string.Empty;
-    private string failureUrl = string.Empty;
+    private string normalizedReturnUrl = "/";
+    private bool showResendVerification;
+    private bool isResending;
+    private bool isSubmitting;
+    private string resendMessage = string.Empty;
+    private string? registeredMessage;
 
     protected override void OnInitialized()
     {
-        successUrl = NavManager.ToAbsoluteUri(ReturnUrl ?? "/").ToString();
-
-        UriBuilder failureUri = new(NavManager.ToAbsoluteUri(NavManager.Uri));
-        NameValueCollection query = HttpUtility.ParseQueryString(failureUri.Query);
-        query.Remove("error");
-
-        if (!string.IsNullOrEmpty(ReturnUrl))
+        if (!string.IsNullOrWhiteSpace(ReturnUrl)
+            && Uri.TryCreate(ReturnUrl, UriKind.Relative, out _)
+            && ReturnUrl.StartsWith("/", StringComparison.Ordinal)
+            && !ReturnUrl.StartsWith("//", StringComparison.Ordinal))
         {
-            query["ReturnUrl"] = ReturnUrl;
-        }
-        else
-        {
-            query.Remove("ReturnUrl");
+            normalizedReturnUrl = ReturnUrl;
         }
 
-        failureUri.Query = query.ToString();
-        failureUrl = failureUri.ToString();
+        showResendVerification = !string.IsNullOrWhiteSpace(ErrorMessage)
+                                 && ErrorMessage.Contains("not verified", StringComparison.OrdinalIgnoreCase);
+
+        if (Registered != 1) return;
+
+        registeredMessage = "Account created. Verify your email, then sign in.";
+        if (!string.IsNullOrWhiteSpace(RegisteredEmail))
+        {
+            userIdentifier = RegisteredEmail.Trim();
+        }
     }
 
-    private async Task HandleLogin()
+    private async Task ResendVerificationEmail()
     {
-        if (string.IsNullOrWhiteSpace(userIdentifier) || string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrWhiteSpace(userIdentifier) || isResending)
         {
-            ErrorMessage = "Username/Email and password are required.";
             return;
         }
 
-        isLoading = true;
-        ErrorMessage = string.Empty;
+        isResending = true;
+        resendMessage = string.Empty;
 
         try
         {
-            LoginRequest request = new()
-            {
-                UserIdentifier = userIdentifier,
-                Password = password,
-                SuccessUrl = successUrl,
-                FailureUrl = failureUrl
-            };
-
-            HttpClient client = HttpClientFactory.CreateClient();
-            string loginUrl = new Uri(new Uri(NavManager.BaseUri), "api/v1/auth/login").ToString();
-            HttpResponseMessage response = await client.PostAsJsonAsync(loginUrl, request);
+            HttpClient client = HttpClientFactory.CreateClient("WriteAPI");
+            HttpResponseMessage response = await client.PostAsJsonAsync(
+                "api/v1/auth/verify-email/send",
+                new { UserIdentifier = userIdentifier });
 
             if (response.IsSuccessStatusCode)
             {
-                string content = await response.Content.ReadAsStringAsync();
-                JsonElement result = JsonSerializer.Deserialize<JsonElement>(content);
-
-                if (result.TryGetProperty("token", out JsonElement tokenElement))
-                {
-                    string? jwtToken = tokenElement.GetString();
-                    if (!string.IsNullOrWhiteSpace(jwtToken)
-                        && AuthenticationStateProvider is CookieAuthenticationStateProvider authProvider)
-                    {
-                        JwtSecurityTokenHandler handler = new();
-                        if (handler.ReadToken(jwtToken) is JwtSecurityToken jsonToken)
-                        {
-                            ClaimsIdentity identity = new(
-                                jsonToken.Claims,
-                                CookieAuthenticationDefaults.AuthenticationScheme);
-                            authProvider.SetAuthenticatedUser(new ClaimsPrincipal(identity));
-                        }
-                    }
-                }
-
-                NavManager.NavigateTo(successUrl);
+                resendMessage = "Verification email sent. Please check your inbox.";
                 return;
             }
 
-            string errorContent = await response.Content.ReadAsStringAsync();
-            string? parsedError = TryParseErrors(errorContent);
-            ErrorMessage = string.IsNullOrWhiteSpace(parsedError)
-                ? "Invalid username/email or password."
-                : parsedError;
+            string error = await response.Content.ReadAsStringAsync();
+            List<string> errors = TryParseErrors(error);
+            ErrorMessage = errors.Count == 0 ? "Unable to resend verification email." : string.Join(", ", errors);
         }
         catch (Exception ex)
         {
@@ -170,47 +166,108 @@
         }
         finally
         {
-            isLoading = false;
+            isResending = false;
         }
     }
 
-    private static string? TryParseErrors(string errorContent)
+    private async Task HandleLoginAsync()
+    {
+        if (isSubmitting)
+        {
+            return;
+        }
+
+        ErrorMessage = null;
+        resendMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(userIdentifier) || string.IsNullOrWhiteSpace(password))
+        {
+            ErrorMessage = "Username/email and password are required.";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            HttpClient client = HttpClientFactory.CreateClient("WriteAPI");
+
+            HttpResponseMessage response = await client.PostAsJsonAsync(
+                "api/v1/auth/login",
+                new
+                {
+                    UserIdentifier = userIdentifier,
+                    Password = password
+                });
+
+            string body = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                List<string> errors = TryParseErrors(body);
+                ErrorMessage = errors.Count == 0 ? "Login failed." : string.Join(", ", errors);
+                showResendVerification = ErrorMessage.Contains("not verified", StringComparison.OrdinalIgnoreCase);
+                return;
+            }
+
+            LoginTokenResponse? tokenResponse = JsonSerializer.Deserialize<LoginTokenResponse>(body, JsonOptions);
+            if (tokenResponse == null ||
+                string.IsNullOrWhiteSpace(tokenResponse.AccessToken) ||
+                string.IsNullOrWhiteSpace(tokenResponse.RefreshToken))
+            {
+                ErrorMessage = "Login response did not contain required tokens.";
+                return;
+            }
+
+            if (AuthenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
+            {
+                await jwtProvider.SetTokensAsync(tokenResponse.AccessToken, tokenResponse.RefreshToken);
+            }
+
+            NavManager.NavigateTo(normalizedReturnUrl, true);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private static List<string> TryParseErrors(string errorContent)
     {
         if (string.IsNullOrWhiteSpace(errorContent))
         {
-            return null;
+            return [];
         }
 
         ValidationErrorResponse? errorResponse = JsonSerializer.Deserialize<ValidationErrorResponse>(errorContent, JsonOptions);
         if (errorResponse?.Errors.Count > 0)
         {
-            return string.Join(", ", errorResponse.Errors);
+            return errorResponse.Errors;
         }
 
         JsonElement root = JsonSerializer.Deserialize<JsonElement>(errorContent);
-        if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("errors", out JsonElement errorsElement) &&
-            errorsElement.ValueKind == JsonValueKind.Array)
-        {
-            List<string> errors = [];
-            foreach (JsonElement item in errorsElement.EnumerateArray())
-            {
-                if (item.ValueKind == JsonValueKind.String)
-                {
-                    string? value = item.GetString();
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        errors.Add(value);
-                    }
-                }
-            }
+        if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("errors", out JsonElement errorsElement) ||
+            errorsElement.ValueKind != JsonValueKind.Array) return [];
+        List<string> errors = [];
+        errors.AddRange(
+            from item in errorsElement.EnumerateArray()
+            where item.ValueKind == JsonValueKind.String
+            select item.GetString()
+            into value
+            where !string.IsNullOrWhiteSpace(value)
+            select value);
 
-            if (errors.Count > 0)
-            {
-                return string.Join(", ", errors);
-            }
-        }
+        return errors.Count > 0 ? errors : [];
+    }
 
-        return null;
+    private sealed class LoginTokenResponse
+    {
+        public string AccessToken { get; set; } = string.Empty;
+
+        public string RefreshToken { get; set; } = string.Empty;
     }
 
 }

@@ -1,3 +1,3 @@
 ﻿namespace Zagejmi.Shared.Failures;
 
-public record FailureWallet(string message) : Failure(message);
+public record FailureWallet(string Message) : Failure(Message);

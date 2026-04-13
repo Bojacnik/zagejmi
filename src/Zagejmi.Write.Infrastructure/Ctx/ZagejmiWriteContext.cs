@@ -30,6 +30,16 @@ public class ZagejmiWriteContext : DbContext
     public DbSet<StoredEvent> StoredEvents { get; set; }
 
     /// <summary>
+    ///     Gets or sets persisted refresh tokens used for rotation/revocation checks.
+    /// </summary>
+    public DbSet<RefreshTokenRecord> RefreshTokens { get; set; }
+
+    /// <summary>
+    ///     Gets or sets revoked JWT IDs for access-token blacklist checks.
+    /// </summary>
+    public DbSet<RevokedAccessTokenRecord> RevokedAccessTokens { get; set; }
+
+    /// <summary>
     ///     Configures the model for the DbContext, including the necessary configurations for the Outbox pattern.
     ///     This method is called by the Entity Framework when the model is being created. It is essential to include the
     ///     configurations
@@ -40,6 +50,8 @@ public class ZagejmiWriteContext : DbContext
     /// <param name="modelBuilder">The ModelBuilder used to configure the model for the DbContext.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDefaultSchema("write");
+
         modelBuilder.Entity<StoredEvent>(entity =>
         {
             entity.Property(x => x.Id)
@@ -64,6 +76,42 @@ public class ZagejmiWriteContext : DbContext
                 .IsRequired()
                 .HasMaxLength(-1)
                 .HasColumnOrder(4);
+        });
+
+        modelBuilder.Entity<RefreshTokenRecord>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.TokenHash)
+                .IsRequired()
+                .HasMaxLength(256);
+
+            entity.Property(x => x.RevocationReason)
+                .HasMaxLength(256);
+
+            entity.HasIndex(x => x.TokenHash)
+                .IsUnique();
+
+            entity.HasIndex(x => new { x.UserId, x.TokenFamilyId });
+
+            entity.HasIndex(x => x.ExpiresAtUtc);
+        });
+
+        modelBuilder.Entity<RevokedAccessTokenRecord>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.JwtId)
+                .IsRequired()
+                .HasMaxLength(128);
+
+            entity.Property(x => x.Reason)
+                .HasMaxLength(256);
+
+            entity.HasIndex(x => x.JwtId)
+                .IsUnique();
+
+            entity.HasIndex(x => x.ExpiresAtUtc);
         });
 
         base.OnModelCreating(modelBuilder);

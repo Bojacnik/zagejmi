@@ -14,6 +14,7 @@ using Zagejmi.Write.Domain.Abstractions;
 using Zagejmi.Write.Domain.Auth;
 using Zagejmi.Write.Domain.Auth.Events;
 using Zagejmi.Write.Infrastructure.Ctx;
+using Zagejmi.Write.Infrastructure.EventStore;
 
 namespace Zagejmi.Write.Infrastructure.Auth;
 
@@ -101,6 +102,24 @@ public sealed class UserRepository : IUserRepository
         this.logger = logger;
     }
 
+    public async Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty)
+        {
+            return null;
+        }
+
+        IReadOnlyList<IDomainEvent> allEvents = await this.eventStore.LoadAsync(userId, cancellationToken);
+        if (allEvents.Count == 0)
+        {
+            return null;
+        }
+
+        User user = CreateUserInstance(userId);
+        user.LoadFromHistory(allEvents);
+        return user;
+    }
+
     /// <summary>
     ///     Gets a user by username by searching through all users' events.
     ///     This is a simplified implementation - in production, use a read model instead.
@@ -137,7 +156,7 @@ public sealed class UserRepository : IUserRepository
         {
             try
             {
-                Type? eventType = Type.GetType(storedEvent.EventType);
+                Type? eventType = EventTypeNameResolver.Resolve(storedEvent.EventType);
                 if (eventType == null)
                 {
                     CouldNotResolveTypeLogger(this.logger, storedEvent.EventType, null);
@@ -214,7 +233,7 @@ public sealed class UserRepository : IUserRepository
         {
             try
             {
-                Type? eventType = Type.GetType(storedEvent.EventType);
+                Type? eventType = EventTypeNameResolver.Resolve(storedEvent.EventType);
                 if (eventType == null)
                 {
                     continue;

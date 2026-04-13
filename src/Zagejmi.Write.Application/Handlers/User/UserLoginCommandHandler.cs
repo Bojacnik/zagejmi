@@ -143,6 +143,12 @@ public sealed class UserLoginCommandHandler : IHandlerRequest<UserLoginCommand, 
                 return new VerificationFailureInvalidLogin("Invalid username/email or password.");
             }
 
+            if (!user.AuthCredentials.EmailVerifiedAtUtc.HasValue)
+            {
+                return new VerificationFailureEmailNotVerified(
+                    "Email is not verified yet. Please verify your email first.");
+            }
+
             PasswordVerifiedSuccessfullyLogger(this.logger, request.Username, null);
 
             // Generate and return JWT token

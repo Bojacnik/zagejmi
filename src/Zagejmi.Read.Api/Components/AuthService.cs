@@ -4,15 +4,28 @@ using System.Threading.Tasks;
 
 namespace Zagejmi.Read.Api.Components;
 
+/// <summary>
+///     HTTP-based authentication service used by the Blazor UI.
+/// </summary>
 public class AuthService : IAuthService
 {
     private readonly HttpClient httpClient;
 
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="AuthService" /> class.
+    /// </summary>
+    /// <param name="httpClient">HTTP client for API calls.</param>
     public AuthService(HttpClient httpClient)
     {
         this.httpClient = httpClient;
     }
 
+    /// <summary>
+    ///     Attempts to authenticate and returns an access token when successful.
+    /// </summary>
+    /// <param name="username">User name.</param>
+    /// <param name="password">Plain text password.</param>
+    /// <returns>JWT token if login succeeds; otherwise <see langword="null" />.</returns>
     public async Task<string?> LoginAsync(string username, string password)
     {
         HttpResponseMessage response = await this.httpClient.PostAsJsonAsync(
@@ -28,7 +41,7 @@ public class AuthService : IAuthService
         return result?.Token;
     }
 
-    private class LoginResponse
+    private sealed class LoginResponse
     {
         public string? Token { get; init; }
     }

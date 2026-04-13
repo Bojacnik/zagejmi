@@ -1,32 +1,37 @@
 ﻿namespace Zagejmi.Shared.Failures;
 
-public abstract record Failure(string message);
+public abstract record Failure(string Message);
 
+public abstract record VerificationFailure(string Message) : Failure(Message);
 
-public abstract record VerificationFailure(string message) : Failure(message);
+public record VerificationFailureInvalidLogin(string Message) : VerificationFailure(Message);
 
-public record VerificationFailureInvalidLogin(string message) : VerificationFailure(message);
+public record VerificationFailureEmailNotVerified(string Message) : VerificationFailure(Message);
 
-public abstract record FailureFile(string message) : Failure(message);
+public record VerificationFailureEmailTokenInvalid(string Message) : VerificationFailure(Message);
 
-public record FailureFileNotFound(string message) : FailureFile(message);
+public record VerificationFailureEmailTokenExpired(string Message) : VerificationFailure(Message);
 
-public record FailureFileNotImage(string message) : FailureFile(message);
+public abstract record FailureFile(string Message) : Failure(Message);
 
-public record FailureFileInvalidImage(string message) : FailureFile(message);
+public record FailureFileNotFound(string Message) : FailureFile(Message);
 
-public record FailureFileNotAuthorized(string message) : FailureFile(message);
+public record FailureFileNotImage(string Message) : FailureFile(Message);
 
-public record FailureFileOther(string message) : FailureFile(message);
+public record FailureFileInvalidImage(string Message) : FailureFile(Message);
 
-public abstract record FailureArgument(string message) : Failure(message);
+public record FailureFileNotAuthorized(string Message) : FailureFile(Message);
 
-public record FailureArgumentInvalidType(string message) : FailureArgument(message);
+public record FailureFileOther(string Message) : FailureFile(Message);
 
-public record FailureArgumentInvalidLength(string message) : FailureArgument(message);
+public abstract record FailureArgument(string Message) : Failure(Message);
 
-public abstract record FailureEventStore(string message) : Failure(message);
+public record FailureArgumentInvalidType(string Message) : FailureArgument(Message);
 
-public record FailureEventStoreConnectionLost(string message) : FailureEventStore(message);
+public record FailureArgumentInvalidLength(string Message) : FailureArgument(Message);
 
-public record FailureEventStoreUnableToSave(string message) : FailureEventStore(message);
+public abstract record FailureEventStore(string Message) : Failure(Message);
+
+public record FailureEventStoreConnectionLost(string Message) : FailureEventStore(Message);
+
+public record FailureEventStoreUnableToSave(string Message) : FailureEventStore(Message);

@@ -1,51 +1,33 @@
 using System;
-using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
-using System.Security.Claims;
-using System.Text;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
+using Zagejmi.Contracts.Api.V1.Requests;
+using Zagejmi.Contracts.Commands;
 using Zagejmi.Read.Api.Models.Requests;
 using Zagejmi.Shared.Models;
+
+using LoginRequest = Zagejmi.Read.Api.Models.Requests.LoginRequest;
 
 namespace Zagejmi.Read.Api.Controllers;
 
 /// <summary>
 ///     Handles authentication and authorization operations for users.
-///     Acts as a proxy to the Write.Api for authentication requests.
+///     Auth token lifecycle is delegated to Write.Api; this controller acts as a read-side auth proxy.
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
 public class AuthController : ControllerBase
 {
     /// <summary>
-    ///     Logs missing Write.Api base address configuration.
-    /// </summary>
-    private static readonly Action<ILogger, Exception?> WriteApiConfigurationMissingLogger =
-        LoggerMessage.Define(
-            LogLevel.Error,
-            default,
-            "WriteApi:BaseAddress configuration is missing");
-
-    /// <summary>
-    ///     Logs the outgoing Write.Api login URL.
-    /// </summary>
-    private static readonly Action<ILogger, string, Exception?> ForwardingLoginLogger =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            default,
-            "Forwarding login to: {FullUrl}");
-
-    /// <summary>
-    ///     Logs unhandled login processing failures.
+    ///     Logger delegate for unexpected login/proxy failures.
     /// </summary>
     private static readonly Action<ILogger, Exception?> LoginErrorLogger =
         LoggerMessage.Define(
@@ -54,7 +36,7 @@ public class AuthController : ControllerBase
             "Login error occurred");
 
     /// <summary>
-    ///     Logs logout requests.
+    ///     Logger delegate for logout request entry.
     /// </summary>
     private static readonly Action<ILogger, Exception?> LogoutRequestedLogger =
         LoggerMessage.Define(
@@ -63,7 +45,7 @@ public class AuthController : ControllerBase
             "Logout requested");
 
     /// <summary>
-    ///     Logs successful sign-out operations.
+    ///     Logger delegate for successful logout completion.
     /// </summary>
     private static readonly Action<ILogger, Exception?> UserSignedOutLogger =
         LoggerMessage.Define(
@@ -72,65 +54,33 @@ public class AuthController : ControllerBase
             "User signed out successfully");
 
     /// <summary>
-    ///     Logs unhandled logout processing failures.
-    /// </summary>
-    private static readonly Action<ILogger, Exception> LogoutErrorLogger =
-        LoggerMessage.Define(
-            LogLevel.Error,
-            default,
-            "Logout error occurred");
-
-    /// <summary>
-    ///     Logs failures while parsing or processing a returned JWT token.
-    /// </summary>
-    private static readonly Action<ILogger, Exception> JwtProcessingFailedLogger =
-        LoggerMessage.Define(
-            LogLevel.Error,
-            default,
-            "Failed to process JWT token");
-
-    /// <summary>
-    ///     Provides application configuration values.
-    /// </summary>
-    private readonly IConfiguration configuration;
-
-    /// <summary>
-    ///     The HTTP client for communicating with the Write.Api.
+    ///     Named HTTP client targeting Write.Api.
     /// </summary>
     private readonly HttpClient httpClient;
 
     /// <summary>
-    ///     The logger used for authentication diagnostics.
+    ///     Logger for controller diagnostics.
     /// </summary>
     private readonly ILogger<AuthController> logger;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="AuthController" /> class.
     /// </summary>
-    /// <param name="httpClientFactory">The HTTP client factory.</param>
-    /// <param name="configuration">The configuration.</param>
-    /// <param name="logger">The logger instance.</param>
+    /// <param name="httpClientFactory">Factory used to resolve named HTTP clients.</param>
+    /// <param name="logger">Logger instance for auth proxy operations.</param>
     public AuthController(
         IHttpClientFactory httpClientFactory,
-        IConfiguration configuration,
         ILogger<AuthController> logger)
     {
-        this.httpClient = httpClientFactory.CreateClient();
-        this.configuration = configuration;
+        this.httpClient = httpClientFactory.CreateClient("WriteAPI");
         this.logger = logger;
     }
 
     /// <summary>
-    ///     Authenticates a user by forwarding the request to the Write.Api.
+    ///     Authenticates user credentials by delegating to Write.Api and returns JWT tokens.
     /// </summary>
-    /// <param name="request">The login payload containing user credentials and optional redirect URLs.</param>
-    /// <returns>
-    ///     A JSON payload from Write.Api on success, or a normalized validation error response on failure.
-    /// </returns>
-    /// <remarks>
-    ///     This endpoint proxies to the Write.Api's authentication service.
-    ///     The session is created as a persistent cookie valid for 7 days.
-    /// </remarks>
+    /// <param name="request">Login payload containing user identifier and password.</param>
+    /// <returns>Write.Api login response pass-through (access token + refresh token or validation errors).</returns>
     [HttpPost("login")]
     [AllowAnonymous]
     [Consumes("application/json")]
@@ -138,15 +88,16 @@ public class AuthController : ControllerBase
     {
         try
         {
-            (bool isSuccess, string responseContent, ValidationErrorResponse errorResponse) =
-                await this.ForwardLoginAndSignIn(request);
+            HttpResponseMessage response = await this.httpClient.PostAsJsonAsync(
+                "api/v1/auth/login",
+                new Contracts.Api.V1.Requests.LoginRequest
+                {
+                    UserIdentifier = request.UserIdentifier,
+                    Password = request.Password
+                });
 
-            if (isSuccess)
-            {
-                return this.Content(responseContent, "application/json");
-            }
-
-            return this.BadRequest(errorResponse);
+            string body = await response.Content.ReadAsStringAsync(this.HttpContext.RequestAborted);
+            return this.StatusCode((int)response.StatusCode, DeserializeOrRaw(body));
         }
         catch (Exception ex)
         {
@@ -156,113 +107,163 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    ///     Logs out the current user by clearing the authentication cookie.
+    ///     Deprecated browser form endpoint in pure-JWT mode.
     /// </summary>
-    /// <returns>
-    ///     An OK response after successfully logging out.
-    /// </returns>
-    /// <remarks>
-    ///     This endpoint clears the authentication cookie for the user.
-    /// </remarks>
+    /// <param name="userIdentifier">Username or email.</param>
+    /// <param name="password">Plaintext password.</param>
+    /// <param name="returnUrl">Optional local return URL.</param>
+    /// <returns>410 Gone with migration guidance.</returns>
+    [HttpPost("login/browser")]
+    [AllowAnonymous]
+    [Consumes("application/x-www-form-urlencoded")]
+    public Task<IActionResult> LoginBrowser(
+        [FromForm] string userIdentifier,
+        [FromForm] string password,
+        [FromForm] string? returnUrl)
+    {
+        _ = userIdentifier;
+        _ = password;
+        _ = returnUrl;
+
+        return Task.FromResult<IActionResult>(
+            this.StatusCode(
+                StatusCodes.Status410Gone,
+                new ValidationErrorResponse
+                {
+                    Errors = ["Browser form login is disabled in pure JWT mode. Use POST /api/v1/auth/login."]
+                }));
+    }
+
+    /// <summary>
+    ///     Exchanges refresh token for a new access/refresh pair by delegating to Write.Api.
+    /// </summary>
+    /// <returns>Write.Api refresh response pass-through.</returns>
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [Consumes("application/json")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+    {
+        HttpResponseMessage response = await this.httpClient.PostAsJsonAsync("api/v1/auth/refresh", request);
+        string body = await response.Content.ReadAsStringAsync(this.HttpContext.RequestAborted);
+        return this.StatusCode((int)response.StatusCode, DeserializeOrRaw(body));
+    }
+
+    /// <summary>
+    ///     Revokes refresh token/session by delegating to Write.Api.
+    /// </summary>
+    /// <returns>Write.Api revoke response pass-through.</returns>
+    [HttpPost("revoke")]
+    [Authorize]
+    [Consumes("application/json")]
+    public async Task<IActionResult> Revoke([FromBody] RevokeTokenRequest request)
+    {
+        HttpRequestMessage proxyRequest = new(HttpMethod.Post, "api/v1/auth/revoke")
+        {
+            Content = JsonContent.Create(request)
+        };
+
+        string? authorization = this.HttpContext.Request.Headers.Authorization;
+        if (!string.IsNullOrWhiteSpace(authorization))
+        {
+            proxyRequest.Headers.TryAddWithoutValidation("Authorization", authorization);
+        }
+
+        HttpResponseMessage response = await this.httpClient.SendAsync(proxyRequest, this.HttpContext.RequestAborted);
+        string body = await response.Content.ReadAsStringAsync(this.HttpContext.RequestAborted);
+        return this.StatusCode((int)response.StatusCode, DeserializeOrRaw(body));
+    }
+
+    /// <summary>
+    ///     Sends a verification email for an existing account.
+    /// </summary>
+    /// <param name="request">The user identifier payload.</param>
+    /// <returns>OK when accepted, or validation errors when request fails.</returns>
+    [HttpPost("verify-email/send")]
+    [AllowAnonymous]
+    [Consumes("application/json")]
+    public async Task<IActionResult> SendVerificationEmail([FromBody] SendVerificationEmailRequest request)
+    {
+        UserSendEmailVerificationCommand command = new() { UserIdentifier = request.UserIdentifier };
+        HttpResponseMessage response = await this.httpClient.PostAsJsonAsync("api/v1/auth/verify-email/send", command);
+        string responseBody = await response.Content.ReadAsStringAsync();
+
+        if (response.IsSuccessStatusCode)
+        {
+            return this.Ok(new { message = "Verification email sent. Check your inbox." });
+        }
+
+        ValidationErrorResponse? errors = JsonSerializer.Deserialize<ValidationErrorResponse>(responseBody);
+        return this.BadRequest(
+            errors ?? new ValidationErrorResponse { Errors = ["Unable to send verification email."] });
+    }
+
+    /// <summary>
+    ///     Confirms email ownership with user ID and token.
+    /// </summary>
+    /// <param name="userId">The user aggregate ID.</param>
+    /// <param name="token">The email verification token.</param>
+    /// <returns>OK when confirmed, or validation errors when invalid/expired.</returns>
+    [HttpGet("verify-email/confirm")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ConfirmVerificationEmail([FromQuery] string userId, [FromQuery] string token)
+    {
+        string fullUrl =
+            $"api/v1/auth/verify-email/confirm?userId={Uri.EscapeDataString(userId)}&token={Uri.EscapeDataString(token)}";
+
+        HttpResponseMessage response = await this.httpClient.GetAsync(fullUrl);
+        string responseBody = await response.Content.ReadAsStringAsync();
+
+        if (response.IsSuccessStatusCode)
+        {
+            return this.Ok(new { message = "Email verified successfully." });
+        }
+
+        ValidationErrorResponse? errors = JsonSerializer.Deserialize<ValidationErrorResponse>(responseBody);
+        return this.BadRequest(errors ?? new ValidationErrorResponse { Errors = ["Unable to verify email."] });
+    }
+
+    /// <summary>
+    ///     Logs out current JWT client by forwarding to Write.Api and returning a neutral response.
+    /// </summary>
+    /// <returns>200 OK. Client should clear local auth state/tokens.</returns>
+    [HttpPost("logout")]
     [HttpGet("logout")]
     [AllowAnonymous]
     public async Task<IActionResult> Logout()
     {
+        LogoutRequestedLogger(this.logger, null);
         try
         {
-            LogoutRequestedLogger(this.logger, null);
-
-            // Sign out on cookie authentication
-            await this.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-            UserSignedOutLogger(this.logger, null);
-
-            // Redirect to home after logout
-            return this.Redirect("/");
+            await this.httpClient.PostAsync("api/v1/auth/logout", null);
         }
-        catch (Exception ex)
+        catch
         {
-            LogoutErrorLogger(this.logger, ex);
-
-            // Even on error, redirect to home
-            return this.Redirect("/");
+            // Logout is idempotent; client-side token cleanup remains the source of truth.
         }
+
+        UserSignedOutLogger(this.logger, null);
+        return this.Ok(new { message = "Logged out. Remove stored tokens on the client." });
     }
 
     /// <summary>
-    ///     Forwards credentials to Write.Api and signs in the current Read.Api user with cookie authentication.
+    ///     Attempts to deserialize proxied JSON responses while preserving non-JSON bodies as plain detail payloads.
     /// </summary>
-    /// <param name="request">The incoming login request.</param>
-    /// <returns>
-    ///     A tuple containing a success flag, raw Write.Api response payload, and a normalized validation error response.
-    /// </returns>
-    private async Task<(bool IsSuccess, string ResponseContent, ValidationErrorResponse ErrorResponse)>
-        ForwardLoginAndSignIn(LoginRequest request)
+    /// <param name="body">Raw response body from proxied request.</param>
+    /// <returns>Deserialized JSON element when possible, otherwise a JSON object containing fallback detail text.</returns>
+    private static JsonElement DeserializeOrRaw(string body)
     {
-        string? writeApiBaseAddress = this.configuration["WriteApi:BaseAddress"];
-        if (string.IsNullOrWhiteSpace(writeApiBaseAddress))
+        if (string.IsNullOrWhiteSpace(body))
         {
-            WriteApiConfigurationMissingLogger(this.logger, null);
-            return (false, string.Empty, new ValidationErrorResponse
-            {
-                Errors = ["Server configuration error: Write API address not configured"]
-            });
+            return JsonSerializer.SerializeToElement(new { });
         }
-
-        if (!writeApiBaseAddress.EndsWith('/'))
-        {
-            writeApiBaseAddress += "/";
-        }
-
-        string fullUrl = $"{writeApiBaseAddress}api/v1/auth/login";
-        ForwardingLoginLogger(this.logger, fullUrl, null);
-
-        string jsonContent = JsonSerializer.Serialize(request);
-        using StringContent content = new(jsonContent, Encoding.UTF8, "application/json");
-
-        HttpResponseMessage response = await this.httpClient.PostAsync(fullUrl, content);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            string errorContent = await response.Content.ReadAsStringAsync();
-            ValidationErrorResponse? errorResponse = JsonSerializer.Deserialize<ValidationErrorResponse>(errorContent);
-            return (false, string.Empty,
-                errorResponse ?? new ValidationErrorResponse { Errors = ["Authentication failed"] });
-        }
-
-        string responseContent = await response.Content.ReadAsStringAsync();
 
         try
         {
-            JsonElement result = JsonSerializer.Deserialize<JsonElement>(responseContent);
-            if (result.TryGetProperty("token", out JsonElement tokenElement))
-            {
-                string? jwtToken = tokenElement.GetString();
-                if (!string.IsNullOrEmpty(jwtToken))
-                {
-                    JwtSecurityTokenHandler handler = new();
-
-                    if (handler.ReadToken(jwtToken) is JwtSecurityToken jsonToken)
-                    {
-                        ClaimsIdentity identity = new(
-                            jsonToken.Claims,
-                            CookieAuthenticationDefaults.AuthenticationScheme);
-                        ClaimsPrincipal principal = new(identity);
-
-                        await this.HttpContext.SignInAsync(
-                            CookieAuthenticationDefaults.AuthenticationScheme,
-                            principal,
-                            new AuthenticationProperties
-                                { IsPersistent = true, ExpiresUtc = DateTime.UtcNow.AddDays(7) });
-                    }
-                }
-            }
+            return JsonSerializer.Deserialize<JsonElement>(body);
         }
-        catch (Exception ex)
+        catch
         {
-            JwtProcessingFailedLogger(this.logger, ex);
+            return JsonSerializer.SerializeToElement(new { detail = body });
         }
-
-        return (true, responseContent, new ValidationErrorResponse());
     }
 }

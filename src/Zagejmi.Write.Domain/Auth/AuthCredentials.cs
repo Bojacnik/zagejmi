@@ -51,12 +51,22 @@ public record AuthCredentials : ValueObject
     ///     should be treated as a case-insensitive value to provide a better user experience and avoid issues with case
     ///     sensitivity during email-based operations.
     /// </param>
-    public AuthCredentials(Guid id, string userName, string passwordHash, string email)
+    public AuthCredentials(
+        Guid id,
+        string userName,
+        string passwordHash,
+        string email,
+        DateTimeOffset? emailVerifiedAtUtc = null,
+        string? pendingEmailVerificationTokenHash = null,
+        DateTimeOffset? pendingEmailVerificationExpiresAtUtc = null)
     {
         this.Id = id;
         this.UserName = userName;
         this.PasswordHash = passwordHash;
         this.Email = email;
+        this.EmailVerifiedAtUtc = emailVerifiedAtUtc;
+        this.PendingEmailVerificationTokenHash = pendingEmailVerificationTokenHash;
+        this.PendingEmailVerificationExpiresAtUtc = pendingEmailVerificationExpiresAtUtc;
     }
 
     /// <summary>
@@ -97,6 +107,12 @@ public record AuthCredentials : ValueObject
     /// </summary>
     public string Email { get; set; }
 
+    public DateTimeOffset? EmailVerifiedAtUtc { get; set; }
+
+    public string? PendingEmailVerificationTokenHash { get; set; }
+
+    public DateTimeOffset? PendingEmailVerificationExpiresAtUtc { get; set; }
+
     /// <summary>
     ///     Returns the atomic values that define the equality of this value object. This method is used by the base
     ///     ValueObject class to implement equality checks and hashing. Each property that contributes to the identity of the
@@ -110,5 +126,8 @@ public record AuthCredentials : ValueObject
         yield return this.UserName;
         yield return this.PasswordHash;
         yield return this.Email;
+        yield return this.EmailVerifiedAtUtc;
+        yield return this.PendingEmailVerificationTokenHash;
+        yield return this.PendingEmailVerificationExpiresAtUtc;
     }
 }

@@ -38,6 +38,23 @@ LINQ
 ### Plánované do budoucna
 Po ujasnění hlavní struktury projektu, otestování core logiky pomocí NUnit nebo lépe xUnit
 
+## SMTP relay (produkce)
+
+1. Vytvořte produkční env soubor z šablony `.env.example` jako `.env` a vyplňte relay údaje.
+2. Ujistěte se, že DNS domény `zagejmi.cz` obsahuje SPF/DKIM/DMARC podle zvoleného providera.
+3. Spusťte produkční stack přes base + prod compose.
+
+```bash
+cp .env.example .env
+docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d --build
+```
+
+Debug stack s Mailpit (read/write/infrastructure jsou v base compose, debug přidává Mailpit a debug SMTP override):
+
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.debug.yaml up -d --build
+```
+
 
 
 

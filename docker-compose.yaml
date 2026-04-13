@@ -19,6 +19,7 @@ services:
     
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
+      - timescaledb_logs:/var/log/postgresql
     
     restart: unless-stopped
     
@@ -63,12 +64,15 @@ services:
     
     networks:
       - zagejmi_network
-  
+
   zagejmi.server.write:
     image: zagejmi.server.write
     build:
       context: .
-      dockerfile: src/Zagejmi.Server.Write/Dockerfile
+      dockerfile: src/Zagejmi.Write.Api/Dockerfile
+
+    ports:
+      - "5178:8080"
     
     networks:
       - zagejmi_network
@@ -79,9 +83,26 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  zagejmi.server.read:
+    image: zagejmi.server.read
+    build:
+      context: .
+      dockerfile: src/Zagejmi.Read.Api/Dockerfile
+
+    ports:
+      - "5271:8081"
+
+    environment:
+      WriteApi__BaseAddress: http://zagejmi.server.write:8080
+
+    depends_on:
+      zagejmi.server.write:
+        condition: service_started
+
+    networks:
+      - zagejmi_network
+
 volumes:
-  postgres_data:
-  postgres_logs:
   rabbitmq_data:
   rabbitmq_logs:
   timescaledb_data:

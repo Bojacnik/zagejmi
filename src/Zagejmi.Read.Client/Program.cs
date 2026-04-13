@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,18 +23,20 @@ public class AuthTokenService
 // Authorization header if a token is available.
 public class AuthHeaderHandler : DelegatingHandler
 {
-    private readonly AuthTokenService _tokenService;
+    private readonly AuthTokenService tokenService;
 
     public AuthHeaderHandler(AuthTokenService tokenService)
     {
-        _tokenService = tokenService;
+        this.tokenService = tokenService;
     }
 
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
-        if (_tokenService.Token is not null)
+        if (this.tokenService.Token is not null)
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _tokenService.Token);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.tokenService.Token);
         }
 
         return base.SendAsync(request, cancellationToken);
@@ -45,17 +47,17 @@ public class AuthHeaderHandler : DelegatingHandler
 // It tells Blazor about the current user's identity.
 public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 {
-    private readonly AuthTokenService _tokenService;
+    private readonly AuthTokenService tokenService;
 
     public CustomAuthenticationStateProvider(AuthTokenService tokenService)
     {
-        _tokenService = tokenService;
+        this.tokenService = tokenService;
     }
 
     public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var token = _tokenService.Token;
-        var identity = string.IsNullOrEmpty(token)
+        string? token = this.tokenService.Token;
+        ClaimsIdentity identity = string.IsNullOrEmpty(token)
             ? new ClaimsIdentity() // Not logged in
             : new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt");
 
@@ -64,38 +66,47 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
     public void NotifyUserAuthentication(string token)
     {
-        _tokenService.Token = token;
-        var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt"));
-        var authState = Task.FromResult(new AuthenticationState(authenticatedUser));
-        NotifyAuthenticationStateChanged(authState);
+        this.tokenService.Token = token;
+        ClaimsPrincipal authenticatedUser = new(new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt"));
+        Task<AuthenticationState> authState = Task.FromResult(new AuthenticationState(authenticatedUser));
+        this.NotifyAuthenticationStateChanged(authState);
     }
 
     public void NotifyUserLogout()
     {
-        _tokenService.Token = null;
-        var identity = new ClaimsIdentity();
-        var user = new ClaimsPrincipal(identity);
-        var authState = Task.FromResult(new AuthenticationState(user));
-        NotifyAuthenticationStateChanged(authState);
+        this.tokenService.Token = null;
+        ClaimsIdentity identity = new();
+        ClaimsPrincipal user = new(identity);
+        Task<AuthenticationState> authState = Task.FromResult(new AuthenticationState(user));
+        this.NotifyAuthenticationStateChanged(authState);
     }
 
     private static IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
     {
-        var claims = new List<Claim>();
-        var payload = jwt.Split('.')[1];
-        var jsonBytes = ParseBase64WithoutPadding(payload);
-        var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
+        List<Claim> claims = new();
+        string payload = jwt.Split('.')[1];
+        byte[] jsonBytes = ParseBase64WithoutPadding(payload);
+        Dictionary<string, object>? keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
 
         if (keyValuePairs != null)
         {
-            keyValuePairs.TryGetValue("sub", out var id);
-            if (id != null) { claims.Add(new Claim(ClaimTypes.NameIdentifier, id.ToString()!)); }
+            keyValuePairs.TryGetValue("sub", out object? id);
+            if (id != null)
+            {
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, id.ToString()!));
+            }
 
-            keyValuePairs.TryGetValue("name", out var name);
-            if (name != null) { claims.Add(new Claim(ClaimTypes.Name, name.ToString()!)); }
+            keyValuePairs.TryGetValue("name", out object? name);
+            if (name != null)
+            {
+                claims.Add(new Claim(ClaimTypes.Name, name.ToString()!));
+            }
 
-            keyValuePairs.TryGetValue("email", out var email);
-            if (email != null) { claims.Add(new Claim(ClaimTypes.Email, email.ToString()!)); }
+            keyValuePairs.TryGetValue("email", out object? email);
+            if (email != null)
+            {
+                claims.Add(new Claim(ClaimTypes.Email, email.ToString()!));
+            }
         }
 
         return claims;
@@ -108,6 +119,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
             case 2: base64 += "=="; break;
             case 3: base64 += "="; break;
         }
+
         return Convert.FromBase64String(base64);
     }
 }
@@ -129,15 +141,14 @@ internal static class Program
         builder.Services.AddTransient<AuthHeaderHandler>();
 
         // Configure a named HttpClient for the write-side API
-        builder.Services.AddHttpClient("WriteAPI", client =>
-        {
-            client.BaseAddress = new Uri("http://localhost:5178");
-        });
+        builder.Services.AddHttpClient(
+            "WriteAPI",
+            client => { client.BaseAddress = new Uri("http://localhost:5178"); });
 
         // Configure the default HttpClient to use the AuthHeaderHandler and have the correct base address.
-        builder.Services.AddScoped(sp => 
+        builder.Services.AddScoped(sp =>
         {
-            var handler = sp.GetRequiredService<AuthHeaderHandler>();
+            AuthHeaderHandler handler = sp.GetRequiredService<AuthHeaderHandler>();
             handler.InnerHandler = new HttpClientHandler();
             return new HttpClient(handler)
             {

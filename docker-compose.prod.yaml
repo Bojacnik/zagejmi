@@ -1,0 +1,24 @@
+services:
+  zagejmi.server.write:
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_URLS: http://+:8080
+      EmailVerification__PublicBaseUrl: ${PUBLIC_BASE_URL}
+      Smtp__Host: ${SMTP_HOST}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__EnableSsl: ${SMTP_ENABLE_SSL:-true}
+      Smtp__UseAuthentication: ${SMTP_USE_AUTHENTICATION:-true}
+      Smtp__Username: ${SMTP_USERNAME}
+      Smtp__Password: ${SMTP_PASSWORD}
+      Smtp__FromEmail: ${SMTP_FROM_EMAIL}
+      Smtp__FromName: ${SMTP_FROM_NAME:-Zagejmi}
+  zagejmi.server.read:
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_URLS: http://+:8080
+      WriteApi__BaseAddress: http://zagejmi.server.write:8080
+

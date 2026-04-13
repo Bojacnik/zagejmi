@@ -1,3 +1,3 @@
 ﻿namespace Zagejmi.Shared.Failures;
 
-public sealed record FailureArgumentInvalidValue(string message) : FailureArgument(message);
+public sealed record FailureArgumentInvalidValue(string Message) : FailureArgument(Message);

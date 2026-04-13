@@ -166,27 +166,26 @@
         {
             "People" => "people",
             "Wallets" => "wallets",
-            "Profile" => "profile/view",
+            "Profile" => "profile",
             _ => "/"
         };
         NavigationManager.NavigateTo(url);
     }
 
-    private void HandleLogout()
+    private async Task HandleLogout()
     {
         Debug.WriteLine("HandleLogout: Starting logout - navigating to logout endpoint");
 
-        if (AuthenticationStateProvider is CookieAuthenticationStateProvider authProvider)
+        if (AuthenticationStateProvider is JwtAuthenticationStateProvider authProvider)
         {
-            authProvider.ClearAuthenticatedUser();
+            await authProvider.ClearTokensAsync();
         }
 
         isAuthenticated = false;
         username = null;
 
-        // Navigate to the logout endpoint which will handle cookie clearing and redirect
-        // Use forceLoad: true to ensure a full page reload from the server
-        NavigationManager.NavigateTo("/api/v1/auth/logout", true);
+        // Route through logout page to complete remote WriteAPI logout and final redirect.
+        NavigationManager.NavigateTo("/logout", true);
     }
 
     private bool IsActive(string section)

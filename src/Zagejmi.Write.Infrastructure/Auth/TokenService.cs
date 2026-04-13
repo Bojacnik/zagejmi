@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 using Microsoft.Extensions.Configuration;
@@ -55,9 +58,83 @@ public class TokenService : ITokenService
             this.configuration["Jwt:Issuer"],
             this.configuration["Jwt:Audience"],
             claims,
-            expires: DateTime.Now.AddMinutes(120),
+            expires: DateTime.UtcNow.AddMinutes(this.GetAccessTokenLifetimeMinutes()),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        byte[] randomBytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToBase64String(randomBytes);
+    }
+
+    public string HashRefreshToken(string refreshToken)
+    {
+        byte[] input = Encoding.UTF8.GetBytes(refreshToken);
+        byte[] hash = SHA256.HashData(input);
+        return Convert.ToHexString(hash);
+    }
+
+    public bool TryGetUserId(string jwtToken, out Guid userId)
+    {
+        userId = Guid.Empty;
+
+        if (string.IsNullOrWhiteSpace(jwtToken))
+        {
+            return false;
+        }
+
+        try
+        {
+            JwtSecurityToken token = new JwtSecurityTokenHandler().ReadJwtToken(jwtToken);
+            string? subject = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+
+            return Guid.TryParse(subject, out userId);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public bool TryGetJwtId(string jwtToken, out string jwtId)
+    {
+        jwtId = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(jwtToken))
+        {
+            return false;
+        }
+
+        try
+        {
+            JwtSecurityToken token = new JwtSecurityTokenHandler().ReadJwtToken(jwtToken);
+            string? jti = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
+            if (string.IsNullOrWhiteSpace(jti))
+            {
+                return false;
+            }
+
+            jwtId = jti;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private int GetAccessTokenLifetimeMinutes()
+    {
+        string? configured = this.configuration["Jwt:AccessTokenMinutes"];
+        if (int.TryParse(configured, NumberStyles.Integer, CultureInfo.InvariantCulture, out int minutes) &&
+            minutes > 0)
+        {
+            return minutes;
+        }
+
+        return 120;
     }
 }

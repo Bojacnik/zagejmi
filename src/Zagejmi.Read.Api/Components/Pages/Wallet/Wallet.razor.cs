@@ -6,18 +6,36 @@ using Zagejmi.Read.Api.Models;
 
 namespace Zagejmi.Read.Api.Components.Pages.Wallet;
 
+/// <summary>
+///     Displays a wallet overview with balances, transactions, and chart data.
+/// </summary>
 public partial class Wallet
 {
-    private readonly string[] _colors = ["accent", "sky", "emerald", "amber", "fuchsia"];
+    private readonly string[] colors = ["accent", "sky", "emerald", "amber", "fuchsia"];
 
+    /// <summary>
+    ///     Gets or sets the aggregated wallet balance in USD.
+    /// </summary>
     public decimal TotalBalanceUsd { get; set; }
 
+    /// <summary>
+    ///     Gets or sets wallets shown in the overview.
+    /// </summary>
     public List<WalletViewModel> Wallets { get; set; } = [];
 
+    /// <summary>
+    ///     Gets or sets recent transactions displayed on the page.
+    /// </summary>
     public List<TransactionViewModel> Transactions { get; set; } = [];
 
+    /// <summary>
+    ///     Gets or sets chart segments derived from wallet allocations.
+    /// </summary>
     public List<ChartSegment> ChartSegments { get; set; } = [];
 
+    /// <summary>
+    ///     Initializes sample wallet data and computes chart segments.
+    /// </summary>
     protected override void OnInitialized()
     {
         this.InitializeData();
@@ -27,35 +45,35 @@ public partial class Wallet
     private void InitializeData()
     {
         Random random = new();
-        string[] shuffledColors = this._colors.OrderBy(c => random.Next()).ToArray();
+        string[] shuffledColors = this.colors.OrderBy(_ => random.Next()).ToArray();
 
         this.Wallets =
         [
             new WalletViewModel
             {
                 Id = Guid.NewGuid(), Name = "Primary Savings", Balance = 5248.75m, Currency = "USD",
-                IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 5248.75m
+                IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 5248.75m,
             },
             new WalletViewModel
             {
                 Id = Guid.NewGuid(), Name = "Ethereum", Balance = 12.5m, Currency = "ETH",
-                IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 30123.45m
+                IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 30123.45m,
             },
             new WalletViewModel
             {
                 Id = Guid.NewGuid(), Name = "Vacation Fund", Balance = 1234.56m, Currency = "EUR",
-                IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 1350.25m
+                IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 1350.25m,
             },
             new WalletViewModel
             {
                 Id = Guid.NewGuid(), Name = "Stock Portfolio", Balance = 8765.43m, Currency = "USD",
-                IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 8765.43m
+                IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 8765.43m,
             },
             new WalletViewModel
             {
                 Id = Guid.NewGuid(), Name = "Bitcoin", Balance = 0.5m, Currency = "BTC",
-                IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 29876.54m
-            }
+                IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 29876.54m,
+            },
         ];
 
         for (int i = 0; i < this.Wallets.Count; i++)
@@ -75,32 +93,32 @@ public partial class Wallet
             {
                 WalletId = walletIdLut["Primary Savings"],
                 WalletName = "Primary Savings", Description = "Grocery Shopping", Date = DateTime.Now.AddDays(-1),
-                Amount = -75.50m
+                Amount = -75.50m,
             },
             new TransactionViewModel
             {
                 WalletId = walletIdLut["Ethereum"],
                 WalletName = "Ethereum", Description = "NFT Purchase", Date = DateTime.Now.AddDays(-2),
-                Amount = -2.5m
+                Amount = -2.5m,
             },
             new TransactionViewModel
             {
                 WalletId = walletIdLut["Primary Savings"],
                 WalletName = "Primary Savings", Description = "Salary Deposit", Date = DateTime.Now.AddDays(-3),
-                Amount = 2500.00m
+                Amount = 2500.00m,
             },
             new TransactionViewModel
             {
                 WalletId = walletIdLut["Vacation Fund"],
                 WalletName = "Vacation Fund", Description = "Flight Tickets", Date = DateTime.Now.AddDays(-4),
-                Amount = -450.00m
+                Amount = -450.00m,
             },
             new TransactionViewModel
             {
                 WalletId = walletIdLut["Stock Portfolio"],
                 WalletName = "Stock Portfolio", Description = "Dividend", Date = DateTime.Now.AddDays(-5),
-                Amount = 120.00m
-            }
+                Amount = 120.00m,
+            },
         ];
     }
 
@@ -120,7 +138,7 @@ public partial class Wallet
                 {
                     Percentage = percentage,
                     Offset = -currentOffset,
-                    StrokeColorCssClass = wallet.BackgroundColorCssClass.Replace("bg-", "stroke-")
+                    StrokeColorCssClass = wallet.BackgroundColorCssClass.Replace("bg-", "stroke-"),
                 });
             currentOffset += percentage;
         }

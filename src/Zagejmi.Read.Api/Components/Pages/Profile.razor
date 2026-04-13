@@ -1,172 +1,758 @@
 ﻿@page "/profile"
+@using System.IdentityModel.Tokens.Jwt
+@using System.IO
+@using System.Net
+@using System.Net.Http.Headers
+@using System.Security.Claims
+@using System.Text.Json
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Configuration
+@using Zagejmi.Contracts.Commands
+@using Zagejmi.Contracts.Dtos
+@using Zagejmi.Read.Api.Models
+@using Zagejmi.Shared.Models
 @rendermode InteractiveServer
 @attribute [Authorize]
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject HttpClient Http
+@inject IHttpClientFactory HttpClientFactory
+@inject IConfiguration Configuration
 
 <PageTitle>Profile</PageTitle>
 
-<div class="w-full max-w-4xl mx-auto p-8">
+<div class="w-full max-w-6xl mx-auto py-8 px-4 sm:px-8">
+    <div
+        class="rounded-3xl border border-accent-800/40 bg-gradient-to-br from-primary-900/80 via-primary-950/80 to-primary-900/70 p-6 sm:p-8 shadow-2xl shadow-primary-950/50">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+                <h1 class="text-4xl font-extrabold tracking-tight text-text-default">Profile Hub</h1>
+                <p class="text-text-muted mt-2">Switch between your profiles, create missing ones, and manage identity
+                    at a glance.</p>
+            </div>
+        </div>
 
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-4xl font-bold text-text-default">Your Profile</h1>
-        <button @onclick="HandleLogout" disabled="@isLoggingOut"
-                class="px-4 py-2 font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
-            @if (isLoggingOut)
-            {
-                <span>Logging out...</span>
-            }
-            else
-            {
-                <span>Logout</span>
-            }
-        </button>
+        @if (isLoading)
+        {
+            <div class="mt-8 text-center p-8 bg-primary-900/40 rounded-2xl border border-accent-700/40">
+                <p class="text-text-muted animate-pulse">Loading profile...</p>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="mt-8 p-4 text-sm text-red-300 bg-red-900/20 border border-red-500/40 rounded-xl" role="alert">
+                <h2 class="font-bold">Unable to load profile</h2>
+                <p>@errorMessage</p>
+            </div>
+        }
+        else
+        {
+            <div class="mt-8 space-y-6">
+                <div class="rounded-2xl border border-accent-800/40 bg-primary-950/50 p-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        @foreach (UserProfileCard profile in profiles)
+                        {
+                            <button @onclick="() => SelectProfile(profile.Type)"
+                                    class="px-4 py-2 rounded-full text-sm font-semibold transition-colors @(selectedProfile?.Type == profile.Type ? "bg-accent-600 text-white" : "bg-primary-900 text-text-muted hover:text-text-default hover:bg-primary-800")">
+                                @GetTypeLabel(profile.Type)
+                            </button>
+                        }
+
+                        @if (CanAddProfile)
+                        {
+                            <button @onclick="OpenCreatePanel"
+                                    class="w-10 h-10 rounded-full border border-accent-600 text-accent-300 hover:bg-accent-700/20 transition-colors text-xl font-bold"
+                                    aria-label="Create profile">
+                                +
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                @if (showCreatePanel)
+                {
+                    <section class="rounded-2xl border border-accent-700/50 bg-primary-900/50 p-6">
+                        <h2 class="text-2xl font-bold text-text-default">Create New Profile</h2>
+                        <p class="text-text-muted mt-1">You can create one profile per type: Customer, Associate, and
+                            Anon.</p>
+
+                        <div class="grid sm:grid-cols-2 gap-4 mt-5">
+                            <div>
+                                <label class="block text-sm text-text-muted mb-2">Profile type</label>
+                                <select @bind="newProfileType"
+                                        class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default">
+                                    @foreach (ProfileType type in availableTypes)
+                                    {
+                                        <option value="@type">@GetTypeLabel(type)</option>
+                                    }
+                                </select>
+                            </div>
+
+                            @if (RequiresDisplayName(newProfileType))
+                            {
+                                <div>
+                                    <label class="block text-sm text-text-muted mb-2">Display name</label>
+                                    <input @bind="newDisplayName" maxlength="40"
+                                           class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default"
+                                           placeholder="Enter display name"/>
+                                </div>
+                            }
+                        </div>
+
+                        @if (newProfileType == ProfileType.Customer)
+                        {
+                            <div class="mt-5">
+                                <label class="block text-sm text-text-muted mb-2">Profile picture (PNG/JPEG, max 2
+                                    MB)</label>
+                                <InputFile OnChange="OnCustomerImageSelected" accept="image/png,image/jpeg"
+                                           class="block w-full text-sm text-text-default file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-accent-700 file:text-white hover:file:bg-accent-600"/>
+                                @if (!string.IsNullOrWhiteSpace(customerImageErrorMessage))
+                                {
+                                    <p class="text-sm text-red-300 mt-2">@customerImageErrorMessage</p>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(newCustomerImageDataUrl))
+                                {
+                                    <img src="@newCustomerImageDataUrl" alt="Customer profile preview"
+                                         class="mt-3 h-20 w-20 rounded-full object-cover border border-accent-700/50"/>
+                                }
+                            </div>
+                        }
+
+                        <div class="flex items-center gap-3 mt-5">
+                            <button @onclick="CreateProfile"
+                                    class="px-4 py-2 rounded-lg font-semibold bg-accent-600 hover:bg-accent-700 text-white transition-colors">
+                                Create Profile
+                            </button>
+                            <button @onclick="CloseCreatePanel"
+                                    class="px-4 py-2 rounded-lg font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(createErrorMessage))
+                        {
+                            <p class="text-sm text-red-300 mt-4">@createErrorMessage</p>
+                        }
+                    </section>
+                }
+
+                @if (selectedProfile is null)
+                {
+                    <div class="min-h-[45vh] grid place-items-center">
+                        <section
+                            class="w-full max-w-3xl rounded-2xl border border-dashed border-accent-700/50 bg-primary-950/40 p-10 text-center">
+                            <h2 class="text-3xl font-bold text-text-default">No profile yet</h2>
+                            <p class="text-text-muted mt-2 max-w-2xl mx-auto">Create your first profile to continue. You
+                                can have up to three profile types: Customer, Associate, and Anon.</p>
+                        </section>
+                    </div>
+                }
+                else
+                {
+                    @switch (selectedProfile.Type)
+                    {
+                        case ProfileType.Customer:
+                            <section class="grid lg:grid-cols-3 gap-6">
+                                <div class="rounded-2xl border border-accent-700/50 bg-primary-950/60 p-6">
+                                    @if (!string.IsNullOrWhiteSpace(selectedProfile.ProfileImageUrl))
+                                    {
+                                        <img src="@selectedProfile.ProfileImageUrl" alt="Customer profile picture"
+                                             class="w-28 h-28 rounded-full object-cover border border-accent-700/50 mx-auto"/>
+                                    }
+                                    else
+                                    {
+                                        <div
+                                            class="w-28 h-28 rounded-full bg-accent-700 text-text-default text-3xl font-bold flex items-center justify-center mx-auto">
+                                            @BuildInitials(selectedProfile.DisplayName)
+                                        </div>
+                                    }
+                                    <h3 class="text-2xl font-bold text-text-default text-center mt-4">@selectedProfile.DisplayName</h3>
+                                    <p class="text-text-muted text-center mt-1">Customer profile</p>
+                                    <p class="text-xs text-text-muted text-center mt-4">Profile photo recommendation:
+                                        square 1024 x 1024 px, JPEG/PNG, up to 2 MB.</p>
+
+                                    <div class="mt-6 p-4 rounded-xl border border-accent-800/50 bg-primary-900/40">
+                                        <label class="block text-sm font-medium text-text-muted mb-2">Change profile
+                                            picture</label>
+                                        <InputFile OnChange="OnExistingCustomerImageSelected"
+                                                   accept="image/png,image/jpeg,image/jpg"
+                                                   class="block w-full text-sm text-text-default file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-accent-700 file:text-white hover:file:bg-accent-600"/>
+
+                                        @if (!string.IsNullOrWhiteSpace(pendingExistingCustomerImageDataUrl))
+                                        {
+                                            <div class="mt-3 flex items-center gap-3">
+                                                <img src="@pendingExistingCustomerImageDataUrl"
+                                                     alt="New customer profile preview"
+                                                     class="h-16 w-16 rounded-full object-cover border border-accent-700/50"/>
+                                                <span class="text-sm text-text-muted">New picture selected.</span>
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(updateImageErrorMessage))
+                                        {
+                                            <p class="text-sm text-red-300 mt-2">@updateImageErrorMessage</p>
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(updateImageSuccessMessage))
+                                        {
+                                            <p class="text-sm text-green-300 mt-2">@updateImageSuccessMessage</p>
+                                        }
+
+                                        <button @onclick="UpdateCustomerPicture"
+                                                disabled="@isUpdatingImage"
+                                                class="mt-3 px-4 py-2 rounded-lg font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                            @(isUpdatingImage ? "Saving..." : "Save picture")
+                                        </button>
+                                    </div>
+                                </div>
+                                <div
+                                    class="lg:col-span-2 rounded-2xl border border-accent-700/50 bg-primary-900/60 p-6">
+                                    <h3 class="text-xl font-bold text-text-default">Customer Stats</h3>
+                                    <p class="text-text-muted text-sm mt-1">Placeholders for future metrics.</p>
+                                    <div class="mt-5 grid sm:grid-cols-3 gap-4">
+                                        <div class="rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
+                                            <p class="text-xs text-text-muted">Level</p>
+                                            <p class="text-3xl font-bold text-accent-300">@selectedProfile.Stats.Level</p>
+                                        </div>
+                                        <div class="rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
+                                            <p class="text-xs text-text-muted">Reputation</p>
+                                            <p class="text-3xl font-bold text-accent-300">@selectedProfile.Stats.Reputation</p>
+                                        </div>
+                                        <div class="rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
+                                            <p class="text-xs text-text-muted">Completed sessions</p>
+                                            <p class="text-3xl font-bold text-accent-300">@selectedProfile.Stats.CompletedSessions</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            break;
+                        case ProfileType.Associate:
+                            <section class="rounded-2xl border border-accent-700/50 bg-primary-900/60 p-6 space-y-4">
+                                <h3 class="text-2xl font-bold text-text-default">Associate Profile</h3>
+                                <p class="text-text-muted">Display name: <span
+                                        class="text-text-default font-semibold">@selectedProfile.DisplayName</span></p>
+                                <div class="grid sm:grid-cols-3 gap-4">
+                                    <div class="rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
+                                        <p class="text-xs text-text-muted">Level</p>
+                                        <p class="text-3xl font-bold text-accent-300">@selectedProfile.Stats.Level</p>
+                                    </div>
+                                    <div class="rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
+                                        <p class="text-xs text-text-muted">Reputation</p>
+                                        <p class="text-3xl font-bold text-accent-300">@selectedProfile.Stats.Reputation</p>
+                                    </div>
+                                    <div class="rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
+                                        <p class="text-xs text-text-muted">Completed sessions</p>
+                                        <p class="text-3xl font-bold text-accent-300">@selectedProfile.Stats.CompletedSessions</p>
+                                    </div>
+                                </div>
+                            </section>
+                            break;
+                        case ProfileType.Anon:
+                            <section class="rounded-2xl border border-accent-700/50 bg-primary-900/60 p-6">
+                                <h3 class="text-2xl font-bold text-text-default">Anon Profile</h3>
+                                <p class="text-text-muted mt-2">This profile keeps identity minimal. A generated
+                                    anonymous handle is shown below.</p>
+                                <div
+                                    class="mt-4 inline-flex items-center rounded-lg bg-primary-950/60 border border-accent-900/50 px-4 py-2">
+                                    <span class="text-text-muted mr-2">Handle:</span>
+                                    <span class="font-semibold text-text-default">@selectedProfile.DisplayName</span>
+                                </div>
+                            </section>
+                            break;
+                    }
+                }
+
+                <section class="rounded-2xl border border-accent-800/40 bg-primary-950/40 p-6">
+                    <h3 class="text-lg font-bold text-text-default">Account Session</h3>
+                    <div class="mt-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <p class="text-xs text-text-muted">Username</p>
+                            <p class="text-text-default break-all">@username</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-text-muted">Email</p>
+                            <p class="text-text-default break-all">@email</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-text-muted">User Id</p>
+                            <p class="text-text-default break-all">@userId</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-text-muted">Authentication</p>
+                            <p class="text-text-default">@authenticationType</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        }
     </div>
-
-    @if (isLoading)
-    {
-        <div class="text-center p-8 bg-primary-900/50 rounded-2xl border border-accent-700/50">
-            <p class="text-text-muted animate-pulse">Loading profile...</p>
-        </div>
-    }
-    else if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div class="p-4 text-sm text-red-400 bg-red-900/30 border border-red-400/50 rounded-lg" role="alert">
-            <h3 class="font-bold">Error Loading Profile</h3>
-            <p>@errorMessage</p>
-        </div>
-    }
-    else if ( /*person != null*/ true)
-    {
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="md:col-span-1">
-                <div
-                    class="bg-primary-900/50 rounded-2xl border border-accent-700/50 shadow-xl p-6 text-center flex flex-col items-center">
-                    <img class="w-32 h-32 rounded-full mb-4 border-4 border-accent-600 shadow-lg" src="img/cat.jpg"
-                         alt="Profile Picture">
-                    <h2 class="text-2xl font-bold text-text-default"><!--@person.FirstName @person.LastName--></h2>
-                    <p class="text-text-muted"><!--@@@person.UserName--></p>
-                </div>
-            </div>
-            <div class="md:col-span-2">
-                <div class="bg-primary-900/50 rounded-2xl border border-accent-700/50 shadow-xl p-6 space-y-6">
-                    <div>
-                        <h3 class="text-xl font-bold text-text-default border-b border-accent-800/50 pb-2 mb-4">Personal
-                            Information</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-text-muted">First Name</label>
-                                <p class="text-text-default text-lg"><!--@person.FirstName--></p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-text-muted">Last Name</label>
-                                <p class="text-text-default text-lg"><!--@person.LastName--></p>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="block text-sm font-medium text-text-muted">Email</label>
-                                <p class="text-text-default text-lg"><!--@person.Email--></p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-text-muted">Birth Date</label>
-                                <p class="text-text-default text-lg"><!--@person.BirthDate.ToShortDateString()--></p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-text-muted">Gender</label>
-                                <p class="text-text-default text-lg"><!--@person.Gender--></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-text-default border-b border-accent-800/50 pb-2 mb-4">Account
-                            Statistics</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-text-muted">Goin Balance</label>
-                                <p class="text-3xl font-bold text-accent-400"><!--@person.GoinAmount--></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
 </div>
 
 @code {
+    private const string UnknownValue = "Not available";
 
-    private bool isLoggingOut;
-
-    //private PersonProjection? person;
     private bool isLoading = true;
     private string? errorMessage;
+    private string? createErrorMessage;
+
+    private string username = UnknownValue;
+    private string email = UnknownValue;
+    private string userId = UnknownValue;
+    private string authenticationType = UnknownValue;
+    private string? accessToken;
+    private Guid currentUserId;
+
+    private List<UserProfileCard> profiles = [];
+    private UserProfileCard? selectedProfile;
+
+    private bool showCreatePanel;
+    private List<ProfileType> availableTypes = [];
+    private ProfileType newProfileType;
+    private string newDisplayName = string.Empty;
+    private string? newCustomerImageDataUrl;
+    private string? customerImageErrorMessage;
+    private string? pendingExistingCustomerImageDataUrl;
+    private string? updateImageErrorMessage;
+    private string? updateImageSuccessMessage;
+    private bool isUpdatingImage;
+
+    private const long CustomerImageMaxSizeBytes = 2 * 1024 * 1024;
+
+    private bool CanAddProfile => availableTypes.Count > 0;
 
     protected override async Task OnInitializedAsync()
     {
-        isLoading = true;
-
-        /*
         try
         {
             AuthenticationState authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             ClaimsPrincipal user = authState.User;
 
-            if (user.Identity?.IsAuthenticated == true)
+            if (user.Identity?.IsAuthenticated != true)
             {
-                string? userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (Guid.TryParse(userIdString, out Guid userId))
-                {
-                    person = await DbContext.PersonProjections
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(p => p.UserId == userId);
+                string returnUrl = Uri.EscapeDataString("/profile");
+                NavigationManager.NavigateTo($"/login?ReturnUrl={returnUrl}", true);
+                return;
+            }
 
-                    if (person == null)
-                    {
-                        errorMessage = "Your profile data has not been generated yet. Please try again shortly.";
-                    }
-                }
-                else
-                {
-                    errorMessage = "Could not parse user ID.";
-                }
-            }
-            else
+            username = GetClaimValue(
+                user,
+                ClaimTypes.Name,
+                JwtRegisteredClaimNames.UniqueName,
+                "unique_name");
+
+            email = GetClaimValue(
+                user,
+                ClaimTypes.Email,
+                JwtRegisteredClaimNames.Email,
+                "email");
+
+            userId = GetClaimValue(
+                user,
+                ClaimTypes.NameIdentifier,
+                JwtRegisteredClaimNames.Sub,
+                "sub");
+
+            if (!Guid.TryParse(userId, out currentUserId))
             {
-                errorMessage = "You are not authenticated.";
+                errorMessage = "Could not determine your user id.";
+                return;
             }
+
+            authenticationType = user.Identity.AuthenticationType ?? UnknownValue;
+            accessToken = user.FindFirst("access_token")?.Value;
+
+            await LoadProfilesAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = $"An unexpected error occurred: {ex.Message}";
-            Console.WriteLine($"Unexpected error fetching profile: {ex.Message}");
+            errorMessage = $"An unexpected error occurred while loading your profile: {ex.Message}";
         }
         finally
         {
             isLoading = false;
         }
-        */
     }
 
-    private async Task HandleLogout()
+    private static string GetClaimValue(ClaimsPrincipal principal, params string[] claimTypes)
     {
-        if (isLoggingOut) return;
+        foreach (string claimType in claimTypes)
+        {
+            string? claimValue = principal.FindFirst(claimType)?.Value;
+            if (!string.IsNullOrWhiteSpace(claimValue))
+            {
+                return claimValue;
+            }
+        }
 
-        isLoggingOut = true;
+        return UnknownValue;
+    }
+
+    private static string BuildInitials(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value == UnknownValue)
+        {
+            return "?";
+        }
+
+        string[] parts = value.Split([' ', '.', '_', '-'], StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+        {
+            return value[..1].ToUpperInvariant();
+        }
+
+        if (parts.Length == 1)
+        {
+            return parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant();
+        }
+
+        return string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant();
+    }
+
+    private static string GetTypeLabel(ProfileType type)
+    {
+        return type switch
+        {
+            ProfileType.Customer => "Customer",
+            ProfileType.Associate => "Associate",
+            ProfileType.Anon => "Anon",
+            _ => type.ToString()
+        };
+    }
+
+    private static bool RequiresDisplayName(ProfileType type)
+    {
+        return type is ProfileType.Customer or ProfileType.Associate;
+    }
+
+    private void SelectProfile(ProfileType type)
+    {
+        selectedProfile = profiles.FirstOrDefault(p => p.Type == type);
+    }
+
+    private void OpenCreatePanel()
+    {
+        createErrorMessage = null;
+        customerImageErrorMessage = null;
+        availableTypes = GetMissingTypes(profiles);
+        if (availableTypes.Count == 0)
+        {
+            return;
+        }
+
+        newProfileType = availableTypes[0];
+        newDisplayName = string.Empty;
+        newCustomerImageDataUrl = null;
+        pendingExistingCustomerImageDataUrl = null;
+        updateImageErrorMessage = null;
+        updateImageSuccessMessage = null;
+        showCreatePanel = true;
+    }
+
+    private void CloseCreatePanel()
+    {
+        showCreatePanel = false;
+        createErrorMessage = null;
+        customerImageErrorMessage = null;
+        newCustomerImageDataUrl = null;
+        pendingExistingCustomerImageDataUrl = null;
+        updateImageErrorMessage = null;
+        updateImageSuccessMessage = null;
+    }
+
+    private async Task OnCustomerImageSelected(InputFileChangeEventArgs e)
+    {
+        customerImageErrorMessage = null;
+        updateImageSuccessMessage = null;
+        newCustomerImageDataUrl = null;
+
+        IBrowserFile file = e.File;
+
+        if (file.Size > CustomerImageMaxSizeBytes)
+        {
+            customerImageErrorMessage = "Profile picture must be 2 MB or smaller.";
+            return;
+        }
+
+        if (!IsSupportedImageType(file.ContentType))
+        {
+            customerImageErrorMessage = "Only JPG or PNG images are supported.";
+            return;
+        }
+
+        await using Stream stream = file.OpenReadStream(CustomerImageMaxSizeBytes);
+        using MemoryStream buffer = new();
+        await stream.CopyToAsync(buffer);
+        string base64 = Convert.ToBase64String(buffer.ToArray());
+        newCustomerImageDataUrl = $"data:{file.ContentType};base64,{base64}";
+    }
+
+    private async Task OnExistingCustomerImageSelected(InputFileChangeEventArgs e)
+    {
+        updateImageErrorMessage = null;
+        updateImageSuccessMessage = null;
+        pendingExistingCustomerImageDataUrl = null;
+
+        IBrowserFile file = e.File;
+
+        if (file.Size > CustomerImageMaxSizeBytes)
+        {
+            updateImageErrorMessage = "Profile picture must be 2 MB or smaller.";
+            return;
+        }
+
+        if (!IsSupportedImageType(file.ContentType))
+        {
+            updateImageErrorMessage = "Only JPG or PNG images are supported.";
+            return;
+        }
+
+        await using Stream stream = file.OpenReadStream(CustomerImageMaxSizeBytes);
+        using MemoryStream buffer = new();
+        await stream.CopyToAsync(buffer);
+        string base64 = Convert.ToBase64String(buffer.ToArray());
+        pendingExistingCustomerImageDataUrl = $"data:{file.ContentType};base64,{base64}";
+    }
+
+    private async Task CreateProfile()
+    {
+        createErrorMessage = null;
+
+        if (availableTypes.Count == 0)
+        {
+            createErrorMessage = "All profile types already exist for this user.";
+            return;
+        }
+
+        if (RequiresDisplayName(newProfileType) && string.IsNullOrWhiteSpace(newDisplayName))
+        {
+            createErrorMessage = "Display name is required for Customer and Associate profiles.";
+            return;
+        }
+
+        string effectiveDisplayName = newProfileType == ProfileType.Anon
+            ? $"anon-{Guid.NewGuid():N}"[..13]
+            : newDisplayName.Trim();
+
+        string? profileImageUrl = newProfileType == ProfileType.Customer ? newCustomerImageDataUrl : null;
+
+        UserCreateProfileCommand command = new()
+        {
+            UserId = currentUserId,
+            ProfileType = ToWriteProfileType(newProfileType),
+            DisplayName = effectiveDisplayName,
+            ProfileImageDataUrl = profileImageUrl
+        };
+
+        HttpClient writeApi = CreateWriteApiClient();
+        HttpResponseMessage response = await writeApi.PostAsJsonAsync($"api/v1/users/{currentUserId}/profiles", command);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string responseText = await response.Content.ReadAsStringAsync();
+            createErrorMessage = ExtractErrorMessage(response.StatusCode, responseText);
+            return;
+        }
+
+        await LoadProfilesAsync();
+        showCreatePanel = false;
+        newDisplayName = string.Empty;
+        newCustomerImageDataUrl = null;
+        customerImageErrorMessage = null;
+    }
+
+    private async Task UpdateCustomerPicture()
+    {
+        updateImageErrorMessage = null;
+        updateImageSuccessMessage = null;
+
+        if (selectedProfile is null || selectedProfile.Type != ProfileType.Customer)
+        {
+            updateImageErrorMessage = "Select a customer profile first.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(pendingExistingCustomerImageDataUrl))
+        {
+            updateImageErrorMessage = "Choose an image first.";
+            return;
+        }
+
+        isUpdatingImage = true;
+        try
+        {
+            UserUpdateProfileImageCommand command = new()
+            {
+                UserId = currentUserId,
+                ProfileId = selectedProfile.ProfileId,
+                ProfileImageDataUrl = pendingExistingCustomerImageDataUrl
+            };
+
+            HttpClient writeApi = CreateWriteApiClient();
+            HttpResponseMessage response =
+                await writeApi.PutAsJsonAsync($"api/v1/users/{currentUserId}/profiles/{selectedProfile.ProfileId}/image", command);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                string responseText = await response.Content.ReadAsStringAsync();
+                updateImageErrorMessage = ExtractErrorMessage(response.StatusCode, responseText);
+                return;
+            }
+
+            await LoadProfilesAsync();
+            pendingExistingCustomerImageDataUrl = null;
+            updateImageSuccessMessage = "Profile picture updated.";
+        }
+        finally
+        {
+            isUpdatingImage = false;
+        }
+    }
+
+    private async Task LoadProfilesAsync()
+    {
+        HttpClient readApi = CreateReadApiClient();
+        HttpResponseMessage response = await readApi.GetAsync($"api/v1/read/users/{currentUserId}/profiles");
+        if (!response.IsSuccessStatusCode)
+        {
+            string responseText = await response.Content.ReadAsStringAsync();
+            errorMessage = ExtractErrorMessage(response.StatusCode, responseText);
+            return;
+        }
+
+        IReadOnlyList<UserProfileDto>? result = await response.Content.ReadFromJsonAsync<IReadOnlyList<UserProfileDto>>();
+        profiles = result?.Select(MapProfile).ToList() ?? [];
+        selectedProfile = profiles.FirstOrDefault();
+        availableTypes = GetMissingTypes(profiles);
+
+        if (availableTypes.Count > 0)
+        {
+            newProfileType = availableTypes[0];
+        }
+
+        showCreatePanel = profiles.Count == 0;
+    }
+
+    private UserProfileCard MapProfile(UserProfileDto dto)
+    {
+        return new UserProfileCard
+        {
+            ProfileId = dto.ProfileId,
+            Type = FromWriteProfileType(dto.ProfileType),
+            DisplayName = dto.DisplayName,
+            ProfileImageUrl = ResolveProfileImageUrl(dto.ProfileImageUrl)
+        };
+    }
+
+    private string? ResolveProfileImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return null;
+        }
+
+        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out _)
+            || imageUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            return imageUrl;
+        }
+
+        Uri? writeApiBaseUri = HttpClientFactory.CreateClient("WriteAPI").BaseAddress;
+        if (writeApiBaseUri != null)
+        {
+            return new Uri(writeApiBaseUri, imageUrl).ToString();
+        }
+
+        string? writeBaseAddress = Configuration["WriteApi:BaseAddress"];
+        if (string.IsNullOrWhiteSpace(writeBaseAddress))
+        {
+            return imageUrl;
+        }
+
+        return new Uri(new Uri(writeBaseAddress), imageUrl).ToString();
+    }
+
+    private static List<ProfileType> GetMissingTypes(IReadOnlyCollection<UserProfileCard> currentProfiles)
+    {
+        HashSet<ProfileType> existing = currentProfiles.Select(p => p.Type).ToHashSet();
+        List<ProfileType> allTypes = [ProfileType.Customer, ProfileType.Associate, ProfileType.Anon];
+        return allTypes.Where(type => !existing.Contains(type)).ToList();
+    }
+
+    private static string ToWriteProfileType(ProfileType type)
+    {
+        return type switch
+        {
+            ProfileType.Anon => "Anonymous",
+            _ => type.ToString()
+        };
+    }
+
+    private static ProfileType FromWriteProfileType(string type)
+    {
+        if (string.Equals(type, "Anonymous", StringComparison.OrdinalIgnoreCase))
+        {
+            return ProfileType.Anon;
+        }
+
+        return Enum.TryParse(type, true, out ProfileType parsed)
+            ? parsed
+            : ProfileType.Anon;
+    }
+
+    private static string ExtractErrorMessage(HttpStatusCode statusCode, string body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return $"Request failed ({(int)statusCode}).";
+        }
 
         try
         {
-            await Http.PostAsync("api/v1/auth/logout", null);
-
-            // Redirect regardless of success
-            NavigationManager.NavigateTo("/", true);
+            ValidationErrorResponse? parsed = JsonSerializer.Deserialize<ValidationErrorResponse>(
+                body,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (parsed?.Errors.Count > 0)
+            {
+                return parsed.Errors[0];
+            }
         }
         catch
         {
-            // On error, still redirect
-            NavigationManager.NavigateTo("/", true);
+            // Fallback to plain response body.
         }
+
+        return body;
+    }
+
+    private HttpClient CreateWriteApiClient()
+    {
+        HttpClient client = HttpClientFactory.CreateClient("WriteAPI");
+
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+
+        return client;
+    }
+
+    private HttpClient CreateReadApiClient()
+    {
+        HttpClient client = HttpClientFactory.CreateClient();
+        client.BaseAddress = new Uri(NavigationManager.BaseUri);
+
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+
+        return client;
+    }
+
+    private static bool IsSupportedImageType(string? contentType)
+    {
+        return contentType is "image/png" or "image/jpeg" or "image/jpg" or "image/pjpeg";
     }
 
 }
