@@ -15,11 +15,11 @@ services:
     networks:
       - zagejmi_network
 
-  zagejmi.server.write:
+  zagejmi:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: Host=timescaledb;Port=5432;Database=my_timescale_db;Username=my_timescale_user;Password=my_strong_password
+      ConnectionStrings__DefaultConnection: Host=postgredb;Port=5432;Database=my_postgres_db;Username=my_postgre_user;Password=my_strong_password
       EmailVerification__PublicBaseUrl: http://localhost:5271
       Smtp__Host: mailpit
       Smtp__Port: 1025
@@ -30,9 +30,7 @@ services:
       Smtp__FromEmail: no-reply@zagejmi.cz
       Smtp__FromName: Zagejmi
     depends_on:
-      timescaledb:
-        condition: service_healthy
-      rabbitmq:
+      postgredb:
         condition: service_healthy
       mailpit:
         condition: service_healthy

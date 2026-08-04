@@ -1,0 +1,189 @@
+﻿@page "/register"
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@rendermode InteractiveServer
+
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager NavigationManager
+
+<div class="w-full h-full flex flex-col justify-center items-center p-4">
+    <form @onsubmit="HandleRegister" @onsubmit:preventDefault novalidate
+          class="w-full max-w-sm p-8 space-y-6 bg-primary-900 rounded-xl border border-accent-700/50 shadow-2xl shadow-accent-900/30">
+
+        <header class="text-center">
+            <h1 class="text-4xl font-bold text-gray-100">Create Account</h1>
+            <p class="text-gray-400 mt-2">Begin your journey with us.</p>
+        </header>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="p-4 text-sm text-red-400 bg-red-900/30 border border-red-400/50 rounded-lg" role="alert">
+                <p>@errorMessage</p>
+            </div>
+        }
+
+        @if (!isSuccess)
+        {
+            <div class="space-y-4">
+                <div>
+                    <label for="username" class="sr-only">Username</label>
+                    <input @bind="registerModel.Username" type="text" id="username" placeholder="Username" required
+                           disabled="@isSubmitting"
+                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
+                </div>
+
+                <div>
+                    <label for="email" class="sr-only">Email</label>
+                    <input @bind="registerModel.Email" type="email" id="email" placeholder="Email" required
+                           disabled="@isSubmitting"
+                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
+                </div>
+
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <input @bind="registerModel.Password" type="password" id="password" placeholder="Password" required
+                           disabled="@isSubmitting"
+                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
+                </div>
+
+                <div>
+                    <label for="password-again" class="sr-only">Confirm Password</label>
+                    <input @bind="registerModel.PasswordAgain" type="password" id="password-again"
+                           placeholder="Confirm Password" required disabled="@isSubmitting"
+                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-4 pt-4">
+                <button type="submit" disabled="@isSubmitting"
+                        class="w-full px-4 py-3 font-bold text-lg text-white bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-900 focus:ring-accent-500 disabled:bg-accent-800 disabled:cursor-not-allowed">
+                    @if (isSubmitting)
+                    {
+                        <span class="animate-pulse">Creating account...</span>
+                    }
+                    else
+                    {
+                        <span>Register</span>
+                    }
+                </button>
+                <div class="text-center">
+                    <a href="/login"
+                       class="text-sm font-medium text-accent-400 hover:text-accent-300 hover:underline transition-colors @(isSubmitting ? "pointer-events-none" : "")">
+                        Already have an account? Login instead.
+                    </a>
+                </div>
+            </div>
+        }
+    </form>
+</div>
+
+@code {
+    private readonly RegisterModel registerModel = new();
+    private string? errorMessage;
+    private bool isSubmitting;
+    private bool isSuccess;
+
+    private class RegisterModel
+    {
+        public string Username { get; set; } = "";
+
+        public string Email { get; set; } = "";
+
+        public string Password { get; set; } = "";
+
+        public string PasswordAgain { get; set; } = "";
+    }
+
+    private async Task HandleRegister()
+    {
+        if (isSubmitting || isSuccess) return;
+
+        errorMessage = null;
+
+        registerModel.Username = registerModel.Username.Trim();
+        registerModel.Email = registerModel.Email.Trim();
+
+        if (string.IsNullOrWhiteSpace(registerModel.Username) ||
+            string.IsNullOrWhiteSpace(registerModel.Email) ||
+            string.IsNullOrWhiteSpace(registerModel.Password))
+        {
+            errorMessage = "Please fill in all fields.";
+            return;
+        }
+
+        if (!Regex.IsMatch(registerModel.Email, @"^[^\s@]+@[^\s@]+\.[^\s@]+$"))
+        {
+            errorMessage = "Please enter a valid email address.";
+            return;
+        }
+
+        if (registerModel.Password != registerModel.PasswordAgain)
+        {
+            errorMessage = "Passwords do not match.";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            CreateUserRequest command = new()
+            {
+                UserName = registerModel.Username,
+                Email = registerModel.Email,
+                Password = registerModel.Password
+            };
+            HttpClient client = HttpClientFactory.CreateClient("WriteAPI");
+            HttpResponseMessage response = await client.PostAsJsonAsync("api/v1/users", command);
+
+            if (response.IsSuccessStatusCode)
+            {
+                isSuccess = true;
+                string encodedEmail = Uri.EscapeDataString(registerModel.Email);
+                NavigationManager.NavigateTo($"/login?registered=1&email={encodedEmail}", true);
+            }
+            else
+            {
+                string errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Registration failed with status {response.StatusCode}");
+                Console.WriteLine($"Response content-type: {response.Content.Headers.ContentType}");
+                Console.WriteLine($"Response body: {errorContent}");
+
+                try
+                {
+                    ValidationErrorResponse? errorResponse = JsonSerializer.Deserialize<ValidationErrorResponse>(errorContent);
+                    errorMessage = errorResponse?.Errors.FirstOrDefault() ?? $"Error: {response.StatusCode}";
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"JSON parsing error: {ex.Message}");
+                    errorMessage = string.IsNullOrWhiteSpace(errorContent) ? $"Error: {response.StatusCode}" : errorContent;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Registration error: {ex}");
+            errorMessage = $"An unexpected error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private class CreateUserRequest
+    {
+        public string UserName { get; set; } = "";
+
+        public string Email { get; set; } = "";
+
+        public string Password { get; set; } = "";
+    }
+
+    private class ValidationErrorResponse
+    {
+        public List<string> Errors { get; init; } = new();
+    }
+
+}

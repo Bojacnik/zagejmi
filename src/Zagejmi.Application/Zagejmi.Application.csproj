@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <RootNamespace>Zagejmi.Application</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Zagejmi.Domain\Zagejmi.Domain.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Konscious.Security.Cryptography.Argon2"/>
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt"/>
+        <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens"/>
+        <PackageReference Include="Microsoft.IdentityModel.Tokens"/>
+        <PackageReference Include="Polly"/>
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,243 @@
+﻿@page "/people"
+@rendermode InteractiveServer
+
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager NavigationManager
+
+@* 
+    People Directory Page
+    Displays a grid of associates that customers can view.
+    Clicking on an associate opens their detailed profile page with services listing.
+*@
+
+<div class="w-full">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-text-default">Find Associates</h1>
+            <p class="text-text-muted mt-2">Browse and connect with service providers in our community</p>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="flex items-center justify-center py-12">
+                <div class="text-center">
+                    <div class="inline-block animate-spin mb-4">
+                        <div class="w-12 h-12 border-4 border-accent-700/30 border-t-accent-600 rounded-full"></div>
+                    </div>
+                    <p class="text-text-muted">Loading associates...</p>
+                </div>
+            </div>
+        }
+        else if (peopleList.Count == 0)
+        {
+            <div class="rounded-lg border border-dashed border-accent-700/50 bg-primary-950/40 p-12 text-center">
+                <p class="text-xl text-text-muted">No associates found yet</p>
+            </div>
+        }
+        else
+        {
+            <div
+                class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 grid-flow-row-dense gap-4">
+                @foreach (PersonModel person in peopleList)
+                {
+                    <NavLink href="@($"/associates/{person.ProfileId}")"
+                             class="relative group rounded-lg overflow-hidden shadow-lg bg-primary-900 transform transition-transform duration-300 hover:scale-105 hover:shadow-accent-700/40 aspect-square cursor-pointer active">
+                        <div class="absolute inset-0">
+                            @if (!string.IsNullOrWhiteSpace(person.ImageUrl))
+                            {
+                                <img src="@person.ImageUrl" class="w-full h-full object-cover"
+                                     alt="Profile picture of @person.Name"/>
+                            }
+                            else
+                            {
+                                <div
+                                    class="w-full h-full bg-gradient-to-br from-accent-700/40 to-accent-900/20 flex items-center justify-center">
+                                    <span class="text-4xl font-bold text-accent-400">@GetInitials(person.Name)</span>
+                                </div>
+                            }
+                        </div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                        <div
+                            class="absolute left-0 bottom-0 z-10 p-4 flex flex-col items-start w-full text-text-default">
+                            <p class="font-bold text-lg">@person.Name</p>
+                            <div
+                                class="inline-flex px-2 py-1 mt-1 text-xs rounded-full bg-accent-600 text-text-default">
+                                ⭐ @person.Reputation.ToString("F1")
+                            </div>
+                        </div>
+                        @if (person.IsOnline)
+                        {
+                            <div
+                                class="absolute top-2 right-2 w-3 h-3 rounded-full bg-green-500 border border-white"></div>
+                        }
+                    </NavLink>
+                }
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="mt-4 rounded-lg bg-red-100 border border-red-300 text-red-700 p-4">
+                <p class="text-sm font-medium">@errorMessage</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<PersonModel> peopleList = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    /// <summary>
+    ///     Initializes the people list by fetching associates from the API.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadAssociatesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load associates: {ex.Message}";
+            peopleList = new();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    /// <summary>
+    ///     Loads associates from the API search endpoint.
+    /// </summary>
+    private async Task LoadAssociatesAsync()
+    {
+        HttpClient client = HttpClientFactory.CreateClient();
+        client.BaseAddress = new Uri(NavigationManager.BaseUri);
+
+        HttpResponseMessage response = await client.GetAsync("api/v1/read/associates/search");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string errorText = await response.Content.ReadAsStringAsync();
+            errorMessage = $"Search failed: {(int)response.StatusCode} {response.StatusCode}. {errorText}";
+            return;
+        }
+
+        SearchResult? result = await response.Content.ReadFromJsonAsync<SearchResult>();
+        if (result?.Data == null)
+        {
+            errorMessage = "Search returned no data payload.";
+            return;
+        }
+
+        peopleList = result.Data.Select(a => new PersonModel
+        {
+            ProfileId = a.ProfileId,
+            Name = a.DisplayName,
+            ImageUrl = a.ProfileImageUrl,
+            Reputation = a.Reputation,
+            IsOnline = a.IsOnline,
+        }).ToList();
+    }
+
+    /// <summary>
+    ///     Builds initials from a display name.
+    /// </summary>
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "?";
+        }
+
+        string[] parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+        {
+            return name[..1].ToUpperInvariant();
+        }
+
+        if (parts.Length == 1)
+        {
+            return parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant();
+        }
+
+        return string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant();
+    }
+
+    /// <summary>
+    ///     Represents a person (associate) in the people directory.
+    /// </summary>
+    public class PersonModel
+    {
+        /// <summary>
+        ///     Gets or sets the profile ID used for navigation to the detailed profile page.
+        /// </summary>
+        public Guid ProfileId { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the associate's display name.
+        /// </summary>
+        public string Name { get; set; } = "";
+
+        /// <summary>
+        ///     Gets or sets the URL to the profile image.
+        /// </summary>
+        public string? ImageUrl { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the associate's reputation rating.
+        /// </summary>
+        public decimal Reputation { get; set; }
+
+        /// <summary>
+        ///     Gets or sets a value indicating whether the associate is online.
+        /// </summary>
+        public bool IsOnline { get; set; }
+    }
+
+    /// <summary>
+    ///     Represents the search API response.
+    /// </summary>
+    private class SearchResult
+    {
+        /// <summary>
+        ///     Gets or sets the list of associates.
+        /// </summary>
+        public List<AssociateData>? Data { get; set; }
+    }
+
+    /// <summary>
+    ///     Represents an associate from the search API.
+    /// </summary>
+    private class AssociateData
+    {
+        /// <summary>
+        ///     Gets or sets the profile ID.
+        /// </summary>
+        public Guid ProfileId { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the display name.
+        /// </summary>
+        public string DisplayName { get; } = "";
+
+        /// <summary>
+        ///     Gets or sets the profile image URL.
+        /// </summary>
+        public string? ProfileImageUrl { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the reputation rating.
+        /// </summary>
+        public decimal Reputation { get; set; }
+
+        /// <summary>
+        ///     Gets or sets a value indicating whether the associate is online.
+        /// </summary>
+        public bool IsOnline { get; set; }
+    }
+
+}
