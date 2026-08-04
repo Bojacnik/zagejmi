@@ -163,29 +163,29 @@ public static class Program
 
         // Register Command Handlers
         builder.Services
-            .AddScoped<IHandlerRequest<UserCreateCommand, Either<Failure, Guid>>, UserCreateCommandHandler>();
+            .AddScoped<IHandlerRequest<UserCreateCommand, (? Result, Failure? Error)>, UserCreateCommandHandler>();
         builder.Services
-            .AddScoped<IHandlerRequest<UserCreateProfileCommand, Either<Failure, Guid>>,
+            .AddScoped<IHandlerRequest<UserCreateProfileCommand, (? Result, Failure? Error)>,
                 UserCreateProfileCommandHandler>();
         builder.Services
-            .AddScoped<IHandlerRequest<UserUpdateProfileImageCommand, Either<Failure, Unit>>,
+            .AddScoped<IHandlerRequest<UserUpdateProfileImageCommand, (? Result, Failure? Error)>,
                 UserUpdateProfileImageCommandHandler>();
         builder.Services
-            .AddScoped<IHandlerRequest<UserRemoveProfileImageCommand, Either<Failure, Unit>>,
+            .AddScoped<IHandlerRequest<UserRemoveProfileImageCommand, (? Result, Failure? Error)>,
                 UserRemoveProfileImageCommandHandler>();
         builder.Services
-            .AddScoped<IHandlerRequest<UserUpdateProfileBannerCommand, Either<Failure, Unit>>,
+            .AddScoped<IHandlerRequest<UserUpdateProfileBannerCommand, (? Result, Failure? Error)>,
                 UserUpdateProfileBannerCommandHandler>();
         builder.Services
-            .AddScoped<IHandlerRequest<UserCreateServiceCommand, Either<Failure, Guid>>,
+            .AddScoped<IHandlerRequest<UserCreateServiceCommand, (? Result, Failure? Error)>,
                 UserCreateServiceCommandHandler>();
         builder.Services
-            .AddScoped<IHandlerRequest<UserLoginCommand, Either<Failure, string>>, UserLoginCommandHandler>();
+            .AddScoped<IHandlerRequest<UserLoginCommand, (? Result, Failure? Error)>, UserLoginCommandHandler>();
         builder.Services
-            .AddScoped<IHandlerRequest<UserSendEmailVerificationCommand, Either<Failure, Unit>>,
+            .AddScoped<IHandlerRequest<UserSendEmailVerificationCommand, (? Result, Failure? Error)>,
                 UserSendEmailVerificationCommandHandler>();
         builder.Services
-            .AddScoped<IHandlerRequest<UserConfirmEmailVerificationCommand, Either<Failure, Unit>>,
+            .AddScoped<IHandlerRequest<UserConfirmEmailVerificationCommand, (? Result, Failure? Error)>,
                 UserConfirmEmailVerificationCommandHandler>();
 
         builder.Services.AddScoped<SidebarStateService>();

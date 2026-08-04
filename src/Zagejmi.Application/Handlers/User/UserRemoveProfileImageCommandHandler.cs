@@ -10,7 +10,7 @@ using Zagejmi.Domain.Profile.Events;
 
 namespace Zagejmi.Application.Handlers.User;
 
-public sealed class UserRemoveProfileImageCommandHandler : IHandlerRequest<UserRemoveProfileImageCommand, Either<Failure, Unit>>
+public sealed class UserRemoveProfileImageCommandHandler : IHandlerRequest<UserRemoveProfileImageCommand, (? Result, Failure? Error)>
 {
     private readonly IEventStore eventStore;
 
@@ -19,7 +19,7 @@ public sealed class UserRemoveProfileImageCommandHandler : IHandlerRequest<UserR
         this.eventStore = eventStore;
     }
 
-    public async Task<Either<Failure, Unit>> Handle(
+    public async Task<(? Result, Failure? Error)> Handle(
         UserRemoveProfileImageCommand request,
         CancellationToken cancellationToken = default)
     {

@@ -9,7 +9,7 @@ using Zagejmi.Domain.Profile.Events;
 
 namespace Zagejmi.Application.Handlers.User;
 
-public sealed class UserCreateProfileCommandHandler : IHandlerRequest<UserCreateProfileCommand, Either<Failure, Guid>>
+public sealed class UserCreateProfileCommandHandler : IHandlerRequest<UserCreateProfileCommand, (? Result, Failure? Error)>
 {
     private const int MaxImageBytes = 2 * 1024 * 1024;
     private const string BlobKeyPrefix = "profile-image";
@@ -27,7 +27,7 @@ public sealed class UserCreateProfileCommandHandler : IHandlerRequest<UserCreate
         this.profileImageStorage = profileImageStorage;
     }
 
-    public async Task<Either<Failure, Guid>> Handle(
+    public async Task<(? Result, Failure? Error)> Handle(
         UserCreateProfileCommand request,
         CancellationToken cancellationToken = default)
     {
@@ -50,7 +50,7 @@ public sealed class UserCreateProfileCommandHandler : IHandlerRequest<UserCreate
         string? imageContentType = null;
         if (!string.IsNullOrWhiteSpace(request.ProfileImageDataUrl))
         {
-            Either<Failure, (byte[] Bytes, string ContentType)> parsedImage =
+            (? Result, Failure? Error) parsedImage =
                 ParseAndValidateImageDataUrl(request.ProfileImageDataUrl);
             if (parsedImage.IsLeft)
             {
@@ -103,7 +103,7 @@ public sealed class UserCreateProfileCommandHandler : IHandlerRequest<UserCreate
         }
     }
 
-    private static Either<Failure, (byte[] Bytes, string ContentType)> ParseAndValidateImageDataUrl(string dataUrl)
+    private static (? Result, Failure? Error) ParseAndValidateImageDataUrl(string dataUrl)
     {
         Match match = DataUrlRegex.Match(dataUrl.Trim());
         if (!match.Success)

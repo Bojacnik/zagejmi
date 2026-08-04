@@ -16,7 +16,7 @@ public sealed record VerificationId(Image ImageFront, Image ImageBack) : Abstrac
         yield return this.ImageBack;
     }
 
-    public override Either<Failure, bool> Verify(params object?[] args)
+    public override (? Result, Failure? Error) Verify(params object?[] args)
     {
         return this.ImageFront != null && this.ImageBack != null;
     }

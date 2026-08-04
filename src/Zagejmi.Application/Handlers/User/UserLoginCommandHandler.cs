@@ -18,7 +18,7 @@ namespace Zagejmi.Application.Handlers.User;
 ///     - Generating JWT tokens for authenticated users
 ///     - Handling authentication failures gracefully.
 /// </summary>
-public sealed class UserLoginCommandHandler : IHandlerRequest<UserLoginCommand, Either<Failure, string>>
+public sealed class UserLoginCommandHandler : IHandlerRequest<UserLoginCommand, (? Result, Failure? Error)>
 {
     private static readonly Action<ILogger, string, Exception?> UserNotFoundLogger =
         LoggerMessage.Define<string>(
@@ -92,7 +92,7 @@ public sealed class UserLoginCommandHandler : IHandlerRequest<UserLoginCommand, 
     ///     - Success: A JWT token string for the authenticated user.
     ///     - Failure: A Failure object describing the authentication error.
     /// </returns>
-    public async Task<Either<Failure, string>> Handle(
+    public async Task<(? Result, Failure? Error)> Handle(
         UserLoginCommand request,
         CancellationToken cancellationToken = default)
     {

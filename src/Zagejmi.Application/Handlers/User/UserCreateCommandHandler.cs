@@ -19,7 +19,7 @@ namespace Zagejmi.Application.Handlers.User;
 ///     - Publishing domain events for event-driven subscribers
 ///     This handler is part of the CQRS pattern and is responsible for processing write operations.
 /// </summary>
-public sealed class UserCreateCommandHandler : IHandlerRequest<UserCreateCommand, Either<Failure, Guid>>
+public sealed class UserCreateCommandHandler : IHandlerRequest<UserCreateCommand, (? Result, Failure? Error)>
 {
     private readonly IEventStore eventStore;
 
@@ -45,28 +45,28 @@ public sealed class UserCreateCommandHandler : IHandlerRequest<UserCreateCommand
     ///     - Success: The newly created user's ID (Guid).
     ///     - Failure: A Failure object describing what went wrong.
     /// </returns>
-    public async Task<Either<Failure, Guid>> Handle(
+    public async Task<(? Result, Failure? Error)> Handle(
         UserCreateCommand request,
         CancellationToken cancellationToken = default)
     {
         try
         {
             // Validate username/nickname
-            Either<Failure, string> usernameValidation = ValidateUsername(request.Username);
+            (? Result, Failure? Error) usernameValidation = ValidateUsername(request.Username);
             if (usernameValidation.IsLeft)
             {
                 return usernameValidation.LeftAsEnumerable().First();
             }
 
             // Validate email format
-            Either<Failure, string> emailValidation = ValidateEmail(request.Email);
+            (? Result, Failure? Error) emailValidation = ValidateEmail(request.Email);
             if (emailValidation.IsLeft)
             {
                 return emailValidation.LeftAsEnumerable().First();
             }
 
             // Validate password strength
-            Either<Failure, string> passwordValidation = ValidatePassword(request.Password);
+            (? Result, Failure? Error) passwordValidation = ValidatePassword(request.Password);
             if (passwordValidation.IsLeft)
             {
                 return passwordValidation.LeftAsEnumerable().First();
@@ -116,7 +116,7 @@ public sealed class UserCreateCommandHandler : IHandlerRequest<UserCreateCommand
     /// <returns>
     ///     An Either containing the validated username or a validation failure.
     /// </returns>
-    private static Either<Failure, string> ValidateUsername(string username)
+    private static (? Result, Failure? Error) ValidateUsername(string username)
     {
         if (string.IsNullOrWhiteSpace(username))
         {
@@ -143,7 +143,7 @@ public sealed class UserCreateCommandHandler : IHandlerRequest<UserCreateCommand
     /// <returns>
     ///     An Either containing the validated email or a validation failure.
     /// </returns>
-    private static Either<Failure, string> ValidateEmail(string email)
+    private static (? Result, Failure? Error) ValidateEmail(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
         {
@@ -178,7 +178,7 @@ public sealed class UserCreateCommandHandler : IHandlerRequest<UserCreateCommand
     /// <returns>
     ///     An Either containing the validated password or a validation failure.
     /// </returns>
-    private static Either<Failure, string> ValidatePassword(string password)
+    private static (? Result, Failure? Error) ValidatePassword(string password)
     {
         if (string.IsNullOrWhiteSpace(password))
         {

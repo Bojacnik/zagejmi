@@ -52,7 +52,7 @@ public class AuthController : ControllerBase
 
     private readonly IConfiguration configuration;
 
-    private readonly IHandlerRequest<UserConfirmEmailVerificationCommand, Either<Failure, Unit>>
+    private readonly IHandlerRequest<UserConfirmEmailVerificationCommand, (? Result, Failure? Error)>
         confirmEmailVerificationHandler;
 
     private readonly ILogger<AuthController> logger;
@@ -60,9 +60,9 @@ public class AuthController : ControllerBase
     /// <summary>
     ///     The handler for processing user login commands.
     /// </summary>
-    private readonly IHandlerRequest<UserLoginCommand, Either<Failure, string>> loginUserHandler;
+    private readonly IHandlerRequest<UserLoginCommand, (? Result, Failure? Error)> loginUserHandler;
 
-    private readonly IHandlerRequest<UserSendEmailVerificationCommand, Either<Failure, Unit>>
+    private readonly IHandlerRequest<UserSendEmailVerificationCommand, (? Result, Failure? Error)>
         sendEmailVerificationHandler;
 
     private readonly ITokenService tokenService;
@@ -81,9 +81,9 @@ public class AuthController : ControllerBase
     /// <param name="configuration">Application configuration source for JWT lifetimes.</param>
     /// <param name="logger">The logger instance.</param>
     public AuthController(
-        IHandlerRequest<UserLoginCommand, Either<Failure, string>> loginUserHandler,
-        IHandlerRequest<UserSendEmailVerificationCommand, Either<Failure, Unit>> sendEmailVerificationHandler,
-        IHandlerRequest<UserConfirmEmailVerificationCommand, Either<Failure, Unit>> confirmEmailVerificationHandler,
+        IHandlerRequest<UserLoginCommand, (? Result, Failure? Error)> loginUserHandler,
+        IHandlerRequest<UserSendEmailVerificationCommand, (? Result, Failure? Error)> sendEmailVerificationHandler,
+        IHandlerRequest<UserConfirmEmailVerificationCommand, (? Result, Failure? Error)> confirmEmailVerificationHandler,
         IUserRepository userRepository,
         ITokenService tokenService,
         ZagejmiWriteContext writeContext,
@@ -132,7 +132,7 @@ public class AuthController : ControllerBase
         LoginValidationPassedLogger(logger, null);
 
         UserLoginCommand userLoginCommand = new() { Username = request.UserIdentifier, Password = request.Password };
-        Either<Failure, string> result = await loginUserHandler.Handle(
+        (? Result, Failure? Error) result = await loginUserHandler.Handle(
             userLoginCommand,
             HttpContext.RequestAborted);
 
@@ -337,7 +337,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> SendVerificationEmail([FromBody] UserSendEmailVerificationCommand command)
     {
-        Either<Failure, Unit> result =
+        (? Result, Failure? Error) result =
             await sendEmailVerificationHandler.Handle(command, HttpContext.RequestAborted);
 
         return result.Match<IActionResult>(
@@ -356,7 +356,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ConfirmVerificationEmail([FromQuery] Guid userId, [FromQuery] string token)
     {
         UserConfirmEmailVerificationCommand command = new() { UserId = userId, Token = token };
-        Either<Failure, Unit> result =
+        (? Result, Failure? Error) result =
             await confirmEmailVerificationHandler.Handle(command, HttpContext.RequestAborted);
 
         return result.Match<IActionResult>(
