@@ -6,5 +6,5 @@ public abstract record Verification : ValueObject
 {
     public VerificationType Type { get; init; }
 
-    public abstract Result<bool> Verify(params object?[] args);
+    public abstract (bool? Result, Failure? Error) Verify(params object?[] args);
 }
