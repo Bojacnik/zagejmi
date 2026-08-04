@@ -11,7 +11,7 @@ using Zagejmi.Domain.Profile.Events;
 
 namespace Zagejmi.Application.Handlers.User;
 
-public sealed class UserUpdateProfileImageCommandHandler : IHandlerRequest<UserUpdateProfileImageCommand, (? Result, Failure? Error)>
+public sealed class UserUpdateProfileImageCommandHandler : IHandlerRequest<UserUpdateProfileImageCommand, (Unit? Result, Failure? Error)>
 {
     private const int MaxImageBytes = 2 * 1024 * 1024;
     private const string BlobKeyPrefix = "profile-image";
@@ -29,7 +29,7 @@ public sealed class UserUpdateProfileImageCommandHandler : IHandlerRequest<UserU
         this.profileImageStorage = profileImageStorage;
     }
 
-    public async Task<(? Result, Failure? Error)> Handle(
+    public async Task<(Unit? Result, Failure? Error)> Handle(
         UserUpdateProfileImageCommand request,
         CancellationToken cancellationToken = default)
     {
@@ -38,7 +38,7 @@ public sealed class UserUpdateProfileImageCommandHandler : IHandlerRequest<UserU
             return new FailureArgumentInvalidValue("UserId and ProfileId are required.");
         }
 
-        (? Result, Failure? Error) parsedImage =
+        (Unit? Result, Failure? Error) parsedImage =
             ParseAndValidateImageDataUrl(request.ProfileImageDataUrl);
         if (parsedImage.IsLeft)
         {
@@ -76,7 +76,7 @@ public sealed class UserUpdateProfileImageCommandHandler : IHandlerRequest<UserU
         return Unit.Default;
     }
 
-    private static (? Result, Failure? Error) ParseAndValidateImageDataUrl(string dataUrl)
+    private static (Unit? Result, Failure? Error) ParseAndValidateImageDataUrl(string dataUrl)
     {
         Match match = DataUrlRegex.Match((dataUrl ?? string.Empty).Trim());
         if (!match.Success)

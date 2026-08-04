@@ -11,7 +11,7 @@ using Zagejmi.Domain.Profile.Events;
 
 namespace Zagejmi.Application.Handlers.User;
 
-public sealed class UserUpdateProfileBannerCommandHandler : IHandlerRequest<UserUpdateProfileBannerCommand, (? Result, Failure? Error)>
+public sealed class UserUpdateProfileBannerCommandHandler : IHandlerRequest<UserUpdateProfileBannerCommand, (Unit? Result, Failure? Error)>
 {
     private const int MaxBannerBytes = 5 * 1024 * 1024;
     private const string BlobKeyPrefix = "banner-image";
@@ -29,7 +29,7 @@ public sealed class UserUpdateProfileBannerCommandHandler : IHandlerRequest<User
         this.profileImageStorage = profileImageStorage;
     }
 
-    public async Task<(? Result, Failure? Error)> Handle(
+    public async Task<(Unit? Result, Failure? Error)> Handle(
         UserUpdateProfileBannerCommand request,
         CancellationToken cancellationToken = default)
     {

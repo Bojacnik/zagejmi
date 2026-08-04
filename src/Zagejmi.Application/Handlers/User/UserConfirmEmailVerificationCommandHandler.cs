@@ -7,7 +7,7 @@ using Zagejmi.Application.Abstractions;
 namespace Zagejmi.Application.Handlers.User;
 
 public sealed class UserConfirmEmailVerificationCommandHandler
-    : IHandlerRequest<UserConfirmEmailVerificationCommand, (? Result, Failure? Error)>
+    : IHandlerRequest<UserConfirmEmailVerificationCommand, (Unit? Result, Failure? Error)>
 {
     private readonly IEmailVerificationTokenService emailVerificationTokenService;
     private readonly IEventStore eventStore;
@@ -23,7 +23,7 @@ public sealed class UserConfirmEmailVerificationCommandHandler
         this.emailVerificationTokenService = emailVerificationTokenService;
     }
 
-    public async Task<(? Result, Failure? Error)> Handle(
+    public async Task<(Unit? Result, Failure? Error)> Handle(
         UserConfirmEmailVerificationCommand request,
         CancellationToken cancellationToken = default)
     {

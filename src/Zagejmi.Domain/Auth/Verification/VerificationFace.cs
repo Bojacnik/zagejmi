@@ -12,7 +12,7 @@ public sealed record VerificationFace(string? Path) : Abstractions.Verification
         yield return this.Path;
     }
 
-    public override (? Result, Failure? Error) Verify(params object?[] args)
+    public override (object? Result, Failure? Error) Verify(params object?[] args)
     {
         return this.Path != null;
     }

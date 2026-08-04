@@ -24,23 +24,23 @@ public class UsersController : ControllerBase
             default,
             "[UsersController] User created but verification email failed: {Reason}");
 
-    private readonly IHandlerRequest<UserCreateProfileCommand, (? Result, Failure? Error)> createProfileHandler;
-    private readonly IHandlerRequest<UserCreateServiceCommand, (? Result, Failure? Error)> createServiceHandler;
+    private readonly IHandlerRequest<UserCreateProfileCommand, (Guid? Result, Failure? Error)> createProfileHandler;
+    private readonly IHandlerRequest<UserCreateServiceCommand, (Guid? Result, Failure? Error)> createServiceHandler;
 
     /// <summary>
     ///     The handler for processing user creation commands.
     /// </summary>
-    private readonly IHandlerRequest<UserCreateCommand, (? Result, Failure? Error)> createUserHandler;
+    private readonly IHandlerRequest<UserCreateCommand, (Guid? Result, Failure? Error)> createUserHandler;
 
     private readonly ILogger<UsersController> logger;
-    private readonly IHandlerRequest<UserRemoveProfileImageCommand, (? Result, Failure? Error)> removeProfileImageHandler;
+    private readonly IHandlerRequest<UserRemoveProfileImageCommand, (Guid? Result, Failure? Error)> removeProfileImageHandler;
 
-    private readonly IHandlerRequest<UserSendEmailVerificationCommand, (? Result, Failure? Error)>
+    private readonly IHandlerRequest<UserSendEmailVerificationCommand, (Guid? Result, Failure? Error)>
         sendEmailVerificationHandler;
 
-    private readonly IHandlerRequest<UserUpdateProfileBannerCommand, (? Result, Failure? Error)> updateProfileBannerHandler;
+    private readonly IHandlerRequest<UserUpdateProfileBannerCommand, (Guid? Result, Failure? Error)> updateProfileBannerHandler;
 
-    private readonly IHandlerRequest<UserUpdateProfileImageCommand, (? Result, Failure? Error)> updateProfileImageHandler;
+    private readonly IHandlerRequest<UserUpdateProfileImageCommand, (Guid? Result, Failure? Error)> updateProfileImageHandler;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="UsersController" /> class.
@@ -54,13 +54,13 @@ public class UsersController : ControllerBase
     /// <param name="sendEmailVerificationHandler">The handler for sending verification emails.</param>
     /// <param name="logger">The logger instance.</param>
     public UsersController(
-        IHandlerRequest<UserCreateCommand, (? Result, Failure? Error)> createUserHandler,
-        IHandlerRequest<UserCreateProfileCommand, (? Result, Failure? Error)> createProfileHandler,
-        IHandlerRequest<UserUpdateProfileImageCommand, (? Result, Failure? Error)> updateProfileImageHandler,
-        IHandlerRequest<UserRemoveProfileImageCommand, (? Result, Failure? Error)> removeProfileImageHandler,
-        IHandlerRequest<UserUpdateProfileBannerCommand, (? Result, Failure? Error)> updateProfileBannerHandler,
-        IHandlerRequest<UserCreateServiceCommand, (? Result, Failure? Error)> createServiceHandler,
-        IHandlerRequest<UserSendEmailVerificationCommand, (? Result, Failure? Error)> sendEmailVerificationHandler,
+        IHandlerRequest<UserCreateCommand, (Guid? Result, Failure? Error)> createUserHandler,
+        IHandlerRequest<UserCreateProfileCommand, (Guid? Result, Failure? Error)> createProfileHandler,
+        IHandlerRequest<UserUpdateProfileImageCommand, (Guid? Result, Failure? Error)> updateProfileImageHandler,
+        IHandlerRequest<UserRemoveProfileImageCommand, (Guid? Result, Failure? Error)> removeProfileImageHandler,
+        IHandlerRequest<UserUpdateProfileBannerCommand, (Guid? Result, Failure? Error)> updateProfileBannerHandler,
+        IHandlerRequest<UserCreateServiceCommand, (Guid? Result, Failure? Error)> createServiceHandler,
+        IHandlerRequest<UserSendEmailVerificationCommand, (Guid? Result, Failure? Error)> sendEmailVerificationHandler,
         ILogger<UsersController> logger)
     {
         this.createUserHandler = createUserHandler;
@@ -93,7 +93,7 @@ public class UsersController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> CreateUser([FromBody] UserCreateCommand command)
     {
-        (? Result, Failure? Error) result = await createUserHandler.Handle(command, HttpContext.RequestAborted);
+        (Guid? Result, Failure? Error) result = await createUserHandler.Handle(command, HttpContext.RequestAborted);
 
         return await result.Match<Task<IActionResult>>(
             async userId =>
@@ -102,7 +102,7 @@ public class UsersController : ControllerBase
 
                 try
                 {
-                    (? Result, Failure? Error) verificationResult = await sendEmailVerificationHandler.Handle(
+                    (Guid? Result, Failure? Error) verificationResult = await sendEmailVerificationHandler.Handle(
                         new UserSendEmailVerificationCommand { UserIdentifier = command.Email },
                         HttpContext.RequestAborted);
 
@@ -143,7 +143,7 @@ public class UsersController : ControllerBase
 
         command.UserId = userId;
 
-        (? Result, Failure? Error) result = await createProfileHandler.Handle(command, HttpContext.RequestAborted);
+        (Guid? Result, Failure? Error) result = await createProfileHandler.Handle(command, HttpContext.RequestAborted);
 
         return result.Match<IActionResult>(
             profileId => CreatedAtAction(
@@ -172,7 +172,7 @@ public class UsersController : ControllerBase
         command.UserId = userId;
         command.ProfileId = profileId;
 
-        (? Result, Failure? Error) result =
+        (Guid? Result, Failure? Error) result =
             await updateProfileImageHandler.Handle(command, HttpContext.RequestAborted);
 
         return result.Match<IActionResult>(
@@ -196,7 +196,7 @@ public class UsersController : ControllerBase
         command.UserId = userId;
         command.ProfileId = profileId;
 
-        (? Result, Failure? Error) result = await updateProfileBannerHandler.Handle(command, HttpContext.RequestAborted);
+        (Guid? Result, Failure? Error) result = await updateProfileBannerHandler.Handle(command, HttpContext.RequestAborted);
 
         return result.Match<IActionResult>(_ => Ok(new { message = "Banner updated." }),
             failure => this.BadRequest(new ValidationErrorResponse { Errors = new() {failure.Message] }));
@@ -218,7 +218,7 @@ public class UsersController : ControllerBase
         command.UserId = userId;
         command.ProfileId = profileId;
 
-        (? Result, Failure? Error) result = await createServiceHandler.Handle(command, HttpContext.RequestAborted);
+        (Guid? Result, Failure? Error) result = await createServiceHandler.Handle(command, HttpContext.RequestAborted);
 
         return result.Match<IActionResult>(serviceId => CreatedAtAction(
                 nameof(CreateService),
@@ -241,7 +241,7 @@ public class UsersController : ControllerBase
         if (!IsSubjectMatchingUserId(userId)) return Forbid();
 
         UserRemoveProfileImageCommand command = new() { UserId = userId, ProfileId = profileId };
-        (? Result, Failure? Error) result =
+        (Guid? Result, Failure? Error) result =
             await removeProfileImageHandler.Handle(command, HttpContext.RequestAborted);
 
         return result.Match<IActionResult>(

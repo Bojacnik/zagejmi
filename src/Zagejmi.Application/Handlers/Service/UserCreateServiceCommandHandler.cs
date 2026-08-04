@@ -9,7 +9,7 @@ using Zagejmi.Domain.Services.Events;
 
 namespace Zagejmi.Application.Handlers.Service;
 
-public sealed class UserCreateServiceCommandHandler : IHandlerRequest<UserCreateServiceCommand, (? Result, Failure? Error)>
+public sealed class UserCreateServiceCommandHandler : IHandlerRequest<UserCreateServiceCommand, (Guid? Result, Failure? Error)>
 {
     private const int MaxImageBytes = 3 * 1024 * 1024;
     private const string BlobKeyPrefix = "service-image";
@@ -27,7 +27,7 @@ public sealed class UserCreateServiceCommandHandler : IHandlerRequest<UserCreate
         this.imageStorage = imageStorage;
     }
 
-    public async Task<(? Result, Failure? Error)> Handle(
+    public async Task<(Guid? Result, Failure? Error)> Handle(
         UserCreateServiceCommand request,
         CancellationToken cancellationToken = default)
     {

@@ -12,7 +12,7 @@ namespace Zagejmi.Application.Handlers.User;
 ///     Sends email verification links for user accounts.
 /// </summary>
 public sealed class UserSendEmailVerificationCommandHandler
-    : IHandlerRequest<UserSendEmailVerificationCommand, (? Result, Failure? Error)>
+    : IHandlerRequest<UserSendEmailVerificationCommand, (Unit? Result, Failure? Error)>
 {
     private static readonly Action<ILogger, string, Exception?> UserNotFoundLogger =
         LoggerMessage.Define<string>(
@@ -64,7 +64,7 @@ public sealed class UserSendEmailVerificationCommandHandler
     /// <param name="request">The send verification command.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>Success when handled; otherwise a failure reason.</returns>
-    public async Task<(? Result, Failure? Error)> Handle(
+    public async Task<(Unit? Result, Failure? Error)> Handle(
         UserSendEmailVerificationCommand request,
         CancellationToken cancellationToken = default)
     {

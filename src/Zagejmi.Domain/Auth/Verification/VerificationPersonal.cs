@@ -15,7 +15,7 @@ public sealed record VerificationPersonal(Profile.Abstractions.Profile? Verifier
         yield return this.Note;
     }
 
-    public override (? Result, Failure? Error) Verify(params object?[] args)
+    public override (object? Result, Failure? Error) Verify(params object?[] args)
     {
         return this.Verifier != null;
     }
