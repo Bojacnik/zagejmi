@@ -12,8 +12,8 @@ public sealed record VerificationFace(string? Path) : Abstractions.Verification
         yield return this.Path;
     }
 
-    public override (object? Result, Failure? Error) Verify(params object?[] args)
-    {
-        return this.Path != null;
-    }
+    public override (bool? Result, Failure? Error) Verify(params object?[] args)
+{
+    return (this.Path != null, null);
+}
 }
