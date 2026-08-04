@@ -11,9 +11,9 @@ public sealed record VerificationId(Image ImageFront, Image ImageBack) : Abstrac
 
     protected override IEnumerable<object?> GetAtomicValues()
     {
-        yield return (this.Type, null);
-        yield return (this.ImageFront, null);
-        yield return (this.ImageBack, null);
+        yield return this.Type;
+        yield return this.ImageFront;
+        yield return this.ImageBack;
     }
 
     public override (bool? Result, Failure? Error) Verify(params object?[] args)

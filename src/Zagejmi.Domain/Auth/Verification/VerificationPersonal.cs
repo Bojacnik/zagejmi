@@ -10,9 +10,9 @@ public sealed record VerificationPersonal(Profile.Abstractions.Profile? Verifier
 
     protected override IEnumerable<object?> GetAtomicValues()
     {
-        yield return (this.Type, null);
-        yield return (this.Verifier, null);
-        yield return (this.Note, null);
+        yield return this.Type;
+        yield return this.Verifier;
+        yield return this.Note;
     }
 
     public override (bool? Result, Failure? Error) Verify(params object?[] args)
