@@ -46,7 +46,7 @@ public class CustomerProfile : Abstractions.Profile
     ///     subscriptions can be added, removed, or updated as needed, and the aggregate root ensures that all operations on
     ///     the subscriptions are consistent with the business rules and domain logic of the application.
     /// </summary>
-    public Subscription[] Subscriptions { get; set; } = new();
+    public Subscription[] Subscriptions { get; set; } = Array.Empty<Subscription>();
 
     /// <summary>
     ///     Applies the specified domain event to the customer profile aggregate. This method is responsible for handling

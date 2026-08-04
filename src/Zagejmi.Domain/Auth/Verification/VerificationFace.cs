@@ -8,8 +8,8 @@ public sealed record VerificationFace(string? Path) : Abstractions.Verification
 
     protected override IEnumerable<object?> GetAtomicValues()
     {
-        yield return this.Type;
-        yield return this.Path;
+        yield return (this.Type, null);
+        yield return (this.Path, null);
     }
 
     public override (bool? Result, Failure? Error) Verify(params object?[] args)

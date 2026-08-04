@@ -78,7 +78,7 @@ public sealed class AssociateProfile : Abstractions.Profile
     ///     <see cref="AssociateServices" /> property enables the application to display and manage the associate's services
     ///     effectively, facilitating interactions and transactions between the associate and other users within the platform.
     /// </summary>
-    public AssociateService[] AssociateServices { get; private set; } = new();
+    public AssociateService[] AssociateServices { get; private set; } = Array.Empty<AssociateService>();
 
     protected override void Apply(IDomainEvent domainEvent)
     {
