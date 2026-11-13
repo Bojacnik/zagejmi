@@ -43,6 +43,11 @@ public class ProfilesContext : DbContext
     public DbSet<PlayerServiceRecord> PlayerServices { get; set; }
 
     /// <summary>
+    ///     Gets or sets the users who own the profiles (read-only; the table belongs to the users context).
+    /// </summary>
+    public DbSet<ProfileOwnerRecord> ProfileOwners { get; set; }
+
+    /// <summary>
     ///     Configures the model for the DbContext.
     /// </summary>
     /// <param name="modelBuilder">The ModelBuilder used to configure the model for the DbContext.</param>
@@ -96,6 +101,15 @@ public class ProfilesContext : DbContext
 
             // The Služby page filters by game.
             entity.HasIndex(e => e.GameKey);
+        });
+
+        modelBuilder.Entity<ProfileOwnerRecord>(entity =>
+        {
+            entity.ToTable("Users", "users", table => table.ExcludeFromMigrations());
+            entity.HasKey(e => e.Id);
+
+            // Same text conversion as in ZagejmiUsersContext.
+            entity.Property(e => e.Gender).HasConversion<string>().HasMaxLength(16);
         });
 
         modelBuilder.Entity<SubscriptionRecord>(entity =>

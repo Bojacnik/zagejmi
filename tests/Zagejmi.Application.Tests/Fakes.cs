@@ -7,12 +7,15 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
+using Zagejmi.Application.Abstractions;
 using Zagejmi.Application.Auth.Passwords;
 using Zagejmi.Application.Auth.Tokens;
 using Zagejmi.Application.Auth.Users.Abstractions;
 using Zagejmi.Application.Auth.Users.EmailVerification;
 using Zagejmi.Application.Mail.Abstractions;
+using Zagejmi.Application.Profiles;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Profiles.SearchServices;
 using Zagejmi.Application.Wallets;
 using Zagejmi.Application.Wallets.Abstractions;
 using Zagejmi.Application.Wallets.GrantReward;
@@ -176,8 +179,16 @@ internal sealed class FakeProfileRepository : IProfileRepository
     public Task AddPlayerAsync(PlayerProfile profile, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
 
-    public Task<IReadOnlyList<PlayerProfile>> SearchPlayersAsync(
+    public Task<PagedResult<PlayerProfile>> SearchPlayersAsync(
         string? search,
+        GenderGroup? gender,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    public Task<PagedResult<ServiceListItem>> SearchServicesAsync(
+        ServiceSearchFilter filter,
         int skip,
         int take,
         CancellationToken cancellationToken = default) =>

@@ -1,6 +1,8 @@
 @page "/people"
 @page "/players/{ProfileId:guid}"
 @using System.Threading
+@using Zagejmi.Application.Abstractions
+@using Zagejmi.Application.Profiles
 @using Zagejmi.Application.Profiles.SearchPlayers
 @using Zagejmi.Shared
 @rendermode InteractiveServer
@@ -10,7 +12,9 @@
 @inject NavigationManager NavigationManager
 
 @*
-    Player directory: every player profile, newest first, with a name filter.
+    Player directory, most complete profiles first (pictures, services with images), then newest, with a name filter.
+    Tabs (MARKET-002): Přehled shows two rows of Hráčky, Hráči and Ostatní; each group's tab (?gender=Women) and
+    Všichni (?gender=All) show the full list.
     Clicking a card opens the player popup at /players/{id} (shareable; Back closes it) without leaving the page.
 *@
 
@@ -36,7 +40,11 @@
             </div>
         </div>
 
-        @if (isLoading && players.Count == 0)
+        <div class="mb-6">
+            <DiscoveryTabs BasePath="/people" Active="@ActiveTab" Counts="@(sections.Counts.Count == 0 ? null : sections.Counts)"/>
+        </div>
+
+        @if (isLoading && sections.IsEmpty)
         {
             <div class="flex items-center justify-center py-12">
                 <div class="text-center">
@@ -53,43 +61,51 @@
                 <p class="text-sm font-medium">@errorMessage</p>
             </div>
         }
-        else if (players.Count == 0)
+        else if (sections.IsEmpty)
         {
             <div class="rounded-lg border border-dashed border-accent-700/50 bg-primary-950/40 p-12 text-center">
                 <p class="text-xl text-text-muted">
-                    @(string.IsNullOrWhiteSpace(searchText)
-                        ? "Zatím tu nejsou žádní hráči"
-                        : $"Nikoho s přezdívkou „{searchText.Trim()}“ jsme nenašli")
+                    @(!string.IsNullOrWhiteSpace(searchText)
+                        ? $"Nikoho s přezdívkou „{searchText.Trim()}“ jsme nenašli"
+                        : ActiveTab is null or DiscoveryTabs.AllTab
+                            ? "Zatím tu nejsou žádní hráči"
+                            : "V této skupině zatím nikdo není")
                 </p>
             </div>
         }
         else
         {
-            <div class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 transition-opacity @(isLoading ? "opacity-60" : "")">
-                @foreach (PlayerListItem player in players)
+            <div class="space-y-10 transition-opacity @(isLoading ? "opacity-60" : "")">
+                @foreach (GenderSections<PlayerListItem>.Section section in sections.Sections.Where(s => s.Items.Count > 0))
                 {
-                    <NavLink href="@($"/players/{player.ProfileId}")"
-                             class="relative group rounded-lg overflow-hidden shadow-lg bg-primary-900 transform transition-transform duration-300 hover:scale-105 hover:shadow-accent-700/40 aspect-square cursor-pointer">
-                        @if (player.ProfileImageId is not null)
-                        {
-                            <img src="@ImageUrls.For(player.ProfileImageId)" alt="Profilová fotka – @player.DisplayName"
-                                 loading="lazy" class="absolute inset-0 w-full h-full object-cover"/>
-                        }
-                        else
-                        {
-                            <div class="absolute inset-0 bg-gradient-to-br from-accent-700/40 to-accent-900/20 flex items-center justify-center">
-                                <span class="text-4xl font-bold text-accent-400">@GetInitials(player.DisplayName)</span>
-                            </div>
-                        }
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                        <div class="absolute left-0 bottom-0 z-10 p-4 flex flex-col items-start w-full text-text-default">
-                            <p class="font-bold text-lg">@player.DisplayName</p>
-                            @if (!string.IsNullOrWhiteSpace(player.Description))
-                            {
-                                <p class="text-sm text-text-muted line-clamp-2">@player.Description</p>
-                            }
-                        </div>
-                    </NavLink>
+                    <DiscoverySection TItem="PlayerListItem" Section="section" IsPreview="sections.IsPreview"
+                                      ShowAllHref="@(section.Group is { } g ? $"/people?gender={g}" : null)"
+                                      OnLoadMore="() => LoadMoreAsync(section)">
+                        <ItemTemplate Context="player">
+                            <NavLink href="@($"/players/{player.ProfileId}{GroupQuery}")"
+                                     class="relative block group rounded-lg overflow-hidden shadow-lg bg-primary-900 transform transition-transform duration-300 hover:scale-105 hover:shadow-accent-700/40 aspect-square cursor-pointer">
+                                @if (player.ProfileImageId is not null)
+                                {
+                                    <img src="@ImageUrls.For(player.ProfileImageId)" alt="Profilová fotka – @player.DisplayName"
+                                         loading="lazy" class="absolute inset-0 w-full h-full object-cover"/>
+                                }
+                                else
+                                {
+                                    <div class="absolute inset-0 bg-gradient-to-br from-accent-700/40 to-accent-900/20 flex items-center justify-center">
+                                        <span class="text-4xl font-bold text-accent-400">@GetInitials(player.DisplayName)</span>
+                                    </div>
+                                }
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                <div class="absolute left-0 bottom-0 z-10 p-4 flex flex-col items-start w-full text-text-default">
+                                    <p class="font-bold text-lg">@player.DisplayName</p>
+                                    @if (!string.IsNullOrWhiteSpace(player.Description))
+                                    {
+                                        <p class="text-sm text-text-muted line-clamp-2">@player.Description</p>
+                                    }
+                                </div>
+                            </NavLink>
+                        </ItemTemplate>
+                    </DiscoverySection>
                 }
             </div>
         }
@@ -104,8 +120,10 @@
 @code {
     private readonly CancellationTokenSource disposed = new();
 
-    private List<PlayerListItem> players = new();
+    private GenderSections<PlayerListItem> sections = new();
     private bool isLoading = true;
+    private bool hasLoaded;
+    private string? loadedTab;
     private string? errorMessage;
     private string searchText = string.Empty;
     private CancellationTokenSource? debounce;
@@ -116,9 +134,34 @@
     [Parameter]
     public Guid? ProfileId { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    /// <summary>
+    ///     Gets or sets the tab from the URL (?gender=Women or ?gender=All); absent for Přehled.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "gender")]
+    public string? GenderQuery { get; set; }
+
+    /// <summary>
+    ///     Gets the active tab: <see langword="null" /> for Přehled, a <see cref="GenderGroup" /> name or
+    ///     <see cref="DiscoveryTabs.AllTab" /> (unknown values fall back to Přehled).
+    /// </summary>
+    private string? ActiveTab =>
+        string.Equals(GenderQuery, DiscoveryTabs.AllTab, StringComparison.OrdinalIgnoreCase) ? DiscoveryTabs.AllTab
+        : Enum.TryParse(GenderQuery, ignoreCase: true, out GenderGroup group) && Enum.IsDefined(group) ? group.ToString()
+        : null;
+
+    /// <summary>
+    ///     Gets the query to keep on links so opening and closing a player stays on the active tab.
+    /// </summary>
+    private string GroupQuery => ActiveTab is { } tab ? $"?gender={tab}" : string.Empty;
+
+    protected override async Task OnParametersSetAsync()
     {
-        await LoadAsync();
+        // Opening or closing the player popup changes only ProfileId; reload when the shown group changes.
+        if (!hasLoaded || loadedTab != ActiveTab)
+        {
+            hasLoaded = true;
+            await LoadAsync();
+        }
     }
 
     private async Task OnSearchChanged()
@@ -144,21 +187,16 @@
     {
         isLoading = true;
         errorMessage = null;
+        string? tab = ActiveTab;
 
         try
         {
-            Result<IReadOnlyList<PlayerListItem>> result = await SearchPlayersHandler.Handle(
-                new SearchPlayersQuery { Search = searchText },
-                disposed.Token);
-
-            if (result.IsFailure)
-            {
-                errorMessage = result.Error!.Message;
-                players = new();
-                return;
-            }
-
-            players = result.Value.ToList();
+            GenderSections<PlayerListItem> loaded = new();
+            errorMessage = tab is null
+                ? await loaded.ReloadOverviewAsync(FetchAsync)
+                : await loaded.ReloadListAsync(Enum.TryParse(tab, out GenderGroup group) ? group : null, FetchAsync);
+            sections = loaded;
+            loadedTab = tab;
         }
         catch (OperationCanceledException)
         {
@@ -167,7 +205,7 @@
         catch (Exception ex)
         {
             errorMessage = $"Hráče se nepodařilo načíst: {ex.Message}";
-            players = new();
+            sections = new();
         }
         finally
         {
@@ -175,9 +213,28 @@
         }
     }
 
+    private async Task LoadMoreAsync(GenderSections<PlayerListItem>.Section section)
+    {
+        try
+        {
+            errorMessage = await section.LoadNextAsync(FetchAsync);
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was left while loading.
+        }
+    }
+
+    private Task<Result<PagedResult<PlayerListItem>>> FetchAsync(GenderGroup? group, int page, int pageSize)
+    {
+        return SearchPlayersHandler.Handle(
+            new SearchPlayersQuery { Search = searchText, Gender = group, Page = page, PageSize = pageSize },
+            disposed.Token);
+    }
+
     private void ClosePlayer()
     {
-        NavigationManager.NavigateTo("/people");
+        NavigationManager.NavigateTo($"/people{GroupQuery}");
     }
 
     private static string GetInitials(string name)

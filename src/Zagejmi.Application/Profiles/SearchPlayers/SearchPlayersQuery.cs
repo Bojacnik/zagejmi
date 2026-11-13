@@ -16,6 +16,11 @@ public sealed class SearchPlayersQuery
     public string? Search { get; init; }
 
     /// <summary>
+    ///     Gets the gender group to list, or <see langword="null" /> for everyone (the combined list).
+    /// </summary>
+    public GenderGroup? Gender { get; init; }
+
+    /// <summary>
     ///     Gets the 1-based page number.
     /// </summary>
     public int Page { get; init; } = 1;

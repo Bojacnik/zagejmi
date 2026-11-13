@@ -1,0 +1,65 @@
+@using Zagejmi.Api.Localization
+@using Zagejmi.Application.Profiles
+
+@*
+    Tabs of the Hráči and Služby results (MARKET-002): Přehled (two rows per gender group), one tab per group, and
+    Všichni (one combined list). Plain links, so every tab has its own URL (?gender=Men) and Back works.
+*@
+
+<nav aria-label="Zobrazení výsledků" class="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto">
+    <ul class="flex gap-2 w-max">
+        <li>@Tab(null, "Přehled", null)</li>
+        @foreach (GenderGroup group in Groups)
+        {
+            <li>@Tab(group.ToString(), CzechLabels.GenderGroupHeading(group), Counts?.GetValueOrDefault(group))</li>
+        }
+        <li>@Tab(AllTab, "Všichni", Counts is null ? null : Counts.Values.Sum())</li>
+    </ul>
+</nav>
+
+@code {
+    /// <summary>
+    ///     The query value of the Všichni tab.
+    /// </summary>
+    public const string AllTab = "All";
+
+    private static readonly GenderGroup[] Groups = [GenderGroup.Women, GenderGroup.Men, GenderGroup.Others];
+
+    /// <summary>
+    ///     Gets or sets the page the tabs belong to, e.g. "/people".
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public string BasePath { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets the active tab: <see langword="null" /> for Přehled, a <see cref="GenderGroup" /> name, or
+    ///     <see cref="AllTab" />.
+    /// </summary>
+    [Parameter]
+    public string? Active { get; set; }
+
+    /// <summary>
+    ///     Gets or sets how many results each group has, or <see langword="null" /> while loading.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyDictionary<GenderGroup, int>? Counts { get; set; }
+
+    private RenderFragment Tab(string? key, string label, int? count) => @<a href="@(key is null ? BasePath : $"{BasePath}?gender={key}")"
+                                                                              aria-current="@(Active == key ? "page" : null)"
+                                                                              class="@TabClass(Active == key)">
+        @label
+        @if (count is { } n)
+        {
+            <span class="@CountClass(Active == key)">@n</span>
+        }
+    </a>;
+
+    private static string TabClass(bool active) => active
+        ? "inline-flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold bg-accent-600 text-white transition-colors"
+        : "inline-flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors";
+
+    private static string CountClass(bool active) => active
+        ? "rounded-full bg-white/20 px-2 text-xs"
+        : "rounded-full bg-primary-950/60 px-2 text-xs text-text-muted";
+}

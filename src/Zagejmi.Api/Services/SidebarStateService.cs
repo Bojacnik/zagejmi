@@ -160,6 +160,10 @@ public class SidebarStateService
         {
             newPage = "People";
         }
+        else if (relativePath.StartsWith("services", StringComparison.Ordinal))
+        {
+            newPage = "Services";
+        }
         else if (relativePath.StartsWith("wallet", StringComparison.Ordinal))
         {
             newPage = "Wallets";

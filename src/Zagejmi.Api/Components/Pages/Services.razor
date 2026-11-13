@@ -1,0 +1,364 @@
+@page "/services"
+@page "/services/players/{ProfileId:guid}"
+@using System.Threading
+@using Zagejmi.Api.Localization
+@using Zagejmi.Application.Abstractions
+@using Zagejmi.Application.Profiles
+@using Zagejmi.Application.Profiles.SearchServices
+@using Zagejmi.Shared
+@rendermode InteractiveServer
+@implements IDisposable
+
+@inject SearchServicesHandler SearchServicesHandler
+@inject NavigationManager NavigationManager
+
+@*
+    Služby (MARKET-001): every available service of every player, most complete first (images), then newest, with the MARKET-003 filters
+    (game, minimum rank, play style) and a text search. Tabs by the player's gender (MARKET-002): Přehled shows two
+    rows of Hráčky, Hráči and Ostatní; each group's tab (?gender=Women) and Všichni (?gender=All) show the full list.
+    The filters apply to every tab and its count. Clicking a card opens the player popup at /services/players/{id};
+    the same component instance stays throughout, so the filters survive opening a group or a player.
+*@
+
+<PageTitle>Služby</PageTitle>
+
+<div class="w-full">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-6">
+            <h1 class="text-4xl font-bold text-text-default">Najít službu</h1>
+            <p class="text-text-muted mt-2">Vyberte hru, rank a styl hraní a najděte, co zrovna potřebujete</p>
+        </div>
+
+        <div class="mb-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:flex-wrap">
+            <div class="relative w-full lg:w-72">
+                <label for="service-search" class="sr-only">Hledat službu nebo hráče</label>
+                <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" fill="none"
+                     stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"></path>
+                </svg>
+                <input id="service-search" type="search" placeholder="Hledat službu nebo hráče…" autocomplete="off"
+                       @bind="searchText" @bind:event="oninput" @bind:after="OnSearchChanged"
+                       class="w-full pl-10 pr-4 py-2.5 rounded-full bg-primary-900/80 border border-accent-700/50 text-text-default placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors"/>
+            </div>
+
+            <select @bind="gameKey" @bind:after="OnGameChanged" aria-label="Hra"
+                    class="w-full lg:w-56 rounded-full bg-primary-900/80 border border-accent-700/50 px-4 py-2.5 text-text-default">
+                <option value="">Všechny hry</option>
+                @foreach (Game game in GameCatalog.All)
+                {
+                    <option value="@game.Key">@game.Name</option>
+                }
+            </select>
+
+            @if (GameCatalog.Find(NullIfEmpty(gameKey)) is { HasRanks: true } selectedGame)
+            {
+                <select @bind="minRankKey" @bind:after="ReloadAsync" aria-label="Minimální rank"
+                        class="w-full lg:w-56 rounded-full bg-primary-900/80 border border-accent-700/50 px-4 py-2.5 text-text-default">
+                    <option value="">Jakýkoli rank</option>
+                    @foreach (GameRank rank in selectedGame.Ranks)
+                    {
+                        <option value="@rank.Key">@rank.Name a výš</option>
+                    }
+                </select>
+            }
+
+            <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Styl hraní">
+                @foreach ((PlayStyles style, string label) in PlayStyleOptions)
+                {
+                    <button type="button" @onclick="() => SetPlayStyleAsync(style)" aria-pressed="@(playStyles == style)"
+                            class="@ChipClass(playStyles == style)">
+                        @label
+                    </button>
+                }
+            </div>
+
+            @if (HasFilters)
+            {
+                <button type="button" @onclick="ClearFiltersAsync" class="text-sm text-accent-300 hover:underline lg:ml-auto">
+                    Zrušit filtry
+                </button>
+            }
+        </div>
+
+        <div class="mb-6">
+            <DiscoveryTabs BasePath="/services" Active="@ActiveTab" Counts="@(sections.Counts.Count == 0 ? null : sections.Counts)"/>
+        </div>
+
+        @if (isLoading && sections.IsEmpty)
+        {
+            <div class="flex items-center justify-center py-12">
+                <div class="text-center">
+                    <div class="inline-block animate-spin mb-4">
+                        <div class="w-12 h-12 border-4 border-accent-700/30 border-t-accent-600 rounded-full"></div>
+                    </div>
+                    <p class="text-text-muted">Načítáme služby…</p>
+                </div>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="rounded-lg bg-red-900/20 border border-red-500/40 text-red-300 p-4" role="alert">
+                <p class="text-sm font-medium">@errorMessage</p>
+            </div>
+        }
+        else if (sections.IsEmpty)
+        {
+            <div class="rounded-lg border border-dashed border-accent-700/50 bg-primary-950/40 p-12 text-center">
+                <p class="text-xl text-text-muted">
+                    @(HasFilters
+                        ? "Žádná služba neodpovídá filtrům"
+                        : ActiveTab is null or DiscoveryTabs.AllTab
+                            ? "Zatím tu nejsou žádné služby"
+                            : "V této skupině zatím nejsou žádné služby")
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="space-y-10 transition-opacity @(isLoading ? "opacity-60" : "")">
+                @foreach (GenderSections<ServiceListItem>.Section section in sections.Sections.Where(s => s.Items.Count > 0))
+                {
+                    <DiscoverySection TItem="ServiceListItem" Section="section" IsPreview="sections.IsPreview"
+                                      ShowAllHref="@(section.Group is { } g ? $"/services?gender={g}" : null)"
+                                      OnLoadMore="() => LoadMoreAsync(section)">
+                        <ItemTemplate Context="service">
+                            <NavLink href="@($"/services/players/{service.PlayerProfileId}{GroupQuery}")"
+                                     class="group flex h-full flex-col rounded-xl overflow-hidden border border-accent-800/40 bg-primary-900/60 shadow-lg transition-transform duration-300 hover:scale-[1.02] hover:shadow-accent-700/40 cursor-pointer">
+                                <div class="aspect-video bg-gradient-to-br from-accent-700/40 to-accent-900/20">
+                                    @if (service.ImageId is not null)
+                                    {
+                                        <img src="@ImageUrls.For(service.ImageId)" alt="" loading="lazy" class="w-full h-full object-cover"/>
+                                    }
+                                </div>
+                                <div class="flex flex-1 flex-col p-4">
+                                    @* Who offers it: on its own row so a long name never fights with the price. *@
+                                    <div class="mb-2 flex items-center gap-2 min-w-0">
+                                        @if (service.PlayerImageId is not null)
+                                        {
+                                            <img src="@ImageUrls.For(service.PlayerImageId)" alt="" loading="lazy"
+                                                 class="w-6 h-6 shrink-0 rounded-full object-cover"/>
+                                        }
+                                        else
+                                        {
+                                            <div class="w-6 h-6 shrink-0 rounded-full bg-accent-800/60"></div>
+                                        }
+                                        <span class="text-sm text-text-muted truncate">@service.PlayerDisplayName</span>
+                                    </div>
+                                    @if (CzechLabels.ServiceGame(service.GameKey, service.RankKey, service.PlayStyles) is { } gameLine)
+                                    {
+                                        <p class="text-xs font-medium text-accent-300 truncate">@gameLine</p>
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(service.Category))
+                                    {
+                                        <p class="text-xs font-medium text-accent-300 truncate">@service.Category</p>
+                                    }
+                                    <h3 class="font-bold text-text-default line-clamp-2">@service.Name</h3>
+                                    @if (!string.IsNullOrWhiteSpace(service.Description))
+                                    {
+                                        <p class="text-sm text-text-muted line-clamp-2 mt-1">@service.Description</p>
+                                    }
+                                    @* The price gets the full width; a long unit ("/ služba, do 60 min") wraps under the amount. *@
+                                    <p class="mt-auto pt-3 border-t border-accent-800/30 flex flex-wrap items-baseline gap-x-1.5">
+                                        <span class="text-lg font-bold text-accent-300 whitespace-nowrap">@CzechLabels.Goins(service.Price)</span>
+                                        @if (!string.IsNullOrWhiteSpace(service.PriceUnit))
+                                        {
+                                            <span class="text-sm text-text-muted">@service.PriceUnit</span>
+                                        }
+                                    </p>
+                                </div>
+                            </NavLink>
+                        </ItemTemplate>
+                    </DiscoverySection>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@if (ProfileId is { } openProfileId)
+{
+    <PlayerDetailModal ProfileId="openProfileId" OnClose="ClosePlayer"/>
+}
+
+@code {
+    private static readonly (PlayStyles Style, string Label)[] PlayStyleOptions =
+    [
+        (PlayStyles.None, "Vše"),
+        (PlayStyles.Competitive, "Kompetitivně"),
+        (PlayStyles.Casual, "Pro zábavu"),
+    ];
+
+    private readonly CancellationTokenSource disposed = new();
+
+    private GenderSections<ServiceListItem> sections = new();
+    private bool isLoading = true;
+    private bool hasLoaded;
+    private string? loadedTab;
+    private string? errorMessage;
+    private string searchText = string.Empty;
+    private string gameKey = string.Empty;
+    private string minRankKey = string.Empty;
+    private PlayStyles playStyles = PlayStyles.None;
+    private CancellationTokenSource? debounce;
+
+    /// <summary>
+    ///     Gets or sets the player whose popup is open (from /services/players/{id}), or <see langword="null" />.
+    /// </summary>
+    [Parameter]
+    public Guid? ProfileId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the tab from the URL (?gender=Women or ?gender=All); absent for Přehled.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "gender")]
+    public string? GenderQuery { get; set; }
+
+    /// <summary>
+    ///     Gets the active tab: <see langword="null" /> for Přehled, a <see cref="GenderGroup" /> name or
+    ///     <see cref="DiscoveryTabs.AllTab" /> (unknown values fall back to Přehled).
+    /// </summary>
+    private string? ActiveTab =>
+        string.Equals(GenderQuery, DiscoveryTabs.AllTab, StringComparison.OrdinalIgnoreCase) ? DiscoveryTabs.AllTab
+        : Enum.TryParse(GenderQuery, ignoreCase: true, out GenderGroup group) && Enum.IsDefined(group) ? group.ToString()
+        : null;
+
+    /// <summary>
+    ///     Gets the query to keep on links so opening and closing a player stays on the active tab.
+    /// </summary>
+    private string GroupQuery => ActiveTab is { } tab ? $"?gender={tab}" : string.Empty;
+
+    private bool HasFilters => !string.IsNullOrWhiteSpace(searchText)
+                               || !string.IsNullOrEmpty(gameKey)
+                               || playStyles != PlayStyles.None;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Opening or closing the player popup changes only ProfileId; reload when the shown group changes.
+        if (!hasLoaded || loadedTab != ActiveTab)
+        {
+            hasLoaded = true;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OnSearchChanged()
+    {
+        // Wait until the user stops typing; a newer keystroke cancels the pending search.
+        debounce?.Cancel();
+        debounce = CancellationTokenSource.CreateLinkedTokenSource(disposed.Token);
+        CancellationToken token = debounce.Token;
+
+        try
+        {
+            await Task.Delay(300, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await ReloadAsync();
+    }
+
+    private Task OnGameChanged()
+    {
+        // Ranks belong to one game.
+        minRankKey = string.Empty;
+        return ReloadAsync();
+    }
+
+    private Task SetPlayStyleAsync(PlayStyles style)
+    {
+        playStyles = style;
+        return ReloadAsync();
+    }
+
+    private Task ClearFiltersAsync()
+    {
+        searchText = string.Empty;
+        gameKey = string.Empty;
+        minRankKey = string.Empty;
+        playStyles = PlayStyles.None;
+        return ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        string? tab = ActiveTab;
+
+        try
+        {
+            GenderSections<ServiceListItem> loaded = new();
+            errorMessage = tab is null
+                ? await loaded.ReloadOverviewAsync(FetchAsync)
+                : await loaded.ReloadListAsync(Enum.TryParse(tab, out GenderGroup group) ? group : null, FetchAsync);
+            sections = loaded;
+            loadedTab = tab;
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was left while loading.
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Služby se nepodařilo načíst: {ex.Message}";
+            sections = new();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadMoreAsync(GenderSections<ServiceListItem>.Section section)
+    {
+        try
+        {
+            errorMessage = await section.LoadNextAsync(FetchAsync);
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was left while loading.
+        }
+    }
+
+    private Task<Result<PagedResult<ServiceListItem>>> FetchAsync(GenderGroup? group, int page, int pageSize)
+    {
+        return SearchServicesHandler.Handle(
+            new SearchServicesQuery
+            {
+                Search = searchText,
+                GameKey = NullIfEmpty(gameKey),
+                MinRankKey = NullIfEmpty(minRankKey),
+                PlayStyles = playStyles,
+                Gender = group,
+                Page = page,
+                PageSize = pageSize,
+            },
+            disposed.Token);
+    }
+
+    private void ClosePlayer()
+    {
+        NavigationManager.NavigateTo($"/services{GroupQuery}");
+    }
+
+    private static string? NullIfEmpty(string value)
+    {
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
+
+    private static string ChipClass(bool active) => active
+        ? "px-4 py-2 rounded-full text-sm font-semibold bg-accent-600 text-white transition-colors"
+        : "px-4 py-2 rounded-full text-sm font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors";
+
+    public void Dispose()
+    {
+        disposed.Cancel();
+        disposed.Dispose();
+        debounce?.Dispose();
+    }
+}
