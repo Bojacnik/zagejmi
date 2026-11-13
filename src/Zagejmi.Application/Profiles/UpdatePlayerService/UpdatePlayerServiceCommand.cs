@@ -36,9 +36,9 @@ public sealed class UpdatePlayerServiceCommand
     public string? Category { get; init; }
 
     /// <summary>
-    ///     Gets the price in Goins.
+    ///     Gets the price in whole Goins.
     /// </summary>
-    public decimal Price { get; init; }
+    public long Price { get; init; }
 
     /// <summary>
     ///     Gets what the price is for, e.g. "/ hodina". Optional.

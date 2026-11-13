@@ -18,9 +18,12 @@ using Zagejmi.Api.Services;
 using Zagejmi.Application.Auth.Tokens;
 using Zagejmi.Application.Auth.Users.CreateUser;
 using Zagejmi.Application.Auth.Users.DeleteUser;
+using Zagejmi.Application.Auth.Users.EmailVerification;
 using Zagejmi.Application.Auth.Users.LoginUser;
+using Zagejmi.Application.Auth.Users.ResendVerificationEmail;
 using Zagejmi.Application.Auth.Users.SetDefaultProfile;
 using Zagejmi.Application.Auth.Users.SetGhostMode;
+using Zagejmi.Application.Auth.Users.VerifyEmail;
 using Zagejmi.Application.Profiles.AddPlayerService;
 using Zagejmi.Application.Profiles.CreatePlayerProfile;
 using Zagejmi.Application.Profiles.DeletePlayerService;
@@ -30,6 +33,10 @@ using Zagejmi.Application.Profiles.SearchPlayers;
 using Zagejmi.Application.Profiles.SetPlayerBanner;
 using Zagejmi.Application.Profiles.SetProfileImage;
 using Zagejmi.Application.Profiles.UpdatePlayerService;
+using Zagejmi.Application.Wallets.ExpireBonuses;
+using Zagejmi.Application.Wallets.GetWallet;
+using Zagejmi.Application.Wallets.GetWalletHistory;
+using Zagejmi.Application.Wallets.GrantReward;
 using Zagejmi.Infrastructure.Extensions;
 
 namespace Zagejmi.Api;
@@ -115,6 +122,8 @@ public static class Program
         // Infrastructure implementations of application abstractions
         builder.Services.AddZagejmiUsers();
         builder.Services.AddZagejmiImages(builder.Configuration);
+        builder.Services.AddZagejmiWallets(builder.Configuration);
+        builder.Services.AddSingleton(TimeProvider.System);
 
         // Application use-case handlers
         builder.Services.AddScoped<CreateUserHandler>();
@@ -131,6 +140,13 @@ public static class Program
         builder.Services.AddScoped<AddPlayerServiceHandler>();
         builder.Services.AddScoped<UpdatePlayerServiceHandler>();
         builder.Services.AddScoped<DeletePlayerServiceHandler>();
+        builder.Services.AddScoped<EmailVerificationMailer>();
+        builder.Services.AddScoped<VerifyEmailHandler>();
+        builder.Services.AddScoped<ResendVerificationEmailHandler>();
+        builder.Services.AddScoped<GrantRewardHandler>();
+        builder.Services.AddScoped<ExpireBonusesHandler>();
+        builder.Services.AddScoped<GetWalletHandler>();
+        builder.Services.AddScoped<GetWalletHistoryHandler>();
 
         // Blazor (interactive server) UI
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();
@@ -149,6 +165,9 @@ public static class Program
 
         // Signed-in user's profiles and the currently active one (Zákazník/Hráč), one instance per circuit.
         builder.Services.AddScoped<ActiveProfileService>();
+
+        // Balance of the active profile's wallet, shown in the top bar and refreshed on profile switches.
+        builder.Services.AddScoped<WalletStateService>();
 
         // Builds the WebApplication instance, which represents the configured web application and its services.
         WebApplication app = builder.Build();

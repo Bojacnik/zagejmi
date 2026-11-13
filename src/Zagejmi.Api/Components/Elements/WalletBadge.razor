@@ -1,0 +1,52 @@
+@using Zagejmi.Api.Localization
+@using Zagejmi.Application.Wallets.GetWallet
+@inject WalletStateService Wallet
+@implements IDisposable
+
+@* Balance of the active profile's wallet in the top bar; links to the wallet page. *@
+@if (Wallet.Current is { } wallet)
+{
+    <a href="/wallet" title="@Tooltip(wallet)"
+       class="shrink-0 flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-full bg-primary-950/70 border border-amber-500/40 text-sm font-semibold text-amber-200 hover:border-amber-400 hover:text-amber-100 transition-colors">
+        <GoinIcon Class="w-5 h-5"/>
+        <span>@wallet.Balance.ToString("N0")</span>
+        <span class="sr-only">@CzechLabels.GoinUnit(wallet.Balance)</span>
+    </a>
+}
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        Wallet.Changed += OnChanged;
+
+        if (Wallet.Current is null)
+        {
+            await Wallet.RefreshAsync();
+        }
+    }
+
+    private static string Tooltip(WalletView wallet)
+    {
+        string total = $"Zůstatek: {CzechLabels.Goins(wallet.Balance)}";
+        if (wallet.BonusBalance == 0 || wallet.ActiveBonuses.Count == 0)
+        {
+            return total;
+        }
+
+        BonusBatchView next = wallet.ActiveBonuses[0];
+        return $"{total} (z toho bonus: {CzechLabels.Goins(wallet.BonusBalance)}). "
+               + $"Nejbližší bonus ({CzechLabels.Goins(next.Remaining)}) vyprší {CzechLabels.InPragueTime(next.ExpiresAt):d. M. yyyy}.";
+    }
+
+    private void OnChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Wallet.Changed -= OnChanged;
+    }
+
+}

@@ -1,0 +1,17 @@
+@* The Goin coin: a gold disc with a "G". Size it with the Class parameter (e.g. "w-5 h-5"). *@
+<svg class="@Class" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="12" cy="12" r="11" fill="#f59e0b"/>
+    <circle cx="12" cy="12" r="8.5" fill="#fbbf24" stroke="#d97706" stroke-width="1"/>
+    <path d="M15.2 9.2A4 4 0 1 0 16 12h-3.6" fill="none" stroke="#92400e" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the CSS classes of the icon.
+    /// </summary>
+    [Parameter]
+    public string Class { get; set; } = "w-5 h-5";
+
+}

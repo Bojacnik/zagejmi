@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Zagejmi.Application.Abstractions;
 using Zagejmi.Application.Auth.Passwords;
 using Zagejmi.Application.Auth.Users.Abstractions;
+using Zagejmi.Application.Auth.Users.EmailVerification;
 using Zagejmi.Application.Profiles.Abstractions;
 using Zagejmi.Domain.Auth;
 using Zagejmi.Domain.Profiles.Customers;
@@ -33,23 +34,32 @@ public class CreateUserHandler : IHandlerRequest<CreateUserCommand, Result<Guid>
     private readonly IProfileRepository profileRepository;
 
     /// <summary>
+    ///     Issues and sends the email verification link.
+    /// </summary>
+    private readonly EmailVerificationMailer mailer;
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="CreateUserHandler" /> class with the specified user repository.
     /// </summary>
     /// <param name="userRepository">The user repository used for creating and managing user entities.</param>
     /// <param name="passwordHasher">The password hasher.</param>
     /// <param name="profileRepository">The profile repository.</param>
+    /// <param name="mailer">Issues and sends the email verification link.</param>
     public CreateUserHandler(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
-        IProfileRepository profileRepository)
+        IProfileRepository profileRepository,
+        EmailVerificationMailer mailer)
     {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.profileRepository = profileRepository;
+        this.mailer = mailer;
     }
 
     /// <summary>
-    ///     Creates the user together with their customer profile (every user is a customer) and returns the user ID.
+    ///     Creates the user together with their customer profile (every user is a customer), emails the verification link
+    ///     and returns the user ID.
     /// </summary>
     /// <param name="request">The command containing the details of the user to be created.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -105,11 +115,15 @@ public class CreateUserHandler : IHandlerRequest<CreateUserCommand, Result<Guid>
             GrammaticalGender = grammaticalGender.Value,
         };
 
+        string verificationToken = this.mailer.IssueToken(user);
         await this.userRepository.AddAsync(user, cancellationToken);
 
         // TODO: users and profiles live in separate DbContexts, so these two writes are not atomic.
         CustomerProfile customer = new(Guid.CreateVersion7(), user.Id, userName);
         await this.profileRepository.AddCustomerAsync(customer, cancellationToken);
+
+        // A failed delivery does not fail the registration: the login page can send a new link.
+        await this.mailer.SendAsync(user, verificationToken, cancellationToken);
 
         return user.Id;
     }

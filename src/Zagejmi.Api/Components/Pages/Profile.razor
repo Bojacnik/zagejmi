@@ -1,4 +1,5 @@
 @page "/profile"
+@using System.Globalization
 @using System.IdentityModel.Tokens.Jwt
 @using System.IO
 @using System.Security.Claims
@@ -520,7 +521,7 @@
                            class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default"/>
                     <input @bind="newService.Category" placeholder="Kategorie" maxlength="50"
                            class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default"/>
-                    <input @bind="newService.PriceString" placeholder="Cena v Goinech (např. 199 nebo 199,50)"
+                    <input @bind="newService.PriceString" placeholder="Cena v celých Goinech (např. 199)" inputmode="numeric"
                            class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default"/>
                     <input @bind="newService.PriceSuffix" @bind:event="oninput"
                            placeholder="Za jednotku (nepovinné, např. / hodina)" maxlength="20"
@@ -1431,12 +1432,16 @@ else if (cropTarget is { } target)
             return;
         }
 
-        // cs-CZ: "199" or "199,50".
-        decimal price = 0m;
+        // Whole Goins only; cs-CZ users may type "1 000" with a (non-breaking) space as the thousands separator.
+        long price = 0;
         if (!string.IsNullOrWhiteSpace(newService.PriceString)
-            && !decimal.TryParse(newService.PriceString.Replace(" ", string.Empty), out price))
+            && !long.TryParse(
+                newService.PriceString.Replace(" ", string.Empty).Replace("\u00A0", string.Empty),
+                NumberStyles.AllowLeadingSign,
+                CultureInfo.InvariantCulture,
+                out price))
         {
-            serviceErrorMessage = "Cena musí být číslo, např. 199 nebo 199,50.";
+            serviceErrorMessage = "Cena musí být celé číslo Goinů, např. 199.";
             return;
         }
 
@@ -1502,7 +1507,7 @@ else if (cropTarget is { } target)
         {
             Name = service.Name,
             Category = service.Category ?? string.Empty,
-            PriceString = service.Price.ToString("0.##"),
+            PriceString = service.Price.ToString(CultureInfo.InvariantCulture),
             PriceSuffix = service.PriceSuffix ?? string.Empty,
             Description = service.Description ?? string.Empty,
         };

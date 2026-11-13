@@ -33,12 +33,12 @@
            class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("People") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
             Hráči
         </a>
-        <a @onclick='() => NavigateToSection("Wallets")' @onclick:preventDefault href="#"
-           class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Wallets") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
-            Peněženky
-        </a>
         @if (isAuthenticated)
         {
+            <a @onclick='() => NavigateToSection("Wallets")' @onclick:preventDefault href="#"
+               class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Wallets") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
+                Peněženka
+            </a>
             <a @onclick='() => NavigateToSection("Profile")' @onclick:preventDefault href="#"
                class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Profile") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
                 Profil
@@ -50,6 +50,7 @@
         @if (isAuthenticated)
         {
             <ProfileSwitch/>
+            <WalletBadge/>
             <span class="hidden sm:inline text-sm text-text-default font-semibold whitespace-nowrap">@username</span>
             <button @onclick="HandleLogout"
                     class="shrink-0 whitespace-nowrap px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
@@ -172,7 +173,7 @@
         string url = section switch
         {
             "People" => "people",
-            "Wallets" => "wallets",
+            "Wallets" => "wallet",
             "Profile" => "profile",
             _ => "/"
         };

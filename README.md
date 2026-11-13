@@ -26,6 +26,14 @@ dotnet build Zagejmi.slnx
 dotnet test --solution Zagejmi.slnx
 ```
 
+Testy peněženek proti skutečnému PostgreSQL se spustí jen s proměnnou `ZAGEJMI_TEST_POSTGRES` (connection string na server,
+kde smí uživatel zakládat databáze; každý běh si vytvoří a smaže vlastní dočasnou databázi), jinak se přeskočí:
+
+```bash
+ZAGEJMI_TEST_POSTGRES="Host=localhost;Port=5432;Database=postgres;Username=my_postgres_user;Password=my_strong_password" \
+  dotnet test --solution Zagejmi.slnx
+```
+
 `dotnet build` spouští `npm run css:build` sám, když se změní `app.css`, `tailwind.config.js` nebo `.razor` soubory.
 Při vývoji UI se `styles.css` dá průběžně generovat přes `npm run css:watch`, ale spolehlivě se v prohlížeči projeví až po buildu:
 `MapStaticAssets` servíruje verzi zachycenou při posledním buildu.

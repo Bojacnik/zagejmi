@@ -16,7 +16,7 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261112090204_AddPlayerServices";
+    public override string LastMigrationId => "20261113083418_WholeGoinPrices";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -126,9 +126,8 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
                 b.Property<Guid>("PlayerProfileId")
                     .HasColumnType("uuid");
 
-                b.Property<decimal>("Price")
-                    .HasPrecision(12, 2)
-                    .HasColumnType("numeric(12,2)");
+                b.Property<long>("Price")
+                    .HasColumnType("bigint");
 
                 b.Property<string>("PriceUnit")
                     .HasMaxLength(20)

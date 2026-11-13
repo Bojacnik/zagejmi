@@ -1,3 +1,4 @@
+@using Zagejmi.Api.Localization
 @* 
     ServiceCard Component
     Displays a single service offering with image, details, rating, and action buttons.
@@ -70,7 +71,7 @@
         @* Pricing Section *@
         <div class="flex items-center justify-between mb-4 pb-4 border-b border-accent-800/40">
             <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-accent-300">@Service.Price.ToString("F2")</span>
+                <span class="text-2xl font-bold text-accent-300">@CzechLabels.Goins(Service.Price)</span>
                 @if (!string.IsNullOrWhiteSpace(Service.PriceSuffix))
                 {
                     <span class="text-sm text-text-muted">@Service.PriceSuffix</span>

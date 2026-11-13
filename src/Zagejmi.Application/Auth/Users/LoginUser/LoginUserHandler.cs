@@ -16,6 +16,13 @@ namespace Zagejmi.Application.Auth.Users.LoginUser;
 /// </summary>
 public class LoginUserHandler : IHandlerRequest<LoginUserCommand, Result<LoginUserResult>>
 {
+    /// <summary>
+    ///     Returned (only after a correct password) when the email address is not verified yet.
+    /// </summary>
+    public static readonly ErrorDetail EmailNotVerified = ErrorDetail.Validation(
+        "User.EmailNotVerified",
+        "Nejdříve ověřte svůj e-mail. Odkaz jsme vám poslali při registraci.");
+
     private static readonly ErrorDetail InvalidCredentials = ErrorDetail.Validation(
         "User.InvalidCredentials",
         "Nesprávné uživatelské jméno, e-mail nebo heslo.");
@@ -71,7 +78,11 @@ public class LoginUserHandler : IHandlerRequest<LoginUserCommand, Result<LoginUs
             return Result<LoginUserResult>.Failure(InvalidCredentials);
         }
 
-        // TODO: require user.AuthCredentials.EmailVerifiedAt once the email verification flow is wired up again.
+        if (user.AuthCredentials.EmailVerifiedAt is null)
+        {
+            return Result<LoginUserResult>.Failure(EmailNotVerified);
+        }
+
         string accessToken = this.tokenService.GenerateToken(user);
         string refreshToken = this.tokenService.GenerateRefreshToken();
 

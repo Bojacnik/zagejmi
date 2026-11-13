@@ -12,6 +12,9 @@ namespace Zagejmi.Api.Localization;
 /// </summary>
 public static class CzechLabels
 {
+    private static readonly TimeZoneInfo? PragueTimeZone =
+        TimeZoneInfo.TryFindSystemTimeZoneById("Europe/Prague", out TimeZoneInfo? zone) ? zone : null;
+
     /// <summary>
     ///     Gets the role name, e.g. "Hráč" / "Hráčka" or "Zákazník" / "Zákaznice".
     /// </summary>
@@ -67,19 +70,33 @@ public static class CzechLabels
     }
 
     /// <summary>
-    ///     Formats a price in Goins with the correct Czech plural: 1 Goin, 2 Goiny, 5 Goinů, 249,90 Goinu.
+    ///     Formats an amount of Goins with the correct Czech plural: 1 Goin, 2 Goiny, 5 Goinů, 1 250 Goinů.
+    /// </summary>
+    /// <param name="amount">The amount (may be negative, e.g. in a history).</param>
+    /// <returns>For example „199 Goinů“.</returns>
+    public static string Goins(long amount)
+    {
+        return $"{amount:N0} {GoinUnit(amount)}";
+    }
+
+    /// <summary>
+    ///     Gets the Czech form of the word "Goin" that goes with an amount: Goin, Goiny or Goinů.
     /// </summary>
     /// <param name="amount">The amount.</param>
-    /// <returns>For example „199 Goinů“ or „249,90 Goinu“.</returns>
-    public static string Goins(decimal amount)
+    /// <returns>The word.</returns>
+    public static string GoinUnit(long amount)
     {
-        if (decimal.Truncate(amount) != amount)
-        {
-            return $"{amount:N2} Goinu";
-        }
+        long abs = Math.Abs(amount);
+        return abs == 1 ? "Goin" : abs is >= 2 and <= 4 ? "Goiny" : "Goinů";
+    }
 
-        decimal abs = Math.Abs(amount);
-        string unit = abs == 1 ? "Goin" : abs is >= 2 and <= 4 ? "Goiny" : "Goinů";
-        return $"{amount:N0} {unit}";
+    /// <summary>
+    ///     Converts a time to Czech local time (Europe/Prague), independent of the server's time zone.
+    /// </summary>
+    /// <param name="value">The time.</param>
+    /// <returns>The same instant in Prague time (or UTC if the time zone database is missing).</returns>
+    public static DateTimeOffset InPragueTime(DateTimeOffset value)
+    {
+        return PragueTimeZone is null ? value.ToUniversalTime() : TimeZoneInfo.ConvertTime(value, PragueTimeZone);
     }
 }
