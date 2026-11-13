@@ -1,0 +1,80 @@
+# Builds the solution and runs every test project on each push and pull request.
+#
+# Opting out:
+#   - One commit:   put [skip tests] (or [tests skip]) in the head commit message.
+#                   GitHub's built-in [skip ci] / [no ci] also works and skips the workflow entirely.
+#   - Whole repo:   set the repository variable SKIP_TESTS=true
+#                   (Settings → Secrets and variables → Actions → Variables). Delete it to turn tests back on.
+#   - Manual run:   Actions → Tests → Run workflow ignores both opt-outs.
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        vars.SKIP_TESTS != 'true' &&
+        !contains(github.event.head_commit.message, '[skip tests]') &&
+        !contains(github.event.head_commit.message, '[tests skip]') &&
+        !contains(github.event.pull_request.title, '[skip tests]')
+      )
+
+    services:
+      postgres:
+        image: postgres:18.4-alpine3.24
+        env:
+          POSTGRES_USER: zagejmi
+          POSTGRES_PASSWORD: zagejmi
+          POSTGRES_DB: zagejmi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U zagejmi"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      # Enables the PostgreSQL-backed repository tests (skipped when unset).
+      ZAGEJMI_TEST_POSTGRES: Host=localhost;Port=5432;Username=zagejmi;Password=zagejmi;Database=zagejmi
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Zagejmi.slnx
+
+      - name: Build
+        run: dotnet build Zagejmi.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test --solution Zagejmi.slnx -c Release --no-build --report-xunit-trx --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/**/*.trx
+          if-no-files-found: ignore
