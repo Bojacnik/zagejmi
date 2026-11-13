@@ -10,11 +10,11 @@
 
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8" role="dialog" aria-modal="true"
      aria-labelledby="player-modal-title" @onkeydown="OnKeyDown" tabindex="-1" @ref="dialog">
-    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm modal-fade-in" @onclick="Close"></div>
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-xs modal-fade-in" @onclick="Close"></div>
 
     <div class="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-accent-700/50 bg-primary-950 shadow-2xl shadow-black/60 modal-pop-in">
         <button type="button" @onclick="Close" aria-label="Zavřít"
-                class="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm border border-white/10 text-text-default hover:bg-black/70 transition-colors">
+                class="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-xs border border-white/10 text-text-default hover:bg-black/70 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"></path>
             </svg>
@@ -46,9 +46,9 @@
                 }
                 else
                 {
-                    <div class="w-full h-full bg-gradient-to-br from-accent-600/50 via-accent-900/60 to-primary-950"></div>
+                    <div class="w-full h-full bg-linear-to-br from-accent-600/50 via-accent-900/60 to-primary-950"></div>
                 }
-                <div class="absolute inset-0 bg-gradient-to-t from-primary-950 via-primary-950/10 to-transparent"></div>
+                <div class="absolute inset-0 bg-linear-to-t from-primary-950 via-primary-950/10 to-transparent"></div>
             </div>
 
             @* Logo + name *@
@@ -60,7 +60,7 @@
                 }
                 else
                 {
-                    <div class="w-28 h-28 rounded-full bg-gradient-to-br from-accent-500 to-accent-800 border-4 border-primary-950 ring-2 ring-accent-600 shadow-xl flex items-center justify-center text-3xl font-bold text-white">
+                    <div class="w-28 h-28 rounded-full bg-linear-to-br from-accent-500 to-accent-800 border-4 border-primary-950 ring-2 ring-accent-600 shadow-xl flex items-center justify-center text-3xl font-bold text-white">
                         @Initials(player.DisplayName)
                     </div>
                 }
@@ -98,7 +98,7 @@
                         @foreach (PlayerServiceItem service in player.Services)
                         {
                             <article class="rounded-xl overflow-hidden border border-accent-800/40 bg-primary-900/60 @(service.IsAvailable ? "" : "opacity-60")">
-                                <div class="aspect-video bg-gradient-to-br from-accent-700/40 to-accent-900/20">
+                                <div class="aspect-video bg-linear-to-br from-accent-700/40 to-accent-900/20">
                                     @if (service.ImageId is not null)
                                     {
                                         <img src="@ImageUrls.For(service.ImageId)" alt="" class="w-full h-full object-cover"/>

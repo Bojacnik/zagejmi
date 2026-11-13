@@ -26,11 +26,11 @@
         <PackageVersion Include="SkiaSharp" Version="4.156.0"/>
         <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.156.0"/>
         <!-- API Documentation -->
-        <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="11.0.0"/>
-        <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="11.0.0"/>
+        <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="11.0.1"/>
+        <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="11.0.1"/>
         <!-- Testing (runs on Microsoft.Testing.Platform, see global.json) -->
         <PackageVersion Include="xunit.v3" Version="4.0.3"/>
         <!-- Code Analysis -->
-        <PackageVersion Include="StyleCop.Analyzers" Version="1.1.118"/>
+        <PackageVersion Include="StyleCop.Analyzers" Version="1.3.180"/>
     </ItemGroup>
 </Project>

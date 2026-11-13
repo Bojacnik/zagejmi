@@ -509,10 +509,13 @@ public class UserController : ControllerBase
         /// <returns>The crop region.</returns>
         public CropRegion? ToCropRegion()
         {
-            return TryParse(this.CropX, out double x) && TryParse(this.CropY, out double y)
-                   && TryParse(this.CropWidth, out double width) && TryParse(this.CropHeight, out double height)
-                ? new CropRegion(x, y, width, height)
-                : null;
+            if (TryParse(this.CropX, out double x) && TryParse(this.CropY, out double y)
+                && TryParse(this.CropWidth, out double width) && TryParse(this.CropHeight, out double height))
+            {
+                return new CropRegion(x, y, width, height);
+            }
+
+            return null;
         }
 
         private static bool TryParse(string? value, out double result)

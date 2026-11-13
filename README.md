@@ -38,7 +38,7 @@ ZAGEJMI_TEST_POSTGRES="Host=localhost;Port=5432;Database=postgres;Username=my_po
   dotnet test --solution Zagejmi.slnx
 ```
 
-`dotnet build` spouští `npm run css:build` sám, když se změní `app.css`, `tailwind.config.js` nebo `.razor` soubory.
+`dotnet build` spouští `npm run css:build` sám, když se změní `app.css` (téma a nastavení Tailwindu v4) nebo `.razor` soubory.
 Při vývoji UI se `styles.css` dá průběžně generovat přes `npm run css:watch`, ale spolehlivě se v prohlížeči projeví až po buildu:
 `MapStaticAssets` servíruje verzi zachycenou při posledním buildu.
 

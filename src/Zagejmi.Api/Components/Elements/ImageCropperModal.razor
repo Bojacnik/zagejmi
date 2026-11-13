@@ -11,7 +11,7 @@
 
 <div class="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true"
      aria-labelledby="cropper-title" @onkeydown="OnKeyDown">
-    <div class="absolute inset-0 bg-black/75 backdrop-blur-sm modal-fade-in"></div>
+    <div class="absolute inset-0 bg-black/75 backdrop-blur-xs modal-fade-in"></div>
 
     <div @ref="root"
          class="cropper relative w-full @(Round ? "max-w-2xl" : "max-w-3xl") max-h-[95vh] overflow-y-auto rounded-2xl border border-accent-700/50 bg-primary-950 shadow-2xl shadow-black/60 modal-pop-in">
@@ -33,7 +33,7 @@
         <div class="px-5 sm:px-6 pt-4 @(Round ? "sm:grid sm:grid-cols-[minmax(0,1fr)_9.5rem] sm:gap-5" : "")">
             <div class="min-w-0">
             <div data-crop-stage tabindex="0" aria-label="Výřez obrázku. Šipky posouvají, plus a mínus přibližují."
-                 class="crop-stage relative w-full overflow-hidden rounded-xl bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+                 class="crop-stage relative w-full overflow-hidden rounded-xl bg-black focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500"
                  style="aspect-ratio: @StageAspect">
                 <img data-crop-image alt="" draggable="false"
                      class="crop-image absolute left-0 top-0 max-w-none select-none pointer-events-none"/>
@@ -117,7 +117,7 @@
                             }
                             else
                             {
-                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-accent-500 to-accent-800 border-4 border-primary-950 ring-2 ring-accent-600"></div>
+                                <div class="w-14 h-14 rounded-full bg-linear-to-br from-accent-500 to-accent-800 border-4 border-primary-950 ring-2 ring-accent-600"></div>
                             }
                             <p class="pb-1 font-bold text-text-default truncate">@PreviewName</p>
                         </div>
@@ -132,7 +132,7 @@
             <p class="px-5 sm:px-6 mt-4 text-sm text-red-300" role="alert">@saveError</p>
         }
 
-        <footer class="sticky bottom-0 mt-5 flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-accent-800/40 bg-primary-950/95 backdrop-blur-sm">
+        <footer class="sticky bottom-0 mt-5 flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-accent-800/40 bg-primary-950/95 backdrop-blur-xs">
             <button type="button" @onclick="Cancel" disabled="@isSaving"
                     class="px-4 py-2 rounded-lg font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors disabled:opacity-50">
                 Zrušit

@@ -41,7 +41,7 @@
         Skipped when node_modules is missing (e.g. the Docker SDK stage, which copies styles.css from its node stage).
     -->
     <ItemGroup>
-        <TailwindInputs Include="wwwroot/app.css;tailwind.config.js;**/*.razor;**/*.cshtml;**/*.html"
+        <TailwindInputs Include="wwwroot/app.css;**/*.razor;**/*.cshtml;**/*.html"
                         Exclude="bin/**;obj/**;node_modules/**"/>
     </ItemGroup>
 

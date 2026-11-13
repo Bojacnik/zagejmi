@@ -13,7 +13,7 @@ public readonly record struct Goin : IComparable<Goin>
     public static readonly Goin Zero = new(0);
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="Goin" /> class.
+    ///     Initializes a new instance of the <see cref="Goin" /> struct.
     /// </summary>
     /// <param name="amount">The amount of Goins. Must not be negative.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the amount is negative.</exception>
