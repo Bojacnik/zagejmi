@@ -12,9 +12,9 @@ using Zagejmi.Shared;
 namespace Zagejmi.Application.Profiles.SearchPlayers;
 
 /// <summary>
-///     Lists player profiles for the public directory, newest first, optionally filtered by display name.
+///     Lists player profiles for the public directory, most complete first, then newest, optionally filtered by display name.
 /// </summary>
-public sealed class SearchPlayersHandler : IHandlerRequest<SearchPlayersQuery, Result<IReadOnlyList<PlayerListItem>>>
+public sealed class SearchPlayersHandler : IHandlerRequest<SearchPlayersQuery, Result<PagedResult<PlayerListItem>>>
 {
     private readonly IProfileRepository profileRepository;
 
@@ -33,22 +33,31 @@ public sealed class SearchPlayersHandler : IHandlerRequest<SearchPlayersQuery, R
     /// <param name="request">The query.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The players on the requested page.</returns>
-    public async Task<Result<IReadOnlyList<PlayerListItem>>> Handle(
+    public async Task<Result<PagedResult<PlayerListItem>>> Handle(
         SearchPlayersQuery request,
         CancellationToken cancellationToken = default)
     {
+        if (request.Gender is { } gender && !Enum.IsDefined(gender))
+        {
+            return Result<PagedResult<PlayerListItem>>.Failure(
+                ErrorDetail.Validation("Players.Gender", "Neznámá skupina pohlaví."));
+        }
+
         int page = Math.Max(1, request.Page);
         int pageSize = Math.Clamp(request.PageSize, 1, SearchPlayersQuery.MaxPageSize);
         string? search = string.IsNullOrWhiteSpace(request.Search) ? null : request.Search.Trim();
 
-        IReadOnlyList<PlayerProfile> players = await this.profileRepository.SearchPlayersAsync(
+        PagedResult<PlayerProfile> players = await this.profileRepository.SearchPlayersAsync(
             search,
+            request.Gender,
             (page - 1) * pageSize,
             pageSize,
             cancellationToken);
 
-        return players
-            .Select(p => new PlayerListItem(p.Id, p.DisplayName, p.Description, p.CreatedAt, p.CardProfilePicture))
-            .ToList();
+        return new PagedResult<PlayerListItem>(
+            players.Items
+                .Select(p => new PlayerListItem(p.Id, p.DisplayName, p.Description, p.CreatedAt, p.CardProfilePicture))
+                .ToList(),
+            players.TotalCount);
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using Zagejmi.Api.Models;
+using Zagejmi.Application.Profiles;
 using Zagejmi.Domain.Auth;
 using Zagejmi.Domain.Games;
 using Zagejmi.Domain.Profiles;
@@ -144,5 +145,20 @@ public static class CzechLabels
         }
 
         return string.Join(" · ", parts);
+    }
+
+    /// <summary>
+    ///     Gets the heading of a gender group on the Hráči and Služby pages: "Hráčky", "Hráči" or "Ostatní".
+    /// </summary>
+    /// <param name="group">The gender group.</param>
+    /// <returns>The heading.</returns>
+    public static string GenderGroupHeading(GenderGroup group)
+    {
+        return group switch
+        {
+            GenderGroup.Women => "Hráčky",
+            GenderGroup.Men => "Hráči",
+            _ => "Ostatní",
+        };
     }
 }

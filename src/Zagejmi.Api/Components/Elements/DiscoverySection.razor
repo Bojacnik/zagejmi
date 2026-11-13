@@ -1,0 +1,108 @@
+@typeparam TItem
+@using Zagejmi.Api.Localization
+
+@*
+    One section of the Hráči / Služby results (see GenderSections).
+    Preview: a heading with the group's count, at most two rows (the grid has 2–5 columns; extra cards are hidden per breakpoint) with "Zobrazit vše (N)";
+    on phones the cards form a swipeable strip instead. Full list: a plain grid with "Načíst další".
+*@
+
+<section aria-labelledby="@(IsPreview ? headingId : null)">
+    @* In the full list the active tab already names the group. *@
+    @if (IsPreview && Section.Group is { } group)
+    {
+        <div class="mb-4 flex items-baseline justify-between gap-4">
+            <h2 id="@headingId" class="text-2xl font-bold text-text-default">
+                @CzechLabels.GenderGroupHeading(group)
+                <span class="ml-1 text-base font-medium text-text-muted">@Section.TotalCount</span>
+            </h2>
+            @if (IsPreview && ShowAllHref is not null)
+            {
+                <a href="@ShowAllHref" class="shrink-0 text-sm font-semibold text-accent-300 hover:underline">
+                    Zobrazit vše (@Section.TotalCount) →
+                </a>
+            }
+        </div>
+    }
+
+    @if (IsPreview)
+    {
+        <div class="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:overflow-visible sm:pb-0">
+            @for (int i = 0; i < Section.Items.Count; i++)
+            {
+                <div class="@PreviewItemClass(i)">@ItemTemplate(Section.Items[i])</div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            @foreach (TItem item in Section.Items)
+            {
+                <div>@ItemTemplate(item)</div>
+            }
+        </div>
+
+        @if (Section.HasMore)
+        {
+            <div class="mt-6 flex justify-center">
+                <button type="button" @onclick="OnLoadMore" disabled="@Section.IsLoading"
+                        class="px-5 py-2 rounded-lg font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors disabled:opacity-50">
+                    @(Section.IsLoading ? "Načítáme…" : "Načíst další")
+                </button>
+            </div>
+        }
+    }
+</section>
+
+@code {
+    private readonly string headingId = $"section-{Guid.NewGuid():N}";
+
+    /// <summary>
+    ///     Gets or sets the section to show.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public GenderSections<TItem>.Section Section { get; set; } = null!;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether to show a two-row preview instead of the full list.
+    /// </summary>
+    [Parameter]
+    public bool IsPreview { get; set; }
+
+    /// <summary>
+    ///     Gets or sets where "Zobrazit vše" leads (the full list of this group).
+    /// </summary>
+    [Parameter]
+    public string? ShowAllHref { get; set; }
+
+    /// <summary>
+    ///     Gets or sets how one card looks.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public RenderFragment<TItem> ItemTemplate { get; set; } = null!;
+
+    /// <summary>
+    ///     Gets or sets what "Načíst další" does.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnLoadMore { get; set; }
+
+    /// <summary>
+    ///     Keeps a preview at two rows: card i is shown only where the grid has at least (i / 2) + 1 columns
+    ///     (2 at sm, 3 at lg, 4 at xl, 5 at 2xl). On phones every card is shown in the swipeable strip.
+    /// </summary>
+    private static string PreviewItemClass(int index)
+    {
+        const string strip = "w-4/5 shrink-0 snap-start sm:w-auto";
+        return index switch
+        {
+            < 4 => strip,
+            < 6 => strip + " sm:hidden lg:block",
+            < 8 => strip + " sm:hidden xl:block",
+            _ => strip + " sm:hidden 2xl:block",
+        };
+    }
+}

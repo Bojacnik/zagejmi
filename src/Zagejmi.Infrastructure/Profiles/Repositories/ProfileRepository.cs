@@ -1,12 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
 
+using Zagejmi.Application.Abstractions;
+using Zagejmi.Application.Profiles;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Profiles.SearchServices;
+using Zagejmi.Domain.Auth;
+using Zagejmi.Domain.Games;
 using Zagejmi.Domain.Profiles.Customers;
 using Zagejmi.Domain.Profiles.Players;
 using Zagejmi.Infrastructure.Profiles.Ctx;
@@ -73,8 +79,9 @@ public sealed class ProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<PlayerProfile>> SearchPlayersAsync(
+    public async Task<PagedResult<PlayerProfile>> SearchPlayersAsync(
         string? search,
+        GenderGroup? gender,
         int skip,
         int take,
         CancellationToken cancellationToken = default)
@@ -89,14 +96,104 @@ public sealed class ProfileRepository : IProfileRepository
             query = query.Where(x => EF.Functions.ILike(x.DisplayName, pattern, "\\"));
         }
 
+        if (gender is { } group)
+        {
+            IQueryable<ProfileOwnerRecord> owners = context.ProfileOwners.Where(InGroup(group));
+            query = query.Where(x => owners.Any(o => o.Id == x.UserId));
+        }
+
+        // Complete profiles first (RANK-001, weights in ProfileCompleteness): profile picture, then banner, then an
+        // available service with an image; ties go to the newest.
+        IQueryable<PlayerServiceRecord> servicesWithImage = context.PlayerServices.Where(s => s.IsAvailable && s.ImageId != null);
+        int total = await query.CountAsync(cancellationToken);
         List<PlayerProfileRecord> records = await query
-            .OrderByDescending(x => x.CreatedAt)
+            .OrderByDescending(x =>
+                (x.CardProfilePictureId != null ? ProfileCompleteness.ProfilePicture : 0)
+                + (x.BannerPictureId != null ? ProfileCompleteness.Banner : 0)
+                + (servicesWithImage.Any(s => s.PlayerProfileId == x.Id) ? ProfileCompleteness.ServiceImage : 0))
+            .ThenByDescending(x => x.CreatedAt)
             .ThenBy(x => x.Id)
             .Skip(skip)
             .Take(take)
             .ToListAsync(cancellationToken);
 
-        return records.Select(ToDomain).ToList();
+        return new PagedResult<PlayerProfile>(records.Select(ToDomain).ToList(), total);
+    }
+
+    /// <inheritdoc />
+    public async Task<PagedResult<ServiceListItem>> SearchServicesAsync(
+        ServiceSearchFilter filter,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        await using ProfilesContext context = await this.contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var query = context.PlayerServices
+            .AsNoTracking()
+            .Where(s => s.IsAvailable)
+            .Join(context.Players, s => s.PlayerProfileId, p => p.Id, (s, p) => new { Service = s, Player = p });
+
+        if (filter.Search is { } search)
+        {
+            string pattern = $"%{EscapeLikePattern(search)}%";
+            query = query.Where(x =>
+                EF.Functions.ILike(x.Service.Name, pattern, "\\")
+                || EF.Functions.ILike(x.Player.DisplayName, pattern, "\\"));
+        }
+
+        if (filter.Gender is { } group)
+        {
+            IQueryable<ProfileOwnerRecord> owners = context.ProfileOwners.Where(InGroup(group));
+            query = query.Where(x => owners.Any(o => o.Id == x.Player.UserId));
+        }
+
+        if (filter.GameKey is { } gameKey)
+        {
+            query = query.Where(x => x.Service.GameKey == gameKey);
+        }
+
+        if (filter.RankKeys is { } rankKeys)
+        {
+            query = query.Where(x => x.Service.RankKey != null && rankKeys.Contains(x.Service.RankKey));
+        }
+
+        if (filter.PlayStyles != PlayStyles.None)
+        {
+            PlayStyles wanted = filter.PlayStyles;
+            query = query.Where(x => (x.Service.PlayStyles & wanted) != PlayStyles.None);
+        }
+
+        int total = await query.CountAsync(cancellationToken);
+        List<ServiceListItem> items = await query
+            // Complete listings first (RANK-001, weights in ProfileCompleteness): the player's profile picture, then
+            // their banner, then the service image; ties go to the newest.
+            .OrderByDescending(x =>
+                (x.Player.CardProfilePictureId != null ? ProfileCompleteness.ProfilePicture : 0)
+                + (x.Player.BannerPictureId != null ? ProfileCompleteness.Banner : 0)
+                + (x.Service.ImageId != null ? ProfileCompleteness.ServiceImage : 0))
+            .ThenByDescending(x => x.Service.CreatedAt)
+            .ThenBy(x => x.Service.Id)
+            .Skip(skip)
+            .Take(take)
+            .Select(x => new ServiceListItem(
+                x.Service.Id,
+                x.Player.Id,
+                x.Player.DisplayName,
+                x.Player.CardProfilePictureId,
+                x.Service.Name,
+                x.Service.Description,
+                x.Service.Price,
+                x.Service.PriceUnit,
+                x.Service.Category,
+                x.Service.GameKey,
+                x.Service.RankKey,
+                x.Service.PlayStyles,
+                x.Service.ImageId,
+                x.Service.CreatedAt))
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<ServiceListItem>(items, total);
     }
 
     /// <inheritdoc />
@@ -322,6 +419,19 @@ public sealed class ProfileRepository : IProfileRepository
     /// <summary>
     ///     Escapes LIKE wildcards so user input such as "50%" is matched literally.
     /// </summary>
+    /// <summary>
+    ///     Which genders belong to a group of the default split; "Jiné" and "Nechci uvádět" share the last group.
+    /// </summary>
+    private static Expression<Func<ProfileOwnerRecord, bool>> InGroup(GenderGroup group)
+    {
+        return group switch
+        {
+            GenderGroup.Women => o => o.Gender == Gender.Female,
+            GenderGroup.Men => o => o.Gender == Gender.Male,
+            _ => o => o.Gender != Gender.Female && o.Gender != Gender.Male,
+        };
+    }
+
     private static string EscapeLikePattern(string value)
     {
         return value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");

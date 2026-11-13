@@ -16,7 +16,7 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261113121607_AddServiceGameRankPlayStyles";
+    public override string LastMigrationId => "20261113123507_AddProfileOwnersView";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -155,6 +155,25 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
                 b.HasIndex("PlayerProfileId", "CreatedAt");
 
                 b.ToTable("PlayerServices", "profiles");
+            });
+
+        modelBuilder.Entity("Zagejmi.Infrastructure.Profiles.Records.ProfileOwnerRecord", b =>
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
+
+                b.Property<string>("Gender")
+                    .IsRequired()
+                    .HasMaxLength(16)
+                    .HasColumnType("character varying(16)");
+
+                b.HasKey("Id");
+
+                b.ToTable("Users", "users", t =>
+                    {
+                        t.ExcludeFromMigrations();
+                    });
             });
 
         modelBuilder.Entity("Zagejmi.Infrastructure.Profiles.Records.SubscriptionRecord", b =>

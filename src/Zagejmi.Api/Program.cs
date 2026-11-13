@@ -30,6 +30,7 @@ using Zagejmi.Application.Profiles.DeletePlayerService;
 using Zagejmi.Application.Profiles.GetPlayerDetail;
 using Zagejmi.Application.Profiles.GetUserProfiles;
 using Zagejmi.Application.Profiles.SearchPlayers;
+using Zagejmi.Application.Profiles.SearchServices;
 using Zagejmi.Application.Profiles.SetPlayerBanner;
 using Zagejmi.Application.Profiles.SetProfileImage;
 using Zagejmi.Application.Profiles.UpdatePlayerService;
@@ -134,6 +135,7 @@ public static class Program
         builder.Services.AddScoped<CreatePlayerProfileHandler>();
         builder.Services.AddScoped<GetUserProfilesHandler>();
         builder.Services.AddScoped<SearchPlayersHandler>();
+        builder.Services.AddScoped<SearchServicesHandler>();
         builder.Services.AddScoped<GetPlayerDetailHandler>();
         builder.Services.AddScoped<SetProfileImageHandler>();
         builder.Services.AddScoped<SetPlayerBannerHandler>();

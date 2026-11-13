@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Zagejmi.Application.Abstractions;
+using Zagejmi.Application.Profiles.SearchServices;
 using Zagejmi.Domain.Profiles.Customers;
 using Zagejmi.Domain.Profiles.Players;
 
@@ -62,15 +64,33 @@ public interface IProfileRepository
     Task AddPlayerAsync(PlayerProfile profile, CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///     Lists player profiles, newest first, optionally filtered by display name (case-insensitive substring).
+    ///     Lists player profiles, most complete first (see <see cref="ProfileCompleteness" />), then newest,
+    ///     optionally filtered by display name (case-insensitive substring).
     /// </summary>
     /// <param name="search">Text to look for in the display name, or <see langword="null" /> for all players.</param>
+    /// <param name="gender">Only players in this gender group, or <see langword="null" /> for everyone.</param>
     /// <param name="skip">How many players to skip.</param>
     /// <param name="take">How many players to return.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>The matching players.</returns>
-    Task<IReadOnlyList<PlayerProfile>> SearchPlayersAsync(
+    /// <returns>The page of matching players and how many match in total.</returns>
+    Task<PagedResult<PlayerProfile>> SearchPlayersAsync(
         string? search,
+        GenderGroup? gender,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Lists available services of all players, most complete first (see <see cref="ProfileCompleteness" />), then
+    ///     newest, with the player who offers each one.
+    /// </summary>
+    /// <param name="filter">The validated filters.</param>
+    /// <param name="skip">How many services to skip.</param>
+    /// <param name="take">How many services to return.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The page of matching services and how many match in total.</returns>
+    Task<PagedResult<ServiceListItem>> SearchServicesAsync(
+        ServiceSearchFilter filter,
         int skip,
         int take,
         CancellationToken cancellationToken = default);

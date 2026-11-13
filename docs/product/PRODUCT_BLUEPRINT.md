@@ -95,6 +95,24 @@ Požadavky používají stavy definované v [README](./README.md).
 - Zákazník může najít hráče přes jeho profil nebo hledat přímo službu.
 - **Návrh:** Service by měla být samostatná entita navázaná na Player profil, s vlastní kategorií, hrou, parametry, cenou a dostupností. Tento datový návrh je potřeba ověřit proti existujícímu modelu a potvrdit před implementací.
 
+### PROFILE-003 – Upozornění na doplnění profilu
+- **Stav:** `CONFIRMED` (záměr), `LATER`
+- Hráče upozornit, že doplnění profilovky, banneru a obrázků služeb zlepší jeho pozici ve výsledcích (RANK-001).
+- Upozornění má vycházet ze stejných vah jako řazení, aby hráči nejdřív doporučilo to, co pomůže nejvíc (profilovka > banner > obrázky služeb).
+- Forma (banner v profilu, checklist, notifikace) a texty zatím nejsou navržené.
+
+### PROFILE-004 – Vlastní plný profil hráče
+- **Stav:** `CONFIRMED` (záměr), `OPEN` (rozsah a forma); zatím neimplementovat.
+- Hráč má mít vlastní plnohodnotnou profilovou stránku, ne jen dnešní popup (detail hráče otevřený ze stránek Hráči a Služby).
+- Na profilu si může napsat něco navíc o sobě: delší text „o mně“ nad rámec dnešního krátkého popisu.
+- **Otevřené otázky:**
+  - Adresa stránky (např. podle přezdívky, nebo podle ID) a co se stane po změně přezdívky.
+  - Rozsah textu „o mně“ a jestli bude formátovaný (odstavce, odkazy, emoji) nebo prostý text.
+  - Další obsah profilu (služby, hry a ranky, recenze, galerie, odkazy na sociální sítě, dostupnost) a jejich pořadí.
+  - Vztah k popupu: jestli popup zůstane jako rychlý náhled s odkazem „Zobrazit celý profil“, nebo karty povedou rovnou na profil.
+  - Moderace textů a obrázků a chování profilu v Ghost Mode (PRIVACY-001).
+- **Souvislosti:** delší „o mně“ může být další položkou úplnosti profilu (RANK-001, PROFILE-003); o váze je potřeba rozhodnout.
+
 ---
 
 ## 7. Privacy – Ghost Mode
@@ -150,6 +168,7 @@ Požadavky používají stavy definované v [README](./README.md).
   - **Hráči:** zákazník hledá konkrétního člověka a prohlíží jeho profil a nabídky.
   - **Služby:** zákazník hledá konkrétní službu bez nutnosti začít výběrem konkrétního hráče.
 - Obě cesty mají pracovat se stejnými hráči a jejich nabídkami; nejde o dva nezávislé marketplace katalogy.
+- **Implementováno:** stránka Služby (`/services`) se všemi dostupnými službami všech hráčů; kliknutí otevře detail hráče. Řazení: nejdřív úplné profily a nabídky s obrázky, potom od nejnovějších (viz RANK-001).
 
 ### MARKET-002 – Výchozí rozdělení výsledků podle pohlaví
 - **Stav:** `CONFIRMED` (výchozí UX), `OPEN` (okrajové případy a profilová data)
@@ -157,6 +176,13 @@ Požadavky používají stavy definované v [README](./README.md).
 - Uživatel může toto rozdělení vypnout a zobrazit společný seznam.
 - Další filtry musí být použitelné jak při rozděleném, tak při společném zobrazení.
 - Je nutné rozhodnout, jak zobrazit profily s jinou nebo neuvedenou hodnotou pohlaví; hodnota se nesmí odvozovat z fotografie ani odhadem.
+- **Implementováno:** na stránkách Hráči i Služby jsou záložky **Přehled · Hráčky · Hráči · Ostatní · Všichni**, každá s počtem výsledků. Výchozí je Přehled se sekcemi Hráčky → Hráči → Ostatní; Všichni = jeden společný seznam. Použije se pouze pohlaví zvolené při registraci. Všechny filtry platí ve všech záložkách i v jejich počtech.
+- **Rozvržení (rozhodnuto 2026-11-13):**
+  - V přehledu má každá sekce nejvýše dvě řady karet (2–5 sloupců podle šířky obrazovky). Na mobilu jsou karty sekce ve vodorovném pásu, kterým se dá swipovat.
+  - Nadpis sekce ukazuje celkový počet; odkaz „Zobrazit vše (N)“ přepne na záložku dané skupiny.
+  - Záložka skupiny nebo Všichni ukáže úplný seznam se stránkováním „Načíst další“. Každá záložka má vlastní URL (`?gender=Women|Men|Others|All`), takže jde sdílet a funguje tlačítko zpět.
+  - Carousel ani popup se pro „Zobrazit vše“ nepoužívá (dlouhý seznam, filtry a detail hráče by se v popupu nevešly); carousel případně později na úvodní stránce.
+- **Návrh (`PROPOSED`, k potvrzení):** hodnoty „Jiné“ a „Nechci uvádět“ tvoří společnou třetí sekci „Ostatní“ pod muži. Volba přepínače se zatím nepamatuje (po načtení stránky je vždy zapnutý).
 
 ### MARKET-003 – Filtry discovery
 - **Stav:** `CONFIRMED` (požadované typy filtrů), `OPEN` (konkrétní UI a datové možnosti)
@@ -170,7 +196,8 @@ Požadavky používají stavy definované v [README](./README.md).
 - **Rozhodnuto (2026-11-13):**
   - Hry a jejich ranky se vybírají z **předem připraveného seznamu** se známými ranky, nikoliv volným textem.
   - Kompetitivní / nekompetitivní hraní si **nastavuje Player u každé služby**: může nabízet jen jedno, nebo obojí.
-- **Implementováno (podklad pro filtry):** katalog her a ranků (`GameCatalog`), služba má hru, rank a styl hraní (kompetitivně / pro zábavu / obojí). Samotné filtry a sekce Služby zatím chybí.
+- **Implementováno:** katalog her a ranků (`GameCatalog`), služba má hru, rank a styl hraní (kompetitivně / pro zábavu / obojí). Stránka Služby filtruje podle textu (název služby nebo hráče), hry, minimálního ranku („Gold a výš“) a stylu hraní.
+- **Zatím chybí:** filtr podle kategorie (kategorie nejsou rozhodnuté), stejné filtry na stránce Hráči a rozdělení podle pohlaví (MARKET-002).
 - **Návrh (`PROPOSED`, k potvrzení):**
   - Rank u služby znamená rank hráče v dané hře. Rozsah ranků pro služby typu boosting zatím není řešen.
   - Ranky jsou pouze úrovně (tiers) bez divizí (např. „Gold“, ne „Gold 2“).
@@ -193,6 +220,14 @@ Požadavky používají stavy definované v [README](./README.md).
 - Inspirací má být relevance na e-pal.gg.
 - Přesné chování e-pal.gg je nutné samostatně zanalyzovat; cílem je vytvořit vlastní vhodný algoritmus, ne kopírovat neveřejný kód nebo interní implementaci.
 - Kandidátní faktory jako shoda služby/hry/ranku, hodnocení, počet recenzí, dostupnost nebo cena jsou zatím pouze `PROPOSED` a musí být ověřeny.
+- **Potvrzený faktor (2026-11-13):** úplnost profilu. Hráči s profilovkou, bannerem a službami s obrázky mají být v pořadí preferováni.
+- **Potvrzené pořadí důležitosti (2026-11-13):** profilovka (vysoko) > banner (vysoko) > obrázky služeb (až třetí).
+- **Implementováno:** v každé sekci (i ve společném seznamu) se řadí podle skóre úplnosti, při shodě od nejnovějších.
+  - Váhy: profilovka 4, banner 2, obrázek služby 1. Jsou to mocniny dvojky, takže důležitější prvek vždy převáží všechny méně důležité dohromady.
+  - Hráči: obrázek služby = aspoň jedna dostupná služba s obrázkem.
+  - Služby: profilovka a banner hráče, který službu nabízí, a obrázek dané služby.
+  - Váhy jsou na jednom místě v kódu (`ProfileCompleteness`), aby je mohl použít i PROFILE-003.
+- Další faktory relevance (hodnocení, dostupnost, …) zůstávají `PROPOSED`.
 
 ### RANK-002 – Leaderboard hráčů
 - **Stav:** `CONFIRMED` (požadavek), `OPEN` (metrika a pravidla)
@@ -330,9 +365,10 @@ Porovnání tohoto dokumentu s kódem na větvi `master`. Část požadavků je 
 | PAY-003 Central Wallet | Částečně: existují systémové účty `Escrow`, `TopUpClearing`, `PayoutClearing`, zatím se nepoužívají. |
 | PRIVACY-001 Ghost Mode | Částečně: přepínač a serverový filtr blokující akce v Ghost Mode. |
 | AUTH-004 / PROFILE-001 | Jeden účet může mít Player i Customer profil a přepínat mezi nimi (odpovídá na otevřenou otázku 1). |
-| MARKET-003 | Částečně: katalog her a ranků, styl hraní u služby (viz MARKET-003). |
+| MARKET-001 / MARKET-003 | Částečně: stránka Služby s filtry hra, minimální rank, styl hraní a text (viz MARKET-003). |
+| MARKET-002 | Hotovo s návrhem pro „Jiné“ / „Nechci uvádět“ (viz MARKET-002). |
 
-Zatím chybí: objednávky, sekce Služby a filtry, rozdělení výsledků podle pohlaví, nákup Goinů (Stripe), cashout.
+Zatím chybí: objednávky, filtry hra/rank/styl na stránce Hráči, nákup Goinů (Stripe), cashout.
 
 ## 16. Otevřená rozhodnutí
 
@@ -356,6 +392,7 @@ Následující body vyžadují další produktový brainstorming nebo technickou
 16. Které metody ověření věku/identity budou dostupné při spuštění?
 17. Jak se budou definovat měsíční průměrné výdělky a reklamovanost v Analytics?
 18. Jak bude vypadat první veřejná a placená release fáze a co do ní nepatří?
+19. Jak bude vypadat plný profil hráče (PROFILE-004): adresa, obsah, formátování textu „o mně“ a vztah k dnešnímu popupu?
 
 ## 17. Doporučený další postup
 
