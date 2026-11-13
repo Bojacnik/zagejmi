@@ -7,75 +7,151 @@
 @implements IDisposable
 @rendermode InteractiveServer
 
+@*
+    Top bar. Built to work at any width (UI-001):
+    - from lg (1024 px) the main navigation sits in the middle; below that it moves into the "Menu" panel;
+    - the username shows from 2xl, "Odhlásit se" is an icon until xl; both are in the Menu panel below lg;
+    - below sm (640 px) the profile switch also moves into the Menu panel and the logo text hides.
+    Flex (not a 1fr/auto/1fr grid), so the right side can never spill over the navigation.
+*@
 <header
-    class="sticky top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 h-16 px-4 bg-primary-950/70 backdrop-blur-md backdrop-saturate-150 border-b border-accent-800/50 shadow-lg shadow-black/30">
-    <div class="flex items-center gap-4">
-        <button @onclick="ToggleSidebar"
-                class="p-2 rounded-md text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+    class="sticky top-0 z-20 flex items-center gap-2 sm:gap-4 h-16 px-2 sm:px-4 bg-primary-950/70 backdrop-blur-md backdrop-saturate-150 border-b border-accent-800/50 shadow-lg shadow-black/30">
+    <div class="flex shrink-0 items-center gap-2 sm:gap-4">
+        @* Two buttons, one per layout: the server cannot know the width, CSS shows the right one. *@
+        <button @onclick="SidebarStateService.ToggleMobileSidebar" aria-label="Postranní panel" title="Postranní panel"
+                aria-expanded="@(SidebarStateService.IsMobileSidebarOpen ? "true" : "false")"
+                class="lg:hidden p-2 rounded-md text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+                 xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+        <button @onclick="ToggleSidebar" aria-label="Postranní panel" title="Postranní panel"
+                aria-expanded="@(SidebarStateService.IsSidebarOpen ? "true" : "false")"
+                class="hidden lg:block p-2 rounded-md text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
                  xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
         </button>
         <a href="/" @onclick='() => NavigateToSection("Home")' @onclick:preventDefault class="flex items-center gap-2">
-            <img src="img/cat.jpg" class="h-10 w-10 rounded-full" alt="Logo Zagejmi"/>
-            <span class="text-xl font-bold text-text-default">Zagejmi</span>
+            <img src="img/cat.jpg" class="h-10 w-10 shrink-0 rounded-full" alt="Logo Zagejmi"/>
+            <span class="hidden sm:inline text-xl font-bold text-text-default">Zagejmi</span>
         </a>
     </div>
 
-    <nav class="hidden md:flex items-center gap-2">
-        <a @onclick='() => NavigateToSection("Home")' @onclick:preventDefault href="#"
-           class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Home") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
-            Domů
-        </a>
-        <a @onclick='() => NavigateToSection("People")' @onclick:preventDefault href="#"
-           class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("People") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
-            Hráči
-        </a>
-        <a @onclick='() => NavigateToSection("Services")' @onclick:preventDefault href="#"
-           class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Services") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
-            Služby
-        </a>
-        @if (isAuthenticated)
+    <nav aria-label="Hlavní navigace" class="hidden lg:flex flex-1 min-w-0 items-center justify-center gap-1 xl:gap-2">
+        @foreach ((string section, string label) in VisibleSections)
         {
-            <a @onclick='() => NavigateToSection("Wallets")' @onclick:preventDefault href="#"
-               class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Wallets") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
-                Peněženka
-            </a>
-            <a @onclick='() => NavigateToSection("Profile")' @onclick:preventDefault href="#"
-               class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Profile") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
-                Profil
+            <a @onclick="() => NavigateToSection(section)" @onclick:preventDefault href="#"
+               aria-current="@(IsActive(section) ? "page" : null)"
+               class="whitespace-nowrap px-3 py-2 rounded-md text-sm font-medium @(IsActive(section) ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
+                @label
             </a>
         }
     </nav>
 
-    <div class="col-start-3 flex items-center justify-end gap-4">
+    @* Pushes the right side to the edge while the middle navigation is hidden. *@
+    <div class="flex-1 lg:hidden"></div>
+
+    <div class="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
         @if (isAuthenticated)
         {
-            <ProfileSwitch/>
+            <div class="hidden sm:block"><ProfileSwitch/></div>
             <WalletBadge/>
-            <span class="hidden sm:inline text-sm text-text-default font-semibold whitespace-nowrap">@username</span>
-            <button @onclick="HandleLogout"
-                    class="shrink-0 whitespace-nowrap px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
-                Odhlásit se
+            <span class="hidden 2xl:inline text-sm text-text-default font-semibold whitespace-nowrap">@username</span>
+            <button @onclick="HandleLogout" aria-label="Odhlásit se" title="Odhlásit se"
+                    class="hidden lg:inline-flex shrink-0 items-center gap-2 whitespace-nowrap p-2 xl:px-4 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
+                <svg class="w-5 h-5 xl:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 12H3m0 0 4-4m-4 4 4 4M13 5h5a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"></path>
+                </svg>
+                <span class="hidden xl:inline">Odhlásit se</span>
             </button>
         }
         else
         {
             <a href="/login"
-               class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors @(IsActive("Login") ? "bg-accent-800/50 text-text-default" : "hover:bg-primary-800/50 text-text-default")">Přihlásit se</a>
+               class="whitespace-nowrap px-2 sm:px-4 py-2 text-sm font-semibold rounded-lg transition-colors @(IsActive("Login") ? "bg-accent-800/50 text-text-default" : "hover:bg-primary-800/50 text-text-default")">Přihlásit se</a>
             <a href="/register"
-               class="px-4 py-2 text-sm font-semibold text-text-default rounded-lg transition-colors shadow-lg shadow-accent-800/40 @(IsActive("Register") ? "bg-accent-700" : "bg-accent-600 hover:bg-accent-700")">
+               class="whitespace-nowrap px-2.5 sm:px-4 py-2 text-sm font-semibold text-text-default rounded-lg transition-colors shadow-lg shadow-accent-800/40 @(IsActive("Register") ? "bg-accent-700" : "bg-accent-600 hover:bg-accent-700")">
                 Registrace
             </a>
         }
+
+        <button type="button" @onclick="ToggleMenu" aria-expanded="@(isMenuOpen ? "true" : "false")" aria-controls="main-menu"
+                aria-label="Menu" title="Menu"
+                class="lg:hidden shrink-0 p-2 rounded-md text-text-default hover:bg-accent-800/50 transition-colors @(isMenuOpen ? "bg-accent-800/50" : "")">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                @if (isMenuOpen)
+                {
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"></path>
+                }
+                else
+                {
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v6H4zM14 15h6v6h-6z"></path>
+                }
+            </svg>
+        </button>
     </div>
+
+    @if (isMenuOpen)
+    {
+        @* Clicking outside the panel closes it. *@
+        <button type="button" aria-label="Zavřít menu" tabindex="-1" @onclick="CloseMenu"
+                class="lg:hidden fixed inset-0 top-16 z-10 h-[calc(100vh-4rem)] w-full cursor-default bg-black/40"></button>
+
+        <div id="main-menu"
+             class="lg:hidden absolute top-16 right-0 left-0 sm:left-auto sm:right-4 sm:mt-2 z-20 sm:w-72 max-h-[calc(100vh-5rem)] overflow-y-auto border-b sm:border border-accent-800/50 sm:rounded-xl bg-primary-950 p-3 shadow-2xl shadow-black/60">
+            @if (isAuthenticated)
+            {
+                <div class="sm:hidden mb-3 flex justify-center"><ProfileSwitch/></div>
+            }
+
+            <nav aria-label="Hlavní navigace" class="flex flex-col gap-1">
+                @foreach ((string section, string label) in VisibleSections)
+                {
+                    <a @onclick="() => NavigateToSection(section)" @onclick:preventDefault href="#"
+                       aria-current="@(IsActive(section) ? "page" : null)"
+                       class="px-3 py-2.5 rounded-md text-base font-medium @(IsActive(section) ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
+                        @label
+                    </a>
+                }
+            </nav>
+
+            @if (isAuthenticated)
+            {
+                <div class="mt-3 pt-3 border-t border-accent-800/40 flex items-center justify-between gap-3">
+                    <span class="min-w-0 truncate text-sm font-semibold text-text-default">@username</span>
+                    <button @onclick="HandleLogout"
+                            class="shrink-0 whitespace-nowrap px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors">
+                        Odhlásit se
+                    </button>
+                </div>
+            }
+        </div>
+    }
 </header>
 
 @code {
+    private static readonly (string Section, string Label, bool NeedsLogin)[] Sections =
+    [
+        ("Home", "Domů", false),
+        ("People", "Hráči", false),
+        ("Services", "Služby", false),
+        ("Wallets", "Peněženka", true),
+        ("Profile", "Profil", true),
+    ];
+
     private bool isAuthenticated;
+    private bool isMenuOpen;
     private string? username;
+
+    private IEnumerable<(string Section, string Label)> VisibleSections =>
+        Sections.Where(s => isAuthenticated || !s.NeedsLogin).Select(s => (s.Section, s.Label));
 
     protected override async Task OnInitializedAsync()
     {
@@ -159,6 +235,8 @@
             // Refresh authentication state on every navigation to detect login/logout changes
             await RefreshAuthenticationState();
             SidebarStateService.SetSelectedPageFromUri(location);
+            SidebarStateService.CloseMobileSidebar();
+            isMenuOpen = false;
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
@@ -172,8 +250,24 @@
         SidebarStateService.ToggleSidebar();
     }
 
+    private void ToggleMenu()
+    {
+        isMenuOpen = !isMenuOpen;
+        if (isMenuOpen)
+        {
+            // One panel at a time on narrow screens.
+            SidebarStateService.CloseMobileSidebar();
+        }
+    }
+
+    private void CloseMenu()
+    {
+        isMenuOpen = false;
+    }
+
     private void NavigateToSection(string section)
     {
+        isMenuOpen = false;
         string url = section switch
         {
             "People" => "people",

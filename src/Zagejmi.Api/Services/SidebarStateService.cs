@@ -79,6 +79,36 @@ public class SidebarStateService
     }
 
     /// <summary>
+    ///     Gets a value indicating whether the sidebar is slid in over the page on narrow screens (below lg, UI-001).
+    ///     Separate from <see cref="IsSidebarOpen" /> (the desktop column), so phones start with it closed while desktops
+    ///     keep it open; the server cannot know the window width, so CSS picks which state applies.
+    /// </summary>
+    public bool IsMobileSidebarOpen { get; private set; }
+
+    /// <summary>
+    ///     Slides the sidebar in or out on narrow screens.
+    /// </summary>
+    public void ToggleMobileSidebar()
+    {
+        this.IsMobileSidebarOpen = !this.IsMobileSidebarOpen;
+        this.NotifyStateChanged();
+    }
+
+    /// <summary>
+    ///     Closes the slid-in sidebar on narrow screens (after navigating, or when tapping outside it).
+    /// </summary>
+    public void CloseMobileSidebar()
+    {
+        if (!this.IsMobileSidebarOpen)
+        {
+            return;
+        }
+
+        this.IsMobileSidebarOpen = false;
+        this.NotifyStateChanged();
+    }
+
+    /// <summary>
     ///     Sets the currently selected page in the application by updating the value of the SelectedPage property. When this
     ///     method is called with a new page name, it will update the SelectedPage property to reflect the new page, allowing
     ///     components to update their state and display content accordingly based on the currently selected page. If the new

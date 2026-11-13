@@ -39,6 +39,7 @@ Požadavky používají stavy definované v [README](./README.md).
 | Wallet | Virtuální měna Goin už existuje; přesný stav wallet/ledger je nutné auditovat. |
 | Payments | Nákup Goinů přes Stripe a cashout hráčů podle vlastníka produktu zatím nejsou k dispozici. |
 | Analytics | Rozšířené Player Analytics jsou plánované později. |
+| UI | Web má fungovat při jakékoli šířce okna; při změně velikosti se dnes některé prvky slévají (hlavně horní lišta), viz UI-001. |
 | Legal & launch | Podnikatelský, platební a regulatorní model musí být vyhodnocen před ostrým komerčním spuštěním. |
 
 ---
@@ -326,7 +327,27 @@ Požadavky používají stavy definované v [README](./README.md).
 
 ---
 
-## 14. Business, legal & launch readiness
+## 14. UI, responzivita a přístupnost
+
+### UI-001 – Web funguje při jakékoli šířce okna
+- **Stav:** `CONFIRMED`
+- Celý web musí fungovat na mobilu, tabletu i desktopu a při změně velikosti okna; prvky se nesmějí překrývat ani slévat dohromady.
+- Na užší obrazovce se obsah má přeskládat (zalomit, schovat do menu, posouvat), ne překrýt.
+- **Zjištěný stav (2026-11-13):** vlastník produktu hlásí, že se při změně velikosti některé prvky slévají dohromady.
+  - Pravděpodobně hlavní místo: horní lišta. Navigace uprostřed (Domů, Hráči, Služby, Peněženka, Profil) se zobrazí od šířky 768 px a na středních šířkách se nevejde vedle přepínače profilu, zůstatku Goinů, jména a tlačítka Odhlásit se. Přidání odkazu Služby (MARKET-001) tento problém zhoršilo.
+  - Pod 768 px není hlavní navigace dostupná jinak než přes postranní panel; je potřeba ověřit, že se dá na mobilu dostat na všechny stránky.
+  - Ostatní stránky (Profil, Peněženka, formuláře, popupy) zatím nebyly systematicky zkontrolovány.
+- **Opraveno (2026-11-13), ověřeno screenshoty v Chrome v šířkách 360–1536 px:**
+  - Horní lišta: hlavní navigace je v liště od 1024 px, pod tím v panelu „Menu“; jméno uživatele od 1536 px; „Odhlásit se“ je mezi 1024 a 1280 px jen ikona; pod 640 px je přepínač profilu v panelu Menu. Lišta je flex, takže pravá část už nepřetéká přes navigaci.
+  - Postranní panel: od 1024 px sloupec vedle obsahu jako dřív; pod 1024 px je ve výchozím stavu zavřený a vysouvá se přes obsah, po navigaci se zavře.
+  - Odsazení obsahu se zmenšuje podle šířky obrazovky.
+- **Zbývá (`PROPOSED`):**
+  - Projít zbývající stránky (Profil, Peněženka, Domů, přihlášení a registrace, popupy) ve stejných šířkách a sepsat konkrétní chyby.
+  - Kontrolu šířek přidat do postupu před každým PR, který mění UI.
+
+---
+
+## 15. Business, legal & launch readiness
 
 ### LEGAL-001 – Provoz bez IČO během vývoje
 - **Stav:** `REVIEW`
@@ -352,7 +373,7 @@ Požadavky používají stavy definované v [README](./README.md).
 
 ---
 
-## 15. Audit kódu (2026-11-13)
+## 16. Audit kódu (2026-11-13)
 
 Porovnání tohoto dokumentu s kódem na větvi `master`. Část požadavků je hotová dříve, než je dokument popisoval:
 
@@ -370,7 +391,7 @@ Porovnání tohoto dokumentu s kódem na větvi `master`. Část požadavků je 
 
 Zatím chybí: objednávky, filtry hra/rank/styl na stránce Hráči, nákup Goinů (Stripe), cashout.
 
-## 16. Otevřená rozhodnutí
+## 17. Otevřená rozhodnutí
 
 Následující body vyžadují další produktový brainstorming nebo technickou/právní analýzu:
 
@@ -394,7 +415,7 @@ Následující body vyžadují další produktový brainstorming nebo technickou
 18. Jak bude vypadat první veřejná a placená release fáze a co do ní nepatří?
 19. Jak bude vypadat plný profil hráče (PROFILE-004): adresa, obsah, formátování textu „o mně“ a vztah k dnešnímu popupu?
 
-## 17. Doporučený další postup
+## 18. Doporučený další postup
 
 1. Pokračovat v brainstormingu a průběžně doplňovat tento dokument.
 2. U každého nového požadavku přidělit ID a stav.

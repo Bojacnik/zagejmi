@@ -43,6 +43,7 @@ Stav a časové zařazení jsou dvě různé věci. Například požadavek můž
 - `REWARD` – Bonus CAP a odměny
 - `ANALYTICS` – statistiky hráče
 - `OPS` – provoz a infrastruktura
+- `UI` – uživatelské rozhraní, responzivita a přístupnost
 - `LEGAL` – právní a regulatorní připravenost
 
 Identifikátory se po přidělení nemění ani při přesunu požadavku do jiné sekce.
