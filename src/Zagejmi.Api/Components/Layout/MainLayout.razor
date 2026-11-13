@@ -1,15 +1,22 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 @inject SidebarStateService SidebarStateService
-@implements IDisposable
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
-<div class="min-h-screen bg-gradient-to-r from-primary-950 to-primary-900 text-text-default">
+@*
+    App shell: the nav bar and sidebar stay put and only <main> scrolls. Its scrollbar gutter is always reserved
+    (scrollbar-gutter: stable) so content doesn't jump sideways when a page becomes long enough to scroll, and because
+    the gutter lives inside <main> (below the nav, over the gradient) the nav still spans the full window width.
+*@
+<div class="h-dvh flex flex-col overflow-hidden bg-gradient-to-r from-primary-950 to-primary-900 text-text-default">
     <NavMenu/>
 
-    <div class="flex">
+    <div class="flex flex-1 min-h-0">
         <Sidebar/>
 
-        <main class="flex-grow p-8 transition-all duration-300 ease-in-out">
+        <main @ref="scrollArea"
+              class="flex-grow min-w-0 overflow-y-auto [scrollbar-gutter:stable] p-8 transition-all duration-300 ease-in-out">
             <div class="max-w-7xl mx-auto">
                 @Body
             </div>
@@ -19,15 +26,51 @@
 
 @code {
 
+    private ElementReference scrollArea;
+    private IJSObjectReference? module;
+    private string currentPath = string.Empty;
+    private bool scrollToTopPending;
+
     protected override void OnInitialized()
     {
         NavigationManager.LocationChanged += HandleLocationChanged;
         SetSelectedPageFromUri(NavigationManager.Uri);
+        currentPath = new Uri(NavigationManager.Uri).AbsolutePath;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Resetting the scroll position is cosmetic, so a failed JS call must never take the layout down.
+        try
+        {
+            if (firstRender)
+            {
+                module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/layout.js");
+            }
+
+            if (scrollToTopPending && module is not null)
+            {
+                scrollToTopPending = false;
+                await module.InvokeVoidAsync("scrollToTop", scrollArea);
+            }
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or JSException)
+        {
+        }
     }
 
     private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         SetSelectedPageFromUri(e.Location);
+
+        // Only a move to another page starts at the top; query-string or #fragment changes keep the position.
+        string path = new Uri(e.Location).AbsolutePath;
+        if (path != currentPath)
+        {
+            currentPath = path;
+            scrollToTopPending = true;
+        }
+
         InvokeAsync(StateHasChanged);
     }
 
@@ -56,9 +99,21 @@
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         NavigationManager.LocationChanged -= HandleLocationChanged;
+
+        if (module is not null)
+        {
+            try
+            {
+                await module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // The circuit is already gone; there is nothing left to release on the browser side.
+            }
+        }
     }
 
 }

@@ -49,6 +49,16 @@
     --color-button-default-hover-bg: #d1d5db; /* Gray-300 */
 }
 
+/*
+ * Thin, themed scrollbars everywhere (scrollbar-color is inherited). The track is transparent so the scrollbar
+ * gutter MainLayout reserves next to the content blends into the background on pages too short to scroll.
+ */
+html {
+    background-color: rgb(var(--color-primary-950));
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-accent-800)) transparent;
+}
+
 /* Popup (modal) entrance animations */
 @keyframes modal-fade-in {
     from { opacity: 0; }
