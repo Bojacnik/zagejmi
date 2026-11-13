@@ -1,4 +1,4 @@
-﻿networks:
+networks:
   zagejmi_network:
     driver: bridge
 
@@ -18,7 +18,7 @@ services:
       - "5432:5432"
     
     volumes:
-      - postgresdb_data:/var/lib/postgresql/data
+      - postgresdb_data:/var/lib/postgresql
       - postgresdb_logs:/var/log/postgresql
     
     restart: unless-stopped
@@ -43,7 +43,9 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     
-    command: sh -c "mkdir -p /var/log/minio && chown -R 1000:1000 /var/log/minio || true && exec minio server /data --console-address \":9001\" >> /var/log/minio/minio.log 2>&1"
+    # The image's default entrypoint is the minio binary, so run the shell explicitly.
+    entrypoint: [ "sh", "-c" ]
+    command: [ "mkdir -p /var/log/minio && exec minio server /data --console-address :9001 >> /var/log/minio/minio.log 2>&1" ]
     ports:
       - "9000:9000" # S3 API
       - "9001:9001" # Console UI
@@ -75,6 +77,13 @@ services:
 
     ports:
       - "5178:8080"
+
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgresdb;Port=5432;Database=my_postgres_db;Username=my_postgres_user;Password=my_strong_password
+      Minio__Endpoint: minio:9000
+
+    volumes:
+      - api_dataprotection_keys:/home/app/.aspnet/DataProtection-Keys
     
     networks:
       - zagejmi_network
@@ -90,3 +99,4 @@ volumes:
   postgresdb_logs:
   minio_data:
   minio_logs:
+  api_dataprotection_keys:
