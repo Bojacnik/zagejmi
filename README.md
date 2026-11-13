@@ -22,8 +22,8 @@ Doporučené prostředí je JetBrains Rider; spouštěcí konfigurace jsou v `.r
 dotnet tool restore
 (cd src/Zagejmi.Api && npm ci && npm run css:build)   # vygeneruje wwwroot/styles.css
 docker compose up -d postgresdb minio                 # nebo konfigurace "Docker Infra only"
-dotnet build Zagejmi.sln
-dotnet test --solution Zagejmi.sln
+dotnet build Zagejmi.slnx
+dotnet test --solution Zagejmi.slnx
 ```
 
 Při vývoji UI stačí nechat běžet `npm run css:watch`.
