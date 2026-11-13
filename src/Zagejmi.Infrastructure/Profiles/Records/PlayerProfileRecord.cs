@@ -27,7 +27,6 @@ public record PlayerProfileRecord
     /// </summary>
     public required string DisplayName { get; set; }
 
-
     /// <summary>
     ///     Gets or sets the identifier of the card profile picture image blob.
     /// </summary>

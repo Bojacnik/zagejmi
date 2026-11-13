@@ -36,7 +36,6 @@ public static class ServiceCollectionExtensions
         // components (top bar, page, popup) query at the same time. Repositories create a short-lived context per
         // operation from these factories. AddDbContextFactory also registers each context as scoped for the
         // migrations and the JWT revocation check.
-
         services.AddDbContextFactory<ZagejmiUsersContext>(options => options.UseNpgsql(
             connectionString,
             npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "users")));

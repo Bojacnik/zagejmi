@@ -32,8 +32,7 @@ public class CustomerProfile : Profile
     }
 
     /// <summary>
-    ///     Gets or sets the profile picture associated with the customer, represented as an <see cref="Image" />
-    ///     object. This property holds the visual representation of the customer's profile picture, which can be used for
+    ///     Gets or sets the profile picture associated with the customer, referenced by the id of its stored image. This property holds the visual representation of the customer's profile picture, which can be used for
     ///     display purposes in the application. The image can be in various formats (e.g., JPEG, PNG) and is typically stored
     ///     as a binary object in the database. The <see cref="ProfilePicture" /> property allows the application to retrieve
     ///     and display the customer's profile picture when needed, such as in user interfaces or profile views.

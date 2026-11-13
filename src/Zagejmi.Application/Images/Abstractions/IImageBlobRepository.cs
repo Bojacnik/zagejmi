@@ -47,10 +47,10 @@ public interface IImageBlobRepository
     /// <summary>
     ///     Adds a new image blob record to the repository.
     /// </summary>
-    /// <param name="record">The image blob record to add.</param>
+    /// <param name="blob">The image blob to add.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The task representing the asynchronous operation.</returns>
-    Task AddAsync(ImageBlob record, CancellationToken ct = default);
+    Task AddAsync(ImageBlob blob, CancellationToken ct = default);
 
     /// <summary>
     ///     Deletes an existing image blob record from the repository by its unique identifier.

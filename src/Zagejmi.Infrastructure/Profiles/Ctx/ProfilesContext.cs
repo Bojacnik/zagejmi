@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
-using Zagejmi.Infrastructure.Profiles.Records;
-
 using Zagejmi.Domain.Profiles.Players;
+using Zagejmi.Infrastructure.Profiles.Records;
 
 namespace Zagejmi.Infrastructure.Profiles.Ctx;
 

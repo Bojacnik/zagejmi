@@ -2,7 +2,13 @@ using System;
 
 namespace Zagejmi.Application.Auth.Users.DeleteUser;
 
-public class DeleteUserCommand
+/// <summary>
+///     Command to delete a user account.
+/// </summary>
+public sealed class DeleteUserCommand
 {
-    public Guid Id { get; set; }
+    /// <summary>
+    ///     Gets the identifier of the user to delete.
+    /// </summary>
+    public Guid Id { get; init; }
 }

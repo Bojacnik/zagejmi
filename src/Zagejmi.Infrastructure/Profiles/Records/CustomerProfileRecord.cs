@@ -27,7 +27,6 @@ public record CustomerProfileRecord
     /// </summary>
     public required string DisplayName { get; set; }
 
-
     /// <summary>
     ///     Gets or sets the identifier of the profile picture image blob.
     /// </summary>
