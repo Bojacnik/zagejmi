@@ -4,7 +4,7 @@ using System.Text;
 
 using Zagejmi.Application.Mail.Abstractions;
 
-namespace Zagejmi.Infrastructure.Auth.Email;
+namespace Zagejmi.Infrastructure.Mail;
 
 /// <summary>
 ///     Represents a service responsible for generating and hashing email verification tokens. The

@@ -3,7 +3,7 @@ using System;
 using Zagejmi.Domain.Auth;
 using Zagejmi.Domain.Profiles;
 
-namespace Zagejmi.Infrastructure.Auth.Users;
+namespace Zagejmi.Infrastructure.Auth.Users.Records;
 
 /// <summary>
 ///     Represents a record for a user in the authentication system, containing information such as username, email,

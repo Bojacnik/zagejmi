@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Zagejmi.Infrastructure.Auth.Users;
+using Zagejmi.Infrastructure.Auth.Users.Records;
+
+namespace Zagejmi.Infrastructure.Auth.Users.Ctx;
 
 /// <summary>
 ///     Represents the context for Zagejmi users, providing access to user-related data and operations.

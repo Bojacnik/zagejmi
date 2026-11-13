@@ -2,7 +2,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Zagejmi.Application.Mail.Abstractions;
-using Zagejmi.Infrastructure.Auth.Email;
 using Zagejmi.Infrastructure.Mail;
 
 namespace Zagejmi.Infrastructure.Extensions;

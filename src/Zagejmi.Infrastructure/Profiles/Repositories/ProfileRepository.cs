@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 using Zagejmi.Application.Profiles.Abstractions;
-using Zagejmi.Domain.Profiles.Customer;
+using Zagejmi.Domain.Profiles.Customers;
 using Zagejmi.Domain.Profiles.Players;
 using Zagejmi.Infrastructure.Profiles.Ctx;
 using Zagejmi.Infrastructure.Profiles.Records;

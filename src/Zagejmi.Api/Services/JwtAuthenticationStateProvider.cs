@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
-namespace Zagejmi.Api.Components;
+namespace Zagejmi.Api.Services;
 
 /// <summary>
 ///     Authentication state provider backed by protected browser storage for JWT mode.

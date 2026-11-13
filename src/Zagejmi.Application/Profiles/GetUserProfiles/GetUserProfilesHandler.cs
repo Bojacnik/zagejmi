@@ -6,7 +6,7 @@ using Zagejmi.Application.Abstractions;
 using Zagejmi.Application.Auth.Users.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
 using Zagejmi.Domain.Auth;
-using Zagejmi.Domain.Profiles.Customer;
+using Zagejmi.Domain.Profiles.Customers;
 using Zagejmi.Domain.Profiles.Players;
 using Zagejmi.Shared;
 

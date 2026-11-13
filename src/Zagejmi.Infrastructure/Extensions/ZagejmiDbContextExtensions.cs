@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Zagejmi.Infrastructure.Auth.AccessTokens.Ctx;
-using Zagejmi.Infrastructure.Auth.Users;
+using Zagejmi.Infrastructure.Auth.Users.Ctx;
 using Zagejmi.Infrastructure.Images.Ctx;
 using Zagejmi.Infrastructure.Profiles.Ctx;
 

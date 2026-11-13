@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace Zagejmi.Domain.Goin;
+namespace Zagejmi.Domain.Wallets;
 
 /// <summary>
 ///     Represents a certain amount of Goin, the in-app currency used for transactions and rewards within the Zagejmi

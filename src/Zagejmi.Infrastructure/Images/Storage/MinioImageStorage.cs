@@ -8,11 +8,15 @@ using Minio.DataModel.Args;
 
 using Zagejmi.Application.Images.Abstractions;
 
-namespace Zagejmi.Infrastructure.Minio;
+namespace Zagejmi.Infrastructure.Images.Storage;
 
 /// <summary>
 ///     Represents an implementation of the <see cref="IImageStorage" /> interface that uses MinIO for image storage.
 /// </summary>
+/// <remarks>
+///     All images live in a single bucket; the object key encodes the owner and purpose,
+///     e.g. <c>profiles/JohnDoe/public/banner.webp</c>.
+/// </remarks>
 internal sealed class MinioImageStorage : IImageStorage
 {
     private const string BucketName = "images";

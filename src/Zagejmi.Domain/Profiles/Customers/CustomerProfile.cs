@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using Zagejmi.Domain.Profiles.Abstractions;
 
-namespace Zagejmi.Domain.Profiles.Customer;
+namespace Zagejmi.Domain.Profiles.Customers;
 
 /// <summary>
 ///     Represents the profile of a customer, containing information such as the profile picture and subscriptions

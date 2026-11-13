@@ -1,6 +1,6 @@
 using System;
 
-namespace Zagejmi.Domain.Goin;
+namespace Zagejmi.Domain.Wallets;
 
 /// <summary>
 ///     A transfer of goins from one wallet owner to another.

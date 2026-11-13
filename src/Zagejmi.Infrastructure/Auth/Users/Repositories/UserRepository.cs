@@ -7,8 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 using Zagejmi.Application.Auth.Users.Abstractions;
 using Zagejmi.Domain.Auth;
+using Zagejmi.Infrastructure.Auth.Users.Ctx;
+using Zagejmi.Infrastructure.Auth.Users.Records;
 
-namespace Zagejmi.Infrastructure.Auth.Users;
+namespace Zagejmi.Infrastructure.Auth.Users.Repositories;
 
 /// <summary>
 ///     Represents the repository for managing user entities in the application.
