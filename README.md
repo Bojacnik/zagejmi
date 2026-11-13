@@ -1,5 +1,9 @@
 ﻿# Zagejmi
 
+## Produktové plánování
+
+Průběžné produktové požadavky, rozhodnutí a otevřené otázky jsou vedené v [Product Discovery](docs/product/README.md) a hlavním [Product Blueprintu](docs/product/PRODUCT_BLUEPRINT.md).
+
 ## Struktura řešení
 
 | Projekt | Obsah |
