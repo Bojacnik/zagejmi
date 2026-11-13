@@ -12,11 +12,13 @@
     - from lg (1024 px) the main navigation sits in the middle; below that it moves into the "Menu" panel;
     - the username shows from 2xl, "Odhlásit se" is an icon until xl; both are in the Menu panel below lg;
     - below sm (640 px) the profile switch also moves into the Menu panel and the logo text hides.
-    Flex (not a 1fr/auto/1fr grid), so the right side can never spill over the navigation.
+    From lg the left and right sides share the free width equally (flex-1 basis-0), so the navigation is centered on
+    the page, not just between them. It is still flex (not a 1fr/auto/1fr grid): a side wider than its half pushes the
+    navigation over instead of spilling onto it.
 *@
 <header
     class="sticky top-0 z-20 flex items-center gap-2 sm:gap-4 h-16 px-2 sm:px-4 bg-primary-950/70 backdrop-blur-md backdrop-saturate-150 border-b border-accent-800/50 shadow-lg shadow-black/30">
-    <div class="flex shrink-0 items-center gap-2 sm:gap-4">
+    <div class="flex shrink-0 lg:flex-1 lg:basis-0 items-center gap-2 sm:gap-4">
         @* Two buttons, one per layout: the server cannot know the width, CSS shows the right one. *@
         <button @onclick="SidebarStateService.ToggleMobileSidebar" aria-label="Postranní panel" title="Postranní panel"
                 aria-expanded="@(SidebarStateService.IsMobileSidebarOpen ? "true" : "false")"
@@ -42,7 +44,7 @@
         </a>
     </div>
 
-    <nav aria-label="Hlavní navigace" class="hidden lg:flex flex-1 min-w-0 items-center justify-center gap-1 xl:gap-2">
+    <nav aria-label="Hlavní navigace" class="hidden lg:flex shrink-0 items-center justify-center gap-1 xl:gap-2">
         @foreach ((string section, string label) in VisibleSections)
         {
             <a @onclick="() => NavigateToSection(section)" @onclick:preventDefault href="#"
@@ -56,7 +58,7 @@
     @* Pushes the right side to the edge while the middle navigation is hidden. *@
     <div class="flex-1 lg:hidden"></div>
 
-    <div class="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
+    <div class="flex shrink-0 lg:flex-1 lg:basis-0 items-center justify-end gap-1.5 sm:gap-3">
         @if (isAuthenticated)
         {
             <div class="hidden sm:block"><ProfileSwitch/></div>
