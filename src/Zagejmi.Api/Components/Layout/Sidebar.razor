@@ -2,8 +2,18 @@
 @implements IDisposable
 @rendermode InteractiveServer
 
+@*
+    From lg the sidebar is a column next to the page (open by default, toggled by IsSidebarOpen). Below lg it is closed
+    by default and slides in over the page (IsMobileSidebarOpen), so it never squeezes the content on phones (UI-001).
+*@
+@if (SidebarStateService.IsMobileSidebarOpen)
+{
+    <button type="button" aria-label="Zavřít postranní panel" tabindex="-1" @onclick="SidebarStateService.CloseMobileSidebar"
+            class="lg:hidden fixed inset-0 top-16 z-20 w-full cursor-default bg-black/50"></button>
+}
+
 <aside
-    class="@($"flex-shrink-0 border-r border-accent-800/50 transition-all duration-300 ease-in-out {(SidebarStateService.IsSidebarOpen ? "w-56 p-4" : "w-0 p-0")}")">
+    class="@AsideClass">
     <div class="flex flex-col gap-2 overflow-hidden">
         @switch (SidebarStateService.SelectedPage)
         {
@@ -59,6 +69,19 @@
 </aside>
 
 @code {
+    private string AsideClass
+    {
+        get
+        {
+            string mobile = SidebarStateService.IsMobileSidebarOpen
+                ? "fixed top-16 bottom-0 left-0 z-30 w-64 p-4 overflow-y-auto bg-primary-950 shadow-2xl shadow-black/60"
+                : "hidden";
+            string desktop = SidebarStateService.IsSidebarOpen
+                ? "lg:static lg:z-auto lg:block lg:w-56 lg:p-4 lg:bg-transparent lg:shadow-none"
+                : "lg:static lg:z-auto lg:block lg:w-0 lg:p-0 lg:bg-transparent lg:shadow-none";
+            return $"flex-shrink-0 border-r border-accent-800/50 transition-all duration-300 ease-in-out {mobile} {desktop}";
+        }
+    }
 
     protected override void OnInitialized()
     {
