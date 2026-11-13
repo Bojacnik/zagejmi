@@ -1,5 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <PackageReference Include="LanguageExt.Core" />
-  </ItemGroup>
+
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Update="StyleCop.Analyzers" PrivateAssets="all" IncludeAssets="build; analyzers; buildtransitive"/>
+    </ItemGroup>
+
 </Project>

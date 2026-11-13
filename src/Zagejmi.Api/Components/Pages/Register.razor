@@ -1,0 +1,189 @@
+﻿@page "/register"
+@using Zagejmi.Api.Localization
+@using Zagejmi.Application.Auth.Users.CreateUser
+@using Zagejmi.Domain.Auth
+@using Zagejmi.Shared
+@rendermode InteractiveServer
+
+@inject NavigationManager NavigationManager
+@inject CreateUserHandler Handler
+
+<PageTitle>Registrace | Zagejmi</PageTitle>
+
+<div class="w-full h-full flex flex-col justify-center items-center p-4">
+    <form @onsubmit="HandleRegister" @onsubmit:preventDefault novalidate
+          class="w-full max-w-sm p-8 space-y-6 bg-primary-900 rounded-xl border border-accent-700/50 shadow-2xl shadow-accent-900/30">
+
+        <header class="text-center">
+            <h1 class="text-4xl font-bold text-gray-100">Vytvořit účet</h1>
+            <p class="text-gray-400 mt-2">Každý účet je zároveň zákaznický. Profil hráče si můžete přidat později.</p>
+        </header>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="p-4 text-sm text-red-400 bg-red-900/30 border border-red-400/50 rounded-lg" role="alert">
+                <p>@ErrorMessage</p>
+            </div>
+        }
+
+        <div class="space-y-4">
+            <div>
+                <label for="username" class="sr-only">Uživatelské jméno</label>
+                <input @bind="registerModel.Username" type="text" id="username" placeholder="Uživatelské jméno"
+                       required autocomplete="username" disabled="@IsSubmitting"
+                       class="@InputClass"/>
+            </div>
+
+            <div>
+                <label for="email" class="sr-only">E-mail</label>
+                <input @bind="registerModel.Email" type="email" id="email" placeholder="E-mail" required
+                       autocomplete="email" disabled="@IsSubmitting"
+                       class="@InputClass"/>
+            </div>
+
+            <div>
+                <label for="password" class="sr-only">Heslo</label>
+                <input @bind="registerModel.Password" type="password" id="password" placeholder="Heslo (alespoň 8 znaků)"
+                       required autocomplete="new-password" disabled="@IsSubmitting"
+                       class="@InputClass"/>
+            </div>
+
+            <div>
+                <label for="password-again" class="sr-only">Heslo znovu</label>
+                <input @bind="registerModel.PasswordAgain" type="password" id="password-again"
+                       placeholder="Heslo znovu" required autocomplete="new-password" disabled="@IsSubmitting"
+                       class="@InputClass"/>
+            </div>
+
+            <div>
+                <label for="gender" class="block text-sm font-medium text-gray-300 mb-1">Pohlaví</label>
+                <select id="gender" @bind="registerModel.Gender" @bind:after="OnGenderChanged" disabled="@IsSubmitting"
+                        class="@InputClass">
+                    @foreach (Gender option in GenderOptions)
+                    {
+                        <option value="@option">@CzechLabels.GenderLabel(option)</option>
+                    }
+                </select>
+            </div>
+
+            @if (NeedsGrammaticalGenderChoice)
+            {
+                <fieldset class="space-y-2">
+                    <legend class="text-sm font-medium text-gray-300 mb-1">Jak vás máme oslovovat?</legend>
+                    @foreach (GrammaticalGender option in Enum.GetValues<GrammaticalGender>())
+                    {
+                        <label class="flex items-center gap-2 text-gray-200 text-sm cursor-pointer">
+                            <input type="radio" name="grammatical-gender" disabled="@IsSubmitting"
+                                   checked="@(registerModel.GrammaticalGender == option)"
+                                   @onchange="() => registerModel.GrammaticalGender = option"
+                                   class="accent-accent-500"/>
+                            @CzechLabels.GrammaticalGenderLabel(option)
+                        </label>
+                    }
+                </fieldset>
+            }
+        </div>
+
+        <div class="flex flex-col gap-4 pt-4">
+            <button type="submit" disabled="@IsSubmitting"
+                    class="w-full px-4 py-3 font-bold text-lg text-white bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-900 focus:ring-accent-500 disabled:bg-accent-800 disabled:cursor-not-allowed">
+                @if (IsSubmitting)
+                {
+                    <span class="animate-pulse">Vytváříme účet…</span>
+                }
+                else
+                {
+                    <span>Zaregistrovat se</span>
+                }
+            </button>
+            <div class="text-center">
+                <a href="/login"
+                   class="text-sm font-medium text-accent-400 hover:text-accent-300 hover:underline transition-colors @(IsSubmitting ? "pointer-events-none" : "")">
+                    Už máte účet? Přihlaste se.
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@code {
+    private const string InputClass =
+        "w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all";
+
+    private static readonly Gender[] GenderOptions = [Gender.Female, Gender.Male, Gender.Other, Gender.Unknown];
+
+    private readonly RegisterModel registerModel = new();
+
+    private string? ErrorMessage { get; set; }
+
+    private bool IsSubmitting { get; set; }
+
+    private bool NeedsGrammaticalGenderChoice => registerModel.Gender is Gender.Other or Gender.Unknown;
+
+    private void OnGenderChanged()
+    {
+        // The choice only applies to Jiné / Nechci uvádět; reset it so a stale value is never sent.
+        if (!NeedsGrammaticalGenderChoice)
+        {
+            registerModel.GrammaticalGender = null;
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        ErrorMessage = null;
+
+        if (registerModel.Password != registerModel.PasswordAgain)
+        {
+            ErrorMessage = "Hesla se neshodují.";
+            return;
+        }
+
+        if (NeedsGrammaticalGenderChoice && registerModel.GrammaticalGender is null)
+        {
+            ErrorMessage = "Vyberte, zda vás máme oslovovat v mužském, nebo v ženském rodě.";
+            return;
+        }
+
+        IsSubmitting = true;
+        try
+        {
+            CreateUserCommand command = new()
+            {
+                Email = registerModel.Email,
+                UserName = registerModel.Username,
+                Password = registerModel.Password,
+                Gender = registerModel.Gender,
+                GrammaticalGender = registerModel.GrammaticalGender,
+            };
+
+            Result<Guid> result = await Handler.Handle(command);
+            if (result.IsFailure)
+            {
+                ErrorMessage = result.Error!.Message;
+                return;
+            }
+
+            NavigationManager.NavigateTo($"/login?registered=1&email={Uri.EscapeDataString(command.Email.Trim())}");
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private sealed class RegisterModel
+    {
+        public string Username { get; set; } = string.Empty;
+
+        public string Email { get; set; } = string.Empty;
+
+        public string Password { get; set; } = string.Empty;
+
+        public string PasswordAgain { get; set; } = string.Empty;
+
+        public Gender Gender { get; set; } = Gender.Female;
+
+        public GrammaticalGender? GrammaticalGender { get; set; }
+    }
+}

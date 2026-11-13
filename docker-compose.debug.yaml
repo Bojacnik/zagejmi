@@ -2,9 +2,11 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     container_name: zagejmi.mailpit-container
+    # Host ports 1026/8026 so this doesn't clash with other local Mailpit instances on 1025/8025.
+    # Containers still use mailpit:1025. Web UI: http://localhost:8026
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "1026:1025"
+      - "8026:8025"
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8025" ]
@@ -15,12 +17,11 @@ services:
     networks:
       - zagejmi_network
 
-  zagejmi.server.write:
+  zagejmi.api:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: Host=timescaledb;Port=5432;Database=my_timescale_db;Username=my_timescale_user;Password=my_strong_password
-      EmailVerification__PublicBaseUrl: http://localhost:5271
+      EmailVerification__PublicBaseUrl: http://localhost:5178
       Smtp__Host: mailpit
       Smtp__Port: 1025
       Smtp__EnableSsl: false
@@ -30,9 +31,7 @@ services:
       Smtp__FromEmail: no-reply@zagejmi.cz
       Smtp__FromName: Zagejmi
     depends_on:
-      timescaledb:
-        condition: service_healthy
-      rabbitmq:
+      postgresdb:
         condition: service_healthy
       mailpit:
         condition: service_healthy

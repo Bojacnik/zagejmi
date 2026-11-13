@@ -1,0 +1,43 @@
+@using Zagejmi.Api.Localization
+@using Zagejmi.Api.Services
+@inject ActiveProfileService ActiveProfiles
+@implements IDisposable
+
+@if (ActiveProfiles.CanSwitch)
+{
+    bool isPlayer = ActiveProfiles.Active == ProfileType.Player;
+
+    <div role="radiogroup" aria-label="Aktivní profil"
+         class="relative shrink-0 grid grid-cols-2 items-center p-1 rounded-full bg-primary-950/70 border border-accent-700/60 shadow-inner shadow-black/40 select-none">
+        <span aria-hidden="true"
+              class="absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-gradient-to-r from-accent-600 to-accent-500 shadow-lg shadow-accent-800/50 transition-transform duration-300 ease-out @(isPlayer ? "translate-x-full" : "translate-x-0")"></span>
+
+        @foreach (ProfileType type in ActiveProfiles.Available)
+        {
+            bool isActive = ActiveProfiles.Active == type;
+            <button type="button" role="radio" aria-checked="@(isActive ? "true" : "false")"
+                    @onclick="() => ActiveProfiles.SetActive(type)"
+                    title="Přepnout na profil @CzechLabels.Role(type, ActiveProfiles.GrammaticalGender)"
+                    class="relative z-10 whitespace-nowrap px-4 py-1.5 text-center text-sm font-semibold rounded-full transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 @(isActive ? "text-white" : "text-text-muted hover:text-text-default")">
+                @CzechLabels.Role(type, ActiveProfiles.GrammaticalGender)
+            </button>
+        }
+    </div>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        ActiveProfiles.Changed += OnChanged;
+    }
+
+    private void OnChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ActiveProfiles.Changed -= OnChanged;
+    }
+}

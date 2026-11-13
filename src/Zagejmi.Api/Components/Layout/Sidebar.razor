@@ -1,0 +1,71 @@
+@inject SidebarStateService SidebarStateService
+@using Zagejmi.Api.Services
+@implements IDisposable
+@rendermode InteractiveServer
+
+<aside
+    class="@($"sticky top-16 h-[calc(100vh-4rem)] flex-shrink-0 border-r border-accent-800/50 transition-all duration-300 ease-in-out {(SidebarStateService.IsSidebarOpen ? "w-56 p-4" : "w-0 p-0")}")">
+    <div class="flex flex-col gap-2 overflow-hidden">
+        @switch (SidebarStateService.SelectedPage)
+        {
+            case "Home":
+                <span class="px-3 pt-2 pb-1 text-xs font-bold text-text-muted uppercase tracking-wider">Pracovní plocha</span>
+                <NavLink href="dashboard"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Přehled
+                </NavLink>
+                <NavLink href="analytics"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Statistiky
+                </NavLink>
+                <NavLink href="settings"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Nastavení
+                </NavLink>
+                break;
+            case "People":
+                <span class="px-3 pt-2 pb-1 text-xs font-bold text-text-muted uppercase tracking-wider">Hráči</span>
+                <NavLink href="people/all"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Všichni hráči
+                </NavLink>
+                <NavLink href="people/add"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Přidat hráče
+                </NavLink>
+                break;
+            case "Wallets":
+                <span class="px-3 pt-2 pb-1 text-xs font-bold text-text-muted uppercase tracking-wider">Peněženky</span>
+                <NavLink href="wallets/all"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Všechny peněženky
+                </NavLink>
+                <NavLink href="wallets/add"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Přidat peněženku
+                </NavLink>
+                break;
+            case "Profile":
+                <span class="px-3 pt-2 pb-1 text-xs font-bold text-text-muted uppercase tracking-wider">Profil</span>
+                <NavLink href="profile"
+                         class="px-3 py-2 rounded-md text-sm font-medium text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors whitespace-nowrap"
+                         activeClass="text-text-default bg-accent-800/50">Zobrazit profil
+                </NavLink>
+                break;
+        }
+    </div>
+</aside>
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        SidebarStateService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        SidebarStateService.OnChange -= StateHasChanged;
+    }
+
+}

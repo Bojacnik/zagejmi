@@ -1,16 +1,16 @@
-﻿networks:
+networks:
   zagejmi_network:
     driver: bridge
 
 services:
-  timescaledb:
-    image: timescale/timescaledb:2.26.1-pg18-oss
+  postgresdb:
+    image: postgres:18.4-alpine3.24
     
-    container_name: my_timescaledb_instance
+    container_name: my_postgresdb_instance
     
     environment:
-      POSTGRES_DB: my_timescale_db
-      POSTGRES_USER: my_timescale_user
+      POSTGRES_DB: my_postgres_db
+      POSTGRES_USER: my_postgres_user
       POSTGRES_PASSWORD: my_strong_password
       POSTGRES_SHARED_BUFFERS: 512MB
     
@@ -18,8 +18,8 @@ services:
       - "5432:5432"
     
     volumes:
-      - timescaledb_data:/var/lib/postgresql/data
-      - timescaledb_logs:/var/log/postgresql
+      - postgresdb_data:/var/lib/postgresql
+      - postgresdb_logs:/var/log/postgresql
     
     restart: unless-stopped
     
@@ -33,77 +33,70 @@ services:
     networks:
       - zagejmi_network
   
-  rabbitmq:
-    image: rabbitmq:4.2.5-management-alpine
-    hostname: rabbitmq-host
-    container_name: zagejmi.rabbitmq-container
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    
+    container_name: zagejmi.minio
     
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-      RABBITMQ_DEFAULT_VHOST: /my_vhost
-      
-      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log_levels [{connection,info}]
+      # Replace these defaults with strong credentials via env or .env in production
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
     
+    # The image's default entrypoint is the minio binary, so run the shell explicitly.
+    entrypoint: [ "sh", "-c" ]
+    command: [ "mkdir -p /var/log/minio && exec minio server /data --console-address :9001 >> /var/log/minio/minio.log 2>&1" ]
     ports:
-      - "5672:5672"   # AMQP protocol port (for client connections)
-      - "15672:15672" # Management UI port (access via browser)
-    
+      - "9000:9000" # S3 API
+      - "9001:9001" # Console UI
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq/mnesia
-      - rabbitmq_logs:/var/log/rabbitmq
-    
+      - minio_data:/data
+      - minio_logs:/var/log/minio
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     
     healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1" ]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 20s
+      retries: 3
+      start_period: 10s
     
     networks:
       - zagejmi_network
 
-  zagejmi.server.write:
-    image: zagejmi.server.write
+  zagejmi.api:
+    image: zagejmi.api
     build:
       context: .
-      dockerfile: src/Zagejmi.Write.Api/Dockerfile
+      dockerfile: src/Zagejmi.Api/Dockerfile
 
     ports:
       - "5178:8080"
-    
-    networks:
-      - zagejmi_network
-    
-    depends_on:
-      timescaledb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  zagejmi.server.read:
-    image: zagejmi.server.read
-    build:
-      context: .
-      dockerfile: src/Zagejmi.Read.Api/Dockerfile
-
-    ports:
-      - "5271:8081"
 
     environment:
-      WriteApi__BaseAddress: http://zagejmi.server.write:8080
+      ConnectionStrings__DefaultConnection: Host=postgresdb;Port=5432;Database=my_postgres_db;Username=my_postgres_user;Password=my_strong_password
+      Minio__Endpoint: minio:9000
 
-    depends_on:
-      zagejmi.server.write:
-        condition: service_started
-
+    volumes:
+      - api_dataprotection_keys:/home/app/.aspnet/DataProtection-Keys
+    
     networks:
       - zagejmi_network
+    
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+      minio:
+        condition: service_started
 
 volumes:
-  rabbitmq_data:
-  rabbitmq_logs:
-  timescaledb_data:
-  timescaledb_logs:
+  postgresdb_data:
+  postgresdb_logs:
+  minio_data:
+  minio_logs:
+  api_dataprotection_keys:

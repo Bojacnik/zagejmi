@@ -1,0 +1,378 @@
+@using Microsoft.JSInterop
+@using Zagejmi.Application.Images.Abstractions
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@*
+    Crop & zoom dialog for profile pictures (round frame), banners and service images (wide frames).
+    The picture is shown straight from the user's file (no upload needed to start cropping); on save the parent gets
+    the chosen region as fractions and the server crops the original at full quality.
+*@
+
+<div class="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true"
+     aria-labelledby="cropper-title" @onkeydown="OnKeyDown">
+    <div class="absolute inset-0 bg-black/75 backdrop-blur-sm modal-fade-in"></div>
+
+    <div @ref="root"
+         class="cropper relative w-full @(Round ? "max-w-2xl" : "max-w-3xl") max-h-[95vh] overflow-y-auto rounded-2xl border border-accent-700/50 bg-primary-950 shadow-2xl shadow-black/60 modal-pop-in">
+        <header class="flex items-start justify-between gap-4 px-5 sm:px-6 pt-5">
+            <div>
+                <h2 id="cropper-title" class="text-xl font-bold text-text-default">@Title</h2>
+                <p class="text-sm text-text-muted mt-1">
+                    Posuňte obrázek tažením a přibližte ho kolečkem myši, posuvníkem nebo dvěma prsty.
+                </p>
+            </div>
+            <button type="button" @onclick="Cancel" aria-label="Zavřít" disabled="@isSaving"
+                    class="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-text-muted hover:text-text-default hover:bg-primary-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </header>
+
+        <div class="px-5 sm:px-6 pt-4 @(Round ? "sm:grid sm:grid-cols-[minmax(0,1fr)_9.5rem] sm:gap-5" : "")">
+            <div class="min-w-0">
+            <div data-crop-stage tabindex="0" aria-label="Výřez obrázku. Šipky posouvají, plus a mínus přibližují."
+                 class="crop-stage relative w-full overflow-hidden rounded-xl bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+                 style="aspect-ratio: @StageAspect">
+                <img data-crop-image alt="" draggable="false"
+                     class="crop-image absolute left-0 top-0 max-w-none select-none pointer-events-none"/>
+                <div data-crop-frame class="crop-frame @(Round ? "is-round" : "")"></div>
+
+                @if (loadError is not null)
+                {
+                    <div class="absolute inset-0 flex items-center justify-center p-6 text-center">
+                        <p class="text-red-300">@loadError</p>
+                    </div>
+                }
+                else if (!isReady)
+                {
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-10 h-10 border-4 border-accent-700/30 border-t-accent-500 rounded-full animate-spin"></div>
+                    </div>
+                }
+            </div>
+
+            <div class="mt-4 flex items-center gap-3">
+                <button type="button" @onclick="() => ZoomBy(1 / 1.2)" disabled="@(!isReady)" aria-label="Oddálit"
+                        class="crop-icon-button">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7" stroke-width="2"></circle>
+                        <path stroke-linecap="round" stroke-width="2" d="M8 11h6M20 20l-4-4"></path>
+                    </svg>
+                </button>
+                <input data-crop-zoom type="range" min="0" max="1000" value="0" disabled="@(!isReady)"
+                       aria-label="Přiblížení" class="crop-zoom flex-1"/>
+                <button type="button" @onclick="() => ZoomBy(1.2)" disabled="@(!isReady)" aria-label="Přiblížit"
+                        class="crop-icon-button">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7" stroke-width="2"></circle>
+                        <path stroke-linecap="round" stroke-width="2" d="M8 11h6M11 8v6M20 20l-4-4"></path>
+                    </svg>
+                </button>
+                <button type="button" @onclick="Reset" disabled="@(!isReady)"
+                        class="px-3 py-1.5 rounded-lg text-sm font-semibold text-text-muted hover:text-text-default hover:bg-primary-800 transition-colors disabled:opacity-40">
+                    Obnovit
+                </button>
+            </div>
+
+            <p data-crop-warning hidden class="crop-warning mt-3 flex items-center gap-2 text-sm text-amber-300">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path>
+                </svg>
+                Výřez je hodně malý, obrázek bude rozmazaný. Oddalte ho, nebo vyberte větší obrázek.
+            </p>
+
+            </div>
+
+            @* Live previews: how the result looks where it is used. *@
+            <div class="mt-5 rounded-xl border border-accent-800/40 bg-primary-900/40 p-4 @(Round ? "sm:mt-0 self-start" : "")">
+                <p class="text-xs font-semibold uppercase tracking-wider text-text-muted">Náhled</p>
+                @if (PreviewTemplate is not null)
+                {
+                    @PreviewTemplate
+                }
+                else if (Round)
+                {
+                    <div class="mt-3 flex sm:flex-col items-center gap-4 sm:gap-3">
+                        <div data-crop-preview class="crop-preview w-24 h-24 sm:w-28 sm:h-28 rounded-full ring-2 ring-accent-600"><img alt=""/></div>
+                        <div data-crop-preview class="crop-preview w-14 h-14 sm:w-16 sm:h-16 rounded-full ring-2 ring-accent-600"><img alt=""/></div>
+                        <div data-crop-preview class="crop-preview w-9 h-9 rounded-full"><img alt=""/></div>
+                        @if (!string.IsNullOrWhiteSpace(PreviewName))
+                        {
+                            <p class="font-bold text-text-default text-center truncate max-w-full">@PreviewName</p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="mt-3 mx-auto max-w-md overflow-hidden rounded-lg border border-accent-800/40 bg-primary-950">
+                        <div data-crop-preview class="crop-preview w-full aspect-[4/1]"><img alt=""/></div>
+                        <div class="relative px-4 pb-3 -mt-6 flex items-end gap-3">
+                            @if (!string.IsNullOrWhiteSpace(PreviewAvatarUrl))
+                            {
+                                <img src="@PreviewAvatarUrl" alt=""
+                                     class="w-14 h-14 rounded-full object-cover border-4 border-primary-950 ring-2 ring-accent-600"/>
+                            }
+                            else
+                            {
+                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-accent-500 to-accent-800 border-4 border-primary-950 ring-2 ring-accent-600"></div>
+                            }
+                            <p class="pb-1 font-bold text-text-default truncate">@PreviewName</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+
+        @if (saveError is not null)
+        {
+            <p class="px-5 sm:px-6 mt-4 text-sm text-red-300" role="alert">@saveError</p>
+        }
+
+        <footer class="sticky bottom-0 mt-5 flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-accent-800/40 bg-primary-950/95 backdrop-blur-sm">
+            <button type="button" @onclick="Cancel" disabled="@isSaving"
+                    class="px-4 py-2 rounded-lg font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors disabled:opacity-50">
+                Zrušit
+            </button>
+            <button type="button" @onclick="SaveAsync" disabled="@(!isReady || isSaving)"
+                    class="min-w-28 px-4 py-2 rounded-lg font-semibold bg-accent-600 hover:bg-accent-700 text-white shadow-lg shadow-accent-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                @(isSaving ? "Ukládáme…" : "Uložit")
+            </button>
+        </footer>
+    </div>
+</div>
+
+@code {
+    private ElementReference root;
+    private IJSObjectReference? module;
+    private IJSObjectReference? cropper;
+    private DotNetObjectReference<ImageCropperModal>? selfReference;
+    private bool isReady;
+    private bool isSaving;
+    private string? loadError;
+    private string? saveError;
+
+    /// <summary>
+    ///     Gets or sets the file input holding the picked image.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public ElementReference FileInput { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the dialog title.
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = "Upravit obrázek";
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether the frame is a circle (profile pictures).
+    /// </summary>
+    [Parameter]
+    public bool Round { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the width / height ratio of the frame.
+    /// </summary>
+    [Parameter]
+    public double AspectRatio { get; set; } = 1;
+
+    /// <summary>
+    ///     Gets or sets the smallest crop width (in source pixels) that still looks sharp; smaller crops show a warning.
+    /// </summary>
+    [Parameter]
+    public int RecommendedMinWidth { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the name shown in the preview.
+    /// </summary>
+    [Parameter]
+    public string? PreviewName { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the profile picture shown in the banner preview.
+    /// </summary>
+    [Parameter]
+    public string? PreviewAvatarUrl { get; set; }
+
+    /// <summary>
+    ///     Gets or sets a custom preview replacing the built-in avatar / banner one. Mark every box that should show the
+    ///     cropped picture with <c>data-crop-preview</c> and put an empty <c>&lt;img alt=""/&gt;</c> inside it.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? PreviewTemplate { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the save callback. Returns an error message to show, or <see langword="null" /> on success.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public Func<CropRegion, Task<string?>> OnSave { get; set; } = default!;
+
+    /// <summary>
+    ///     Gets or sets the callback invoked when the dialog should close (after saving or cancelling).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    // Round frames sit in a square stage; wide frames get room above and below to show what is cut off.
+    private string StageAspect => Round ? "1 / 1" : AspectRatio >= 3 ? "12 / 5" : "16 / 10";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        selfReference = DotNetObjectReference.Create(this);
+        try
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/image-cropper.js");
+            cropper = await module.InvokeAsync<IJSObjectReference>(
+                "create",
+                root,
+                FileInput,
+                new { aspectRatio = AspectRatio, padding = Round ? 28 : 24, recommendedMinWidth = RecommendedMinWidth },
+                selfReference);
+        }
+        catch (JSException)
+        {
+            loadError = "Editor obrázku se nepodařilo spustit. Obnovte prosím stránku a zkuste to znovu.";
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    ///     Calls the cropper; a failed call must never take the whole page down.
+    /// </summary>
+    private async Task CallCropperAsync(string identifier, params object?[] args)
+    {
+        if (cropper is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await cropper.InvokeVoidAsync(identifier, args);
+        }
+        catch (JSException)
+        {
+            // Ignore a failed zoom/focus; the user can simply try again.
+        }
+    }
+
+    /// <summary>
+    ///     Called by JS once the picture is decoded.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnImageReady(int width, int height)
+    {
+        isReady = true;
+        StateHasChanged();
+        await CallCropperAsync("focus");
+    }
+
+    /// <summary>
+    ///     Called by JS when the browser cannot show the file (e.g. HEIC photos from iPhones).
+    /// </summary>
+    [JSInvokable]
+    public void OnImageError()
+    {
+        loadError = "Tento soubor neumíme zobrazit. Nahrajte prosím obrázek JPG, PNG nebo WebP.";
+        StateHasChanged();
+    }
+
+    private Task ZoomBy(double factor)
+    {
+        return CallCropperAsync("zoomBy", factor);
+    }
+
+    private Task Reset()
+    {
+        return CallCropperAsync("reset");
+    }
+
+    private async Task SaveAsync()
+    {
+        if (cropper is null || !isReady || isSaving)
+        {
+            return;
+        }
+
+        CropDto? crop;
+        try
+        {
+            crop = await cropper.InvokeAsync<CropDto?>("getCrop");
+        }
+        catch (JSException)
+        {
+            saveError = "Výřez se nepodařilo načíst. Zkuste to prosím znovu.";
+            return;
+        }
+
+        if (crop is null)
+        {
+            return;
+        }
+
+        isSaving = true;
+        saveError = null;
+        try
+        {
+            saveError = await OnSave(new CropRegion(crop.X, crop.Y, crop.Width, crop.Height));
+            if (saveError is null)
+            {
+                await OnClose.InvokeAsync();
+            }
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private Task Cancel()
+    {
+        return isSaving ? Task.CompletedTask : OnClose.InvokeAsync();
+    }
+
+    private Task OnKeyDown(KeyboardEventArgs e)
+    {
+        return e.Key switch
+        {
+            "Escape" => Cancel(),
+            "Enter" => SaveAsync(),
+            _ => Task.CompletedTask,
+        };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (cropper is not null)
+            {
+                await cropper.InvokeVoidAsync("dispose");
+                await cropper.DisposeAsync();
+            }
+
+            if (module is not null)
+            {
+                await module.DisposeAsync();
+            }
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or JSException)
+        {
+            // The browser tab is gone (or the module never loaded); nothing to clean up there.
+        }
+
+        selfReference?.Dispose();
+    }
+
+    private sealed record CropDto(double X, double Y, double Width, double Height);
+}

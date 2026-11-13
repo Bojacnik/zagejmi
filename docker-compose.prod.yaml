@@ -1,5 +1,5 @@
 services:
-  zagejmi.server.write:
+  zagejmi.api:
     env_file:
       - .env
     environment:
@@ -14,11 +14,3 @@ services:
       Smtp__Password: ${SMTP_PASSWORD}
       Smtp__FromEmail: ${SMTP_FROM_EMAIL}
       Smtp__FromName: ${SMTP_FROM_NAME:-Zagejmi}
-  zagejmi.server.read:
-    env_file:
-      - .env
-    environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      ASPNETCORE_URLS: http://+:8080
-      WriteApi__BaseAddress: http://zagejmi.server.write:8080
-

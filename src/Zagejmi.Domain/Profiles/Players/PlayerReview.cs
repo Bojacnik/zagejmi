@@ -1,0 +1,14 @@
+using System;
+
+namespace Zagejmi.Domain.Profiles.Players;
+
+public record PlayerReview
+{
+    public string? Comment { get; set; }
+
+    public Guid? ProfileId { get; set; }
+
+    public DateTimeOffset Date { get; set; }
+
+    public decimal Rating { get; set; }
+}

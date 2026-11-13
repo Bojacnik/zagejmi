@@ -1,13 +1,38 @@
 <Project>
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <LangVersion>13</LangVersion>
+        <!-- .NET 11 / C# 15. Bump these two together; every project inherits them. -->
+        <TargetFramework>net11.0</TargetFramework>
+        <LangVersion>15</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>disable</ImplicitUsings>
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisLevel>latest-recommended</AnalysisLevel>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
         <NoWarn>$(NoWarn);SA1200;SA1101;SA1106;SA1503;SA1201;SA1000;SA1309;SA1010;SA1611;SA1633;SA1206;SA1009;IDE0290;SA1413;SA1011;SA1313</NoWarn>
+    </PropertyGroup>
+
+    <!--
+        .NET 11 opt-in features, centralized. Toggle per build with e.g. `dotnet build -p:ZagejmiRuntimeAsync=false`
+        or override in an individual .csproj.
+    -->
+    <PropertyGroup>
+        <!-- Runtime-native async (no compiler state machines). Opt-in in .NET 11; no EnablePreviewFeatures needed for net11.0. -->
+        <ZagejmiRuntimeAsync Condition="'$(ZagejmiRuntimeAsync)' == ''">true</ZagejmiRuntimeAsync>
+        <!-- C# 15 memory-safety preview. Requires LangVersion=preview + unsafe blocks, so it is off by default. -->
+        <ZagejmiMemorySafetyPreview Condition="'$(ZagejmiMemorySafetyPreview)' == ''">false</ZagejmiMemorySafetyPreview>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(ZagejmiRuntimeAsync)' == 'true'">
+        <Features>$(Features);runtime-async=on</Features>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(ZagejmiRuntimeAsync)' != 'true'">
+        <UseRuntimeAsync>false</UseRuntimeAsync>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(ZagejmiMemorySafetyPreview)' == 'true'">
+        <LangVersion>preview</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Features>$(Features);updated-memory-safety-rules</Features>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">

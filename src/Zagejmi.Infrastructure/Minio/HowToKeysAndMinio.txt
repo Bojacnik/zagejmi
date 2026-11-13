@@ -1,0 +1,3 @@
+For example MinioImageStorage picks the image bucket now inside the bucket structure it like with key like this
+
+key example: profiles/JohnDoe/public/banner.webp

@@ -1,0 +1,52 @@
+﻿using System;
+
+namespace Zagejmi.Domain.Auth;
+
+/// <summary>
+///     Represents the personal information of a profile, including contact details, name, birthdate, gender, and
+///     verification status.
+/// </summary>
+public sealed record PersonalInformation
+{
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="PersonalInformation" /> class with the specified mail address, first
+    ///     name, last name, birthday, and gender. This constructor allows for the creation of a complete personal information
+    ///     record for a profile, ensuring that all relevant details are captured and can be used for various purposes such as
+    ///     communication, personalization, and demographic analysis.
+    /// </summary>
+    /// <param name="firstName">The first name of the profile, which is used for personalization and display purposes.</param>
+    /// <param name="lastName">The last name of the profile, which is used for personalization and display purposes.</param>
+    /// <param name="birthDay">The birthdate of the profile, which can be used for personalization and demographic purposes.</param>
+    /// <param name="gender">The gender of the profile, which can be used for personalization and demographic purposes.</param>
+    public PersonalInformation(
+        string firstName,
+        string lastName,
+        DateOnly birthDay,
+        Gender gender)
+    {
+        this.FirstName = firstName;
+        this.LastName = lastName;
+        this.BirthDay = birthDay;
+        this.Gender = gender;
+    }
+
+    /// <summary>
+    ///     Gets the first name of the profile, which is used for personalization and display purposes.
+    /// </summary>
+    public string? FirstName { get; }
+
+    /// <summary>
+    ///     Gets the last name of the profile, which is used for personalization and display purposes.
+    /// </summary>
+    public string? LastName { get; }
+
+    /// <summary>
+    ///     Gets the birthdate of the profile, which can be used for personalization and demographic purposes.
+    /// </summary>
+    public DateOnly? BirthDay { get; }
+
+    /// <summary>
+    ///     Gets the gender of the profile, which can be used for personalization and demographic purposes.
+    /// </summary>
+    public Gender Gender { get; }
+}

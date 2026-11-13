@@ -1,0 +1,211 @@
+@inject NavigationManager NavigationManager
+@inject SidebarStateService SidebarStateService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ActiveProfileService ActiveProfiles
+@using System.Diagnostics
+@using System.Security.Claims
+@using Zagejmi.Api.Services
+@implements IDisposable
+@rendermode InteractiveServer
+
+<header
+    class="sticky top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 h-16 px-4 bg-primary-950/70 backdrop-blur-md backdrop-saturate-150 border-b border-accent-800/50 shadow-lg shadow-black/30">
+    <div class="flex items-center gap-4">
+        <button @onclick="ToggleSidebar"
+                class="p-2 rounded-md text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                 xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+        <a href="/" @onclick='() => NavigateToSection("Home")' @onclick:preventDefault class="flex items-center gap-2">
+            <img src="img/cat.jpg" class="h-10 w-10 rounded-full" alt="Logo Zagejmi"/>
+            <span class="text-xl font-bold text-text-default">Zagejmi</span>
+        </a>
+    </div>
+
+    <nav class="hidden md:flex items-center gap-2">
+        <a @onclick='() => NavigateToSection("Home")' @onclick:preventDefault href="#"
+           class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Home") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
+            Domů
+        </a>
+        <a @onclick='() => NavigateToSection("People")' @onclick:preventDefault href="#"
+           class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("People") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
+            Hráči
+        </a>
+        <a @onclick='() => NavigateToSection("Wallets")' @onclick:preventDefault href="#"
+           class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Wallets") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
+            Peněženky
+        </a>
+        @if (isAuthenticated)
+        {
+            <a @onclick='() => NavigateToSection("Profile")' @onclick:preventDefault href="#"
+               class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Profile") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
+                Profil
+            </a>
+        }
+    </nav>
+
+    <div class="col-start-3 flex items-center justify-end gap-4">
+        @if (isAuthenticated)
+        {
+            <ProfileSwitch/>
+            <span class="hidden sm:inline text-sm text-text-default font-semibold whitespace-nowrap">@username</span>
+            <button @onclick="HandleLogout"
+                    class="shrink-0 whitespace-nowrap px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
+                Odhlásit se
+            </button>
+        }
+        else
+        {
+            <a href="/login"
+               class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors @(IsActive("Login") ? "bg-accent-800/50 text-text-default" : "hover:bg-primary-800/50 text-text-default")">Přihlásit se</a>
+            <a href="/register"
+               class="px-4 py-2 text-sm font-semibold text-text-default rounded-lg transition-colors shadow-lg shadow-accent-800/40 @(IsActive("Register") ? "bg-accent-700" : "bg-accent-600 hover:bg-accent-700")">
+                Registrace
+            </a>
+        }
+    </div>
+</header>
+
+@code {
+    private bool isAuthenticated;
+    private string? username;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Debug.WriteLine("NavMenu: OnInitializedAsync called");
+        await RefreshAuthenticationState();
+        Debug.WriteLine($"NavMenu: After refresh - isAuthenticated={isAuthenticated}, username={username}");
+
+        SidebarStateService.OnChange += StateHasChanged;
+        NavigationManager.LocationChanged += OnLocationChanged;
+        SidebarStateService.SetSelectedPageFromUri(NavigationManager.Uri);
+    }
+
+    private async Task RefreshAuthenticationState()
+    {
+        bool wasAuthenticated = isAuthenticated;
+
+        try
+        {
+            // Get authentication state from AuthenticationStateProvider
+            AuthenticationState authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            ClaimsPrincipal user = authState.User;
+            isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+            Debug.WriteLine($"NavMenu: RefreshAuthenticationState - wasAuthenticated={wasAuthenticated}, now isAuthenticated={isAuthenticated}");
+
+            if (isAuthenticated)
+            {
+                // Try to get the username from ClaimTypes.Name first
+                username = user.FindFirst(ClaimTypes.Name)?.Value;
+
+                // If no name claim, try unique_name claim
+                if (string.IsNullOrEmpty(username))
+                {
+                    username = user.FindFirst("unique_name")?.Value;
+                }
+
+                // If still no username, fallback to email
+                if (string.IsNullOrEmpty(username))
+                {
+                    username = user.FindFirst(ClaimTypes.Email)?.Value;
+                }
+
+                Debug.WriteLine($"NavMenu: User authenticated - username={username}");
+
+                string? userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+                if (Guid.TryParse(userIdClaim, out Guid userId))
+                {
+                    await ActiveProfiles.LoadAsync(userId);
+                }
+
+                // Log all claims for debugging
+                IEnumerable<Claim> allClaims = user.Claims;
+                foreach (Claim claim in allClaims)
+                {
+                    Debug.WriteLine($"NavMenu: Claim - Type: {claim.Type}, Value: {claim.Value}");
+                }
+            }
+            else
+            {
+                username = null;
+                Debug.WriteLine("NavMenu: User not authenticated");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NavMenu: Error in RefreshAuthenticationState: {ex.Message}");
+            isAuthenticated = false;
+            username = null;
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _ = HandleLocationChangedAsync(e.Location);
+    }
+
+    private async Task HandleLocationChangedAsync(string location)
+    {
+        try
+        {
+            // Refresh authentication state on every navigation to detect login/logout changes
+            await RefreshAuthenticationState();
+            SidebarStateService.SetSelectedPageFromUri(location);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NavMenu: Error in location change handling: {ex.Message}");
+        }
+    }
+
+    private void ToggleSidebar()
+    {
+        SidebarStateService.ToggleSidebar();
+    }
+
+    private void NavigateToSection(string section)
+    {
+        string url = section switch
+        {
+            "People" => "people",
+            "Wallets" => "wallets",
+            "Profile" => "profile",
+            _ => "/"
+        };
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task HandleLogout()
+    {
+        Debug.WriteLine("HandleLogout: Starting logout - navigating to logout endpoint");
+
+        if (AuthenticationStateProvider is JwtAuthenticationStateProvider authProvider)
+        {
+            await authProvider.ClearTokensAsync();
+        }
+
+        isAuthenticated = false;
+        username = null;
+        ActiveProfiles.Clear();
+
+        // Route through logout page to complete remote WriteAPI logout and final redirect.
+        NavigationManager.NavigateTo("/logout", true);
+    }
+
+    private bool IsActive(string section)
+    {
+        return SidebarStateService.SelectedPage == section;
+    }
+
+    public void Dispose()
+    {
+        SidebarStateService.OnChange -= StateHasChanged;
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+}
