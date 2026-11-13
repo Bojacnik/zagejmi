@@ -36,7 +36,7 @@
                 </svg>
                 <input id="player-search" type="search" placeholder="Hledat podle přezdívky…" autocomplete="off"
                        @bind="searchText" @bind:event="oninput" @bind:after="OnSearchChanged"
-                       class="w-full pl-10 pr-4 py-2.5 rounded-full bg-primary-900/80 border border-accent-700/50 text-text-default placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors"/>
+                       class="w-full pl-10 pr-4 py-2.5 rounded-full bg-primary-900/80 border border-accent-700/50 text-text-default placeholder:text-text-muted focus:outline-hidden focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors"/>
             </div>
         </div>
 
@@ -91,11 +91,11 @@
                                 }
                                 else
                                 {
-                                    <div class="absolute inset-0 bg-gradient-to-br from-accent-700/40 to-accent-900/20 flex items-center justify-center">
+                                    <div class="absolute inset-0 bg-linear-to-br from-accent-700/40 to-accent-900/20 flex items-center justify-center">
                                         <span class="text-4xl font-bold text-accent-400">@GetInitials(player.DisplayName)</span>
                                     </div>
                                 }
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                <div class="absolute inset-0 bg-linear-to-t from-black/80 to-transparent"></div>
                                 <div class="absolute left-0 bottom-0 z-10 p-4 flex flex-col items-start w-full text-text-default">
                                     <p class="font-bold text-lg">@player.DisplayName</p>
                                     @if (!string.IsNullOrWhiteSpace(player.Description))

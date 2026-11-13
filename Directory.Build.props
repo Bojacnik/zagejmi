@@ -11,7 +11,8 @@
         <!-- Needed so CS1591/StyleCop documentation rules actually run (otherwise SA0001). -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!-- NU1608: Npgsql 11 is still RC and pins an RC EF Core; see Directory.Packages.props. -->
-        <NoWarn>$(NoWarn);NU1608;SA1200;SA1101;SA1106;SA1503;SA1201;SA1000;SA1309;SA1010;SA1611;SA1633;SA1206;SA1009;IDE0290;SA1413;SA1011;SA1313</NoWarn>
+        <!-- SA1402/SA1649: small related types (records next to their handler, test fakes) deliberately share one file. -->
+        <NoWarn>$(NoWarn);NU1608;SA1200;SA1101;SA1106;SA1503;SA1201;SA1000;SA1309;SA1010;SA1611;SA1633;SA1206;SA1009;IDE0290;SA1413;SA1011;SA1313;SA1402;SA1649</NoWarn>
     </PropertyGroup>
 
     <!--

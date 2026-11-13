@@ -9,14 +9,14 @@
     (scrollbar-gutter: stable) so content doesn't jump sideways when a page becomes long enough to scroll, and because
     the gutter lives inside <main> (below the nav, over the gradient) the nav still spans the full window width.
 *@
-<div class="h-dvh flex flex-col overflow-hidden bg-gradient-to-r from-primary-950 to-primary-900 text-text-default">
+<div class="h-dvh flex flex-col overflow-hidden bg-linear-to-r from-primary-950 to-primary-900 text-text-default">
     <NavMenu/>
 
     <div class="flex flex-1 min-h-0">
         <Sidebar/>
 
         <main @ref="scrollArea"
-              class="flex-grow min-w-0 overflow-y-auto [scrollbar-gutter:stable] p-2 sm:p-4 lg:p-8 transition-all duration-300 ease-in-out">
+              class="grow min-w-0 overflow-y-auto [scrollbar-gutter:stable] p-2 sm:p-4 lg:p-8 transition-all duration-300 ease-in-out">
             <div class="max-w-7xl mx-auto">
                 @Body
             </div>

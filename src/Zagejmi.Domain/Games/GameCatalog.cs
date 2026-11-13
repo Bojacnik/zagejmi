@@ -13,6 +13,8 @@ namespace Zagejmi.Domain.Games;
 /// </remarks>
 public static class GameCatalog
 {
+    // A data table: key and name on the first line, the rank tiers wrapped below (one rank per line would be unreadable).
+#pragma warning disable SA1117 // Parameters should be on same line or separate lines
     /// <summary>
     ///     Gets all games in display order.
     /// </summary>
@@ -43,6 +45,7 @@ public static class GameCatalog
             "Copper", "Bronze", "Silver", "Gold", "Platinum", "Emerald", "Diamond", "Champion"),
         new("minecraft", "Minecraft"),
     ];
+#pragma warning restore SA1117
 
     /// <summary>
     ///     Finds a game by its key.

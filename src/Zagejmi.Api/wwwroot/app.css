@@ -1,51 +1,85 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/*
+ * Tailwind CSS v4. Classes are collected only from Razor/HTML/CSHTML templates (as in v3), so class names must be
+ * written out in full there; C# files, bin/, obj/ and node_modules/ are not scanned.
+ */
+@import "tailwindcss" source(none);
+@source "../**/*.{razor,html,cshtml}";
+@source not "../bin";
+@source not "../obj";
+@source not "../node_modules";
 
 /*
- * Colors are stored as space-separated RGB channels (not hex) so Tailwind can apply opacity modifiers,
- * e.g. bg-primary-950/80 or border-accent-800/50. Use them in plain CSS as rgb(var(--color-...)).
+ * Theme colors. Each one becomes both a CSS variable (use it in plain CSS as var(--color-...)) and utility classes
+ * such as bg-primary-950, text-text-muted or border-accent-800/50; opacity modifiers (/50) work on any color in v4.
+ * "static" keeps every variable in the output even when no class uses it, because plain CSS below relies on them.
  */
-:root {
+@theme static {
     /* Main Colors (Dark Gray Gradient) */
-    --color-primary-950: 10 10 10;    /* #0a0a0a Near black */
-    --color-primary-900: 23 23 23;    /* #171717 Very dark gray */
-    --color-primary-800: 38 38 38;    /* #262626 */
-    --color-primary-700: 64 64 64;    /* #404040 */
-    --color-primary-600: 82 82 82;    /* #525252 */
+    --color-primary-950: #0a0a0a; /* Near black */
+    --color-primary-900: #171717; /* Very dark gray */
+    --color-primary-800: #262626;
+    --color-primary-700: #404040;
+    --color-primary-600: #525252;
 
     /* Accent Colors (Magical Violet Palette) */
-    --color-accent-50:  245 243 255;  /* #f5f3ff */
-    --color-accent-100: 237 233 254;  /* #ede9fe */
-    --color-accent-200: 221 214 254;  /* #ddd6fe */
-    --color-accent-300: 196 181 253;  /* #c4b5fd */
-    --color-accent-400: 167 139 250;  /* #a78bfa */
-    --color-accent-500: 139 92 246;   /* #8b5cf6 */
-    --color-accent-600: 124 58 237;   /* #7c3aed The chosen magical accent */
-    --color-accent-700: 109 40 217;   /* #6d28d9 */
-    --color-accent-800: 91 33 182;    /* #5b21b6 */
-    --color-accent-900: 76 29 149;    /* #4c1d95 */
-    --color-accent-950: 46 16 101;    /* #2e1065 */
+    --color-accent-50: #f5f3ff;
+    --color-accent-100: #ede9fe;
+    --color-accent-200: #ddd6fe;
+    --color-accent-300: #c4b5fd;
+    --color-accent-400: #a78bfa;
+    --color-accent-500: #8b5cf6;
+    --color-accent-600: #7c3aed; /* The chosen magical accent */
+    --color-accent-700: #6d28d9;
+    --color-accent-800: #5b21b6;
+    --color-accent-900: #4c1d95;
+    --color-accent-950: #2e1065;
 
     /* Text Colors */
-    --color-text-default: 250 250 250;          /* #fafafa Light text for dark backgrounds */
-    --color-text-muted:   163 163 163;          /* #a3a3a3 A dimmer, more subtle light text */
-    --color-text-accent:  var(--color-accent-400); /* A magical violet for highlighted text */
-    --color-text-dark:    23 23 23;             /* #171717 Dark text for light backgrounds (e.g., on default buttons) */
+    --color-text-default: #fafafa; /* Light text for dark backgrounds */
+    --color-text-muted: #a3a3a3; /* A dimmer, more subtle light text */
+    --color-text-accent: var(--color-accent-400); /* A magical violet for highlighted text */
+    --color-text-dark: #171717; /* Dark text for light backgrounds (e.g., on default buttons) */
+}
 
+/*
+ * Keep Tailwind v3 defaults that v4 changed, so existing markup looks the same: borders without a color class were
+ * gray-200 (v4: currentColor), placeholders were gray-400 (v4: half-transparent text color) and buttons showed a
+ * pointer cursor (v4: the default arrow).
+ */
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--color-gray-400);
+    }
+
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
+:root {
     /* Button Colors */
-    --color-button-primary-bg-start: rgb(var(--color-primary-950));
-    --color-button-primary-bg-end:   rgb(var(--color-primary-900));
-    --color-button-primary-text:     rgb(var(--color-text-default));
+    --color-button-primary-bg-start: var(--color-primary-950);
+    --color-button-primary-bg-end: var(--color-primary-900);
+    --color-button-primary-text: var(--color-text-default);
     --color-button-primary-hover-bg-start: #000000;
-    --color-button-primary-hover-bg-end:   #0d0d0d;
+    --color-button-primary-hover-bg-end: #0d0d0d;
 
-    --color-button-secondary-bg:     rgb(var(--color-accent-600));
-    --color-button-secondary-text:   rgb(var(--color-text-default));
-    --color-button-secondary-hover-bg: rgb(var(--color-accent-700));
+    --color-button-secondary-bg: var(--color-accent-600);
+    --color-button-secondary-text: var(--color-text-default);
+    --color-button-secondary-hover-bg: var(--color-accent-700);
 
-    --color-button-default-bg:   #e5e7eb; /* Gray-200 for a neutral button */
-    --color-button-default-text: rgb(var(--color-text-dark));
+    --color-button-default-bg: #e5e7eb; /* Gray-200 for a neutral button */
+    --color-button-default-text: var(--color-text-dark);
     --color-button-default-hover-bg: #d1d5db; /* Gray-300 */
 }
 
@@ -54,9 +88,9 @@
  * gutter MainLayout reserves next to the content blends into the background on pages too short to scroll.
  */
 html {
-    background-color: rgb(var(--color-primary-950));
+    background-color: var(--color-primary-950);
     scrollbar-width: thin;
-    scrollbar-color: rgb(var(--color-accent-800)) transparent;
+    scrollbar-color: var(--color-accent-800) transparent;
 }
 
 /* Popup (modal) entrance animations */
@@ -161,7 +195,7 @@ html {
     position: relative;
     overflow: hidden;
     flex-shrink: 0;
-    background: rgb(var(--color-primary-900));
+    background: var(--color-primary-900);
 }
 
 .crop-preview img {
@@ -178,13 +212,13 @@ html {
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
-    color: rgb(var(--color-text-muted));
+    color: var(--color-text-muted);
     transition: color 0.15s, background-color 0.15s;
 }
 
 .crop-icon-button:hover:not(:disabled) {
-    color: rgb(var(--color-text-default));
-    background: rgb(var(--color-primary-800));
+    color: var(--color-text-default);
+    background: var(--color-primary-800);
 }
 
 .crop-icon-button:disabled {
@@ -192,7 +226,7 @@ html {
 }
 
 .crop-zoom {
-    accent-color: rgb(var(--color-accent-500));
+    accent-color: var(--color-accent-500);
     height: 0.375rem;
     cursor: pointer;
 }

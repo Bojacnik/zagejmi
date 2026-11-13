@@ -39,7 +39,7 @@
                 </svg>
                 <input id="service-search" type="search" placeholder="Hledat službu nebo hráče…" autocomplete="off"
                        @bind="searchText" @bind:event="oninput" @bind:after="OnSearchChanged"
-                       class="w-full pl-10 pr-4 py-2.5 rounded-full bg-primary-900/80 border border-accent-700/50 text-text-default placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors"/>
+                       class="w-full pl-10 pr-4 py-2.5 rounded-full bg-primary-900/80 border border-accent-700/50 text-text-default placeholder:text-text-muted focus:outline-hidden focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors"/>
             </div>
 
             <select @bind="gameKey" @bind:after="OnGameChanged" aria-label="Hra"
@@ -125,7 +125,7 @@
                         <ItemTemplate Context="service">
                             <NavLink href="@($"/services/players/{service.PlayerProfileId}{GroupQuery}")"
                                      class="group flex h-full flex-col rounded-xl overflow-hidden border border-accent-800/40 bg-primary-900/60 shadow-lg transition-transform duration-300 hover:scale-[1.02] hover:shadow-accent-700/40 cursor-pointer">
-                                <div class="aspect-video bg-gradient-to-br from-accent-700/40 to-accent-900/20">
+                                <div class="aspect-video bg-linear-to-br from-accent-700/40 to-accent-900/20">
                                     @if (service.ImageId is not null)
                                     {
                                         <img src="@ImageUrls.For(service.ImageId)" alt="" loading="lazy" class="w-full h-full object-cover"/>
