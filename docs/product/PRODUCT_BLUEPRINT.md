@@ -248,7 +248,7 @@ Požadavky používají stavy definované v [README](./README.md).
 - Není rozhodnuto, zda se připíše pouze rozdíl oproti základní odměně, nebo další samostatná odměna.
 - Konkrétní částky nejsou stanovené.
 - Odměny mají být financované z Bonus CAP.
-- Připsání musí být jednorázové i při opakovaných požadavcích/webhoocích.
+- Připsání musí být jednorázové i při opakovaných požadavcích/webhookích.
 
 ---
 
@@ -328,7 +328,7 @@ Následující body vyžadují další produktový brainstorming nebo technickou
 15. Jaký minimální věk bude vyžadován u Customer účtů?
 16. Které metody ověření věku/identity budou dostupné při spuštění?
 17. Jak se budou definovat měsíční průměrné výdělky a reklamovanost v Analytics?
-18. Jak bude vypadat první veřejná/verejně placená release fáze a co do ní nepatří?
+18. Jak bude vypadat první veřejná a placená release fáze a co do ní nepatří?
 
 ## 16. Doporučený další postup
 
