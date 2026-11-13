@@ -1,22 +1,36 @@
 using System;
+using System.Globalization;
 using System.IO;
-using System.Reflection;
-using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Zagejmi.Api.Components;
+using Zagejmi.Api.Extensions;
+using Zagejmi.Api.Filters;
 using Zagejmi.Api.Services;
-using Zagejmi.Application.Abstractions;
-using Zagejmi.Application.Handlers.Service;
-using Zagejmi.Application.Handlers.User;
-using Zagejmi.Infrastructure.Auth;
-using Zagejmi.Infrastructure.Ctx;
-using Zagejmi.Infrastructure.Utility;
+using Zagejmi.Application.Auth.Tokens;
+using Zagejmi.Application.Auth.Users.CreateUser;
+using Zagejmi.Application.Auth.Users.DeleteUser;
+using Zagejmi.Application.Auth.Users.LoginUser;
+using Zagejmi.Application.Auth.Users.SetDefaultProfile;
+using Zagejmi.Application.Auth.Users.SetGhostMode;
+using Zagejmi.Application.Profiles.AddPlayerService;
+using Zagejmi.Application.Profiles.CreatePlayerProfile;
+using Zagejmi.Application.Profiles.DeletePlayerService;
+using Zagejmi.Application.Profiles.GetPlayerDetail;
+using Zagejmi.Application.Profiles.GetUserProfiles;
+using Zagejmi.Application.Profiles.SearchPlayers;
+using Zagejmi.Application.Profiles.SetPlayerBanner;
+using Zagejmi.Application.Profiles.SetProfileImage;
+using Zagejmi.Application.Profiles.UpdatePlayerService;
+using Zagejmi.Infrastructure.Extensions;
 
 namespace Zagejmi.Api;
 
@@ -31,22 +45,36 @@ public static class Program
     ///     The main method that configures and runs the web application.
     /// </summary>
     /// <param name="args">The command-line arguments passed to the application.</param>
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         const string myAllowSpecificOrigins = "_myAllowSpecificOrigins";
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+        // The app is Czech-native: dates, numbers and currency use cs-CZ everywhere (incl. Blazor circuits).
+        CultureInfo czech = CultureInfo.GetCultureInfo("cs-CZ");
+        CultureInfo.DefaultThreadCurrentCulture = czech;
+        CultureInfo.DefaultThreadCurrentUICulture = czech;
 
         // Configure routing to use lowercase URLs for consistency
         builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
         // 1. Add services to the container.
+        // Ghost mode is enforced for every controller action; enums are exchanged as strings ("Female", "Feminine").
+        builder.Services
+            .AddControllers(options => options.Filters.Add<GhostModeFilter>())
+            .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+        string[] allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? [];
+
         builder.Services.AddCors(options =>
         {
             options.AddPolicy(
                 myAllowSpecificOrigins,
                 policy =>
                 {
-                    policy.WithOrigins("http://localhost:5271", "https://localhost:7014")
+                    policy.WithOrigins(allowedOrigins)
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();
@@ -54,175 +82,102 @@ public static class Program
         });
 
         builder.Services.AddHttpContextAccessor();
-        builder.Services.AddAntiforgery();
-        builder.Services.AddControllers()
-            .AddApplicationPart(typeof(Read.Api.Controllers.UserProfilesController).Assembly);
 
-        // Add Swagger/OpenAPI services
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen(options =>
-        {
-            string basePath = AppContext.BaseDirectory;
-            string writeXml = Path.Combine(basePath, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
-            string contractsXml = Path.Combine(basePath, "Zagejmi.Contracts.xml");
+        // Add Swagger
+        builder.Services.AddZagejmiSwagger();
 
-            if (File.Exists(writeXml)) options.IncludeXmlComments(writeXml);
+        // Add db contexts
+        builder.Services.AddZagejmiDbContext(builder.Configuration);
 
-            if (File.Exists(contractsXml)) options.IncludeXmlComments(contractsXml);
-        });
-
-        // Use Npgsql for PostgreSQL / TimescaleDB
-        builder.Services.AddDbContext<ZagejmiContext>(options => options.UseNpgsql(
-            builder.Configuration.GetConnectionString("DefaultConnection"),
-            npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "write")));
-
-        // Read-side DbContext (merged)
-        builder.Services.AddDbContext<ZagejmiReadContext>(options => options.UseNpgsql(
-            builder.Configuration.GetConnectionString("DefaultConnection"),
-            npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "read")));
-
-        // Configure data protection to persist keys in a cross-platform location
-        string keyStorePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Zagejmi",
-            "DataProtection");
+        // Configure data protection to persist keys. "DataProtection:KeysPath" overrides the default location
+        // (used by the Docker image, where the app user can only write to its home/volumes).
+        string keyStorePath = builder.Configuration["DataProtection:KeysPath"]
+                              ?? Path.Combine(
+                                  Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                                  "Zagejmi",
+                                  "DataProtection");
 
         builder.Services.AddDataProtection()
             .PersistKeysToFileSystem(new DirectoryInfo(keyStorePath))
-            .SetApplicationName("ZagejmiShared");
+            .SetApplicationName("Zagejmi");
 
-        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                    ValidAudience = builder.Configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-                };
+        // This is a custom extension method that configures authentication services for the application.
+        builder.Services.AddZagejmiAuthentication(builder.Configuration);
+        builder.Services.AddAuthorization();
 
-                options.Events = new JwtBearerEvents
-                {
-                    OnTokenValidated = async context =>
-                    {
-                        string? jti = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
-                        if (string.IsNullOrWhiteSpace(jti))
-                        {
-                            context.Fail("Token is missing jti claim.");
-                            return;
-                        }
-
-                        ZagejmiContext dbContext = context.HttpContext.RequestServices
-                            .GetRequiredService<ZagejmiContext>();
-
-                        bool isRevoked = await dbContext.RevokedAccessTokens
-                            .AsNoTracking()
-                            .AnyAsync(x => x.JwtId == jti && x.ExpiresAtUtc > DateTimeOffset.UtcNow);
-
-                        if (isRevoked) context.Fail("Token has been revoked.");
-                    },
-                };
-            });
-
-        // Register the event store
-        builder.Services.AddScoped<IEventStore, EventStore>();
-        builder.Services.Configure<RabbitMqProjectionOptions>(builder.Configuration.GetSection("RabbitMq"));
-        builder.Services.AddScoped<IStoredEventPublisher, RabbitMqStoredEventPublisher>();
-
-        // Register Mapper
-        builder.Services.AddScoped<IMapper, SimpleMapper>();
-
-        // Register abstractions and implementations
+        // This is a service that provides functionality for generating and validating tokens used for authentication and authorization.
         builder.Services.AddScoped<ITokenService, TokenService>();
-        builder.Services.AddScoped<IUserRepository, UserRepository>();
-        builder.Services.AddScoped<IEmailVerificationTokenService, EmailVerificationTokenService>();
-        builder.Services.AddScoped<IEmailVerificationLinkFactory, EmailVerificationLinkFactory>();
-        builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
-        builder.Services.AddScoped<IProfileImageStorage, FileSystemProfileImageStorage>();
 
-        // Read-side services (merged)
-        builder.Services.AddScoped<ProfileProjectionApplier>();
-        builder.Services.AddScoped<ServiceProjectionApplier>();
-        builder.Services.AddScoped<ProfileProjectionRepairService>();
-        builder.Services.AddScoped<AssociateProjectionRepairService>();
-        builder.Services.AddScoped<ReadOnlyProfileImageStorage>();
-        builder.Services.AddScoped<ReadOnlyServiceImageStorage>();
-        builder.Services.AddScoped<UserReadRepository>();
-        builder.Services.Configure<Read.Api.Services.RabbitMqProjectionOptions>(
-            builder.Configuration.GetSection("RabbitMq"));
-        builder.Services.AddHostedService<ProfileProjectionBootstrapService>();
-        builder.Services.AddHostedService<ProfileProjectionRabbitMqConsumerService>();
+        // This is a custom extension method that configures email services for the application.
+        builder.Services.AddZagejmiEmail(builder.Configuration);
 
-        builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
-        builder.Services.Configure<EmailVerificationOptions>(builder.Configuration.GetSection("EmailVerification"));
+        // Infrastructure implementations of application abstractions
+        builder.Services.AddZagejmiUsers();
+        builder.Services.AddZagejmiImages(builder.Configuration);
 
-        // Register Command Handlers
-        builder.Services
-            .AddScoped<IHandlerRequest<UserCreateCommand, (string? Result, Failure? Error)>, UserCreateCommandHandler>();
-        builder.Services
-            .AddScoped<IHandlerRequest<UserCreateProfileCommand, (string? Result, Failure? Error)>,
-                UserCreateProfileCommandHandler>();
-        builder.Services
-            .AddScoped<IHandlerRequest<UserUpdateProfileImageCommand, (string? Result, Failure? Error)>,
-                UserUpdateProfileImageCommandHandler>();
-        builder.Services
-            .AddScoped<IHandlerRequest<UserRemoveProfileImageCommand, (string? Result, Failure? Error)>,
-                UserRemoveProfileImageCommandHandler>();
-        builder.Services
-            .AddScoped<IHandlerRequest<UserUpdateProfileBannerCommand, (string? Result, Failure? Error)>,
-                UserUpdateProfileBannerCommandHandler>();
-        builder.Services
-            .AddScoped<IHandlerRequest<UserCreateServiceCommand, (string? Result, Failure? Error)>,
-                UserCreateServiceCommandHandler>();
-        builder.Services
-            .AddScoped<IHandlerRequest<UserLoginCommand, (string? Result, Failure? Error)>, UserLoginCommandHandler>();
-        builder.Services
-            .AddScoped<IHandlerRequest<UserSendEmailVerificationCommand, (string? Result, Failure? Error)>,
-                UserSendEmailVerificationCommandHandler>();
-        builder.Services
-            .AddScoped<IHandlerRequest<UserConfirmEmailVerificationCommand, (string? Result, Failure? Error)>,
-                UserConfirmEmailVerificationCommandHandler>();
+        // Application use-case handlers
+        builder.Services.AddScoped<CreateUserHandler>();
+        builder.Services.AddScoped<DeleteUserHandler>();
+        builder.Services.AddScoped<LoginUserHandler>();
+        builder.Services.AddScoped<SetDefaultProfileHandler>();
+        builder.Services.AddScoped<SetGhostModeHandler>();
+        builder.Services.AddScoped<CreatePlayerProfileHandler>();
+        builder.Services.AddScoped<GetUserProfilesHandler>();
+        builder.Services.AddScoped<SearchPlayersHandler>();
+        builder.Services.AddScoped<GetPlayerDetailHandler>();
+        builder.Services.AddScoped<SetProfileImageHandler>();
+        builder.Services.AddScoped<SetPlayerBannerHandler>();
+        builder.Services.AddScoped<AddPlayerServiceHandler>();
+        builder.Services.AddScoped<UpdatePlayerServiceHandler>();
+        builder.Services.AddScoped<DeletePlayerServiceHandler>();
 
+        // Blazor (interactive server) UI
+        builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+        builder.Services.AddCascadingAuthenticationState();
+        builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthenticationStateProvider>();
+
+        // HTTP clients used by the Blazor pages. "WriteAPI" is a leftover name from the read/write split and now
+        // points back at this same application.
+        builder.Services.AddHttpClient();
+        builder.Services.AddHttpClient(
+            "WriteAPI",
+            client => client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"] ?? "http://localhost:5178/"));
+
+        // This is a service that manages the state of the sidebar in the application, allowing for dynamic updates and interactions.
         builder.Services.AddScoped<SidebarStateService>();
 
-        // 2. Build the application.
+        // Signed-in user's profiles and the currently active one (Zákazník/Hráč), one instance per circuit.
+        builder.Services.AddScoped<ActiveProfileService>();
+
+        // Builds the WebApplication instance, which represents the configured web application and its services.
         WebApplication app = builder.Build();
 
-        // 3. Configure the HTTP request pipeline.
-
-        // Enable Swagger middleware only in development environment
+        // Enable Swagger middleware and auto-apply migrations only in development environment
         if (app.Environment.IsDevelopment())
         {
+            await app.Services.MigrateZagejmiDatabasesAsync();
+
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
-                options.SwaggerEndpoint("./swagger/v1/swagger.json", "Zagejmi.Api v1");
-                options.RoutePrefix = string.Empty;
+                options.SwaggerEndpoint("v1/swagger.json", "Zagejmi.Api v1");
+                options.RoutePrefix = "swagger";
             });
         }
 
-        app.UseExceptionHandler(errorApp =>
+        app.UseZagejmiExceptionHandling();
+
+        // Enable HSTS (HTTP Strict Transport Security) in non-development environments to enforce secure connections
+        if (!app.Environment.IsDevelopment())
         {
-            errorApp.Run(async context =>
-            {
-                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                context.Response.ContentType = "application/problem+json";
-                await context.Response.WriteAsJsonAsync(
-                    new
-                    {
-                        title = "Unexpected server error",
-                        status = StatusCodes.Status500InternalServerError,
-                        detail = "An unexpected error occurred while processing the request.",
-                    });
-            });
-        });
-        app.UseHsts();
+            app.UseHsts();
+        }
+
+        // Redirect HTTP requests to HTTPS to ensure secure communication
         app.UseHttpsRedirection();
+
+        // Add routing middleware to the pipeline to enable endpoint routing
+        app.UseRouting();
 
         // Add CORS middleware BEFORE authentication
         app.UseCors(myAllowSpecificOrigins);
@@ -233,8 +188,18 @@ public static class Program
 
         app.UseAntiforgery();
 
+        // Map controller routes to handle incoming HTTP requests
         app.MapControllers();
 
-        app.Run();
+        // Map static assets and the Blazor UI
+        app.MapStaticAssets();
+        // The JWT lives in browser storage, so the server cannot see it on a full page load. [Authorize] on a page
+        // would otherwise turn every reload/forceLoad of e.g. /profile into an empty 401. Pages are protected by
+        // AuthorizeRouteView + RedirectToLogin once the interactive circuit can read the token; API controllers keep
+        // their own [Authorize].
+        app.MapRazorComponents<App>().AddInteractiveServerRenderMode().AllowAnonymous();
+
+        // Start the application and listen for incoming requests
+        await app.RunAsync();
     }
 }

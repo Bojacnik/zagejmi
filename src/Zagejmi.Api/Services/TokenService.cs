@@ -9,7 +9,8 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-using Zagejmi.Application.Abstractions;
+using Zagejmi.Application.Auth.Tokens;
+using Zagejmi.Domain.Auth;
 
 namespace Zagejmi.Api.Services;
 
@@ -35,11 +36,6 @@ public class TokenService : ITokenService
         this.configuration = configuration;
     }
 
-    public string GenerateToken(User user)
-    {
-        throw new NotImplementedException();
-    }
-
     public string GenerateRefreshToken()
     {
         byte[] randomBytes = RandomNumberGenerator.GetBytes(64);
@@ -57,7 +53,10 @@ public class TokenService : ITokenService
     {
         userId = Guid.Empty;
 
-        if (string.IsNullOrWhiteSpace(jwtToken)) return false;
+        if (string.IsNullOrWhiteSpace(jwtToken))
+        {
+            return false;
+        }
 
         try
         {
@@ -72,17 +71,51 @@ public class TokenService : ITokenService
         }
     }
 
+    /// <summary>
+    ///     Generates a JWT token for the given user.
+    /// </summary>
+    /// <param name="user"> The user for which to generate the token.</param>
+    /// <returns>Generated token for the user.</returns>
+    public string GenerateToken(User user)
+    {
+        SymmetricSecurityKey securityKey = new(Encoding.UTF8.GetBytes(this.configuration["Jwt:Key"]!));
+        SigningCredentials credentials = new(securityKey, SecurityAlgorithms.HmacSha256);
+
+        Claim[] claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, user.AuthCredentials?.Email ?? "unknown"),
+            new Claim(JwtRegisteredClaimNames.UniqueName, user.AuthCredentials?.UserName ?? "unknown"),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString()),
+        };
+
+        JwtSecurityToken token = new(
+            this.configuration["Jwt:Issuer"],
+            this.configuration["Jwt:Audience"],
+            claims,
+            expires: DateTime.UtcNow.AddMinutes(this.GetAccessTokenLifetimeMinutes()),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
     public bool TryGetJwtId(string jwtToken, out string jwtId)
     {
         jwtId = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(jwtToken)) return false;
+        if (string.IsNullOrWhiteSpace(jwtToken))
+        {
+            return false;
+        }
 
         try
         {
             JwtSecurityToken token = new JwtSecurityTokenHandler().ReadJwtToken(jwtToken);
             string? jti = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
-            if (string.IsNullOrWhiteSpace(jti)) return false;
+            if (string.IsNullOrWhiteSpace(jti))
+            {
+                return false;
+            }
 
             jwtId = jti;
             return true;
@@ -93,40 +126,26 @@ public class TokenService : ITokenService
         }
     }
 
-    /// <summary>
-    ///     Generates a JWT token for the given user.
-    /// </summary>
-    /// <param name="user"> The user for which to generate the token.</param>
-    /// <returns>Generated token for the user.</returns>
-    public string GenerateToken(User user)
+    /// <inheritdoc />
+    public TimeSpan RefreshTokenLifetime
     {
-        SymmetricSecurityKey securityKey = new(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
-        SigningCredentials credentials = new(securityKey, SecurityAlgorithms.HmacSha256);
-
-        Claim[] claims =
-        [
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.AuthCredentials?.Email ?? "unknown"),
-            new(JwtRegisteredClaimNames.UniqueName, user.AuthCredentials?.UserName ?? "unknown"),
-            new(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString()),
-        ];
-
-        JwtSecurityToken token = new(
-            configuration["Jwt:Issuer"],
-            configuration["Jwt:Audience"],
-            claims,
-            expires: DateTime.UtcNow.AddMinutes(GetAccessTokenLifetimeMinutes()),
-            signingCredentials: credentials);
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        get
+        {
+            string? configured = this.configuration["Jwt:RefreshTokenDays"];
+            return int.TryParse(configured, NumberStyles.Integer, CultureInfo.InvariantCulture, out int days) && days > 0
+                ? TimeSpan.FromDays(days)
+                : TimeSpan.FromDays(30);
+        }
     }
 
     private int GetAccessTokenLifetimeMinutes()
     {
-        string? configured = configuration["Jwt:AccessTokenMinutes"];
+        string? configured = this.configuration["Jwt:AccessTokenMinutes"];
         if (int.TryParse(configured, NumberStyles.Integer, CultureInfo.InvariantCulture, out int minutes) &&
             minutes > 0)
+        {
             return minutes;
+        }
 
         return 120;
     }

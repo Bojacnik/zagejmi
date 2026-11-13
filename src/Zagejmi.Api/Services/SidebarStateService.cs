@@ -156,7 +156,7 @@ public class SidebarStateService
         string newPage;
         bool needsNotify = false;
 
-        if (relativePath.StartsWith("people", StringComparison.Ordinal))
+        if (relativePath.StartsWith("people", StringComparison.Ordinal) || relativePath.StartsWith("players", StringComparison.Ordinal))
         {
             newPage = "People";
         }
