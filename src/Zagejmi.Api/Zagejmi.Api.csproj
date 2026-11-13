@@ -35,5 +35,29 @@
         </Content>
     </ItemGroup>
 
+    <!--
+        Regenerate the Tailwind output before static web assets are fingerprinted and pre-compressed;
+        otherwise MapStaticAssets keeps serving the stylesheet captured by the previous build.
+        Skipped when node_modules is missing (e.g. the Docker SDK stage, which copies styles.css from its node stage).
+    -->
+    <ItemGroup>
+        <TailwindInputs Include="wwwroot/app.css;tailwind.config.js;**/*.razor;**/*.cshtml;**/*.html"
+                        Exclude="bin/**;obj/**;node_modules/**"/>
+    </ItemGroup>
+
+    <Target Name="BuildTailwindCss"
+            BeforeTargets="ResolveProjectStaticWebAssets"
+            Condition="Exists('node_modules')"
+            Inputs="@(TailwindInputs)"
+            Outputs="wwwroot/styles.css">
+        <Exec Command="npm run css:build" WorkingDirectory="$(MSBuildProjectDirectory)"/>
+        <!-- Tailwind leaves the file untouched when its content is unchanged; bump it so the target stays incremental. -->
+        <Touch Files="wwwroot/styles.css"/>
+        <ItemGroup>
+            <!-- Picks up styles.css on a fresh clone, where it did not exist when the project was evaluated. -->
+            <Content Include="wwwroot/styles.css" Exclude="@(Content)"/>
+        </ItemGroup>
+    </Target>
+
 
 </Project>

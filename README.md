@@ -20,13 +20,15 @@ Doporučené prostředí je JetBrains Rider; spouštěcí konfigurace jsou v `.r
 
 ```bash
 dotnet tool restore
-(cd src/Zagejmi.Api && npm ci && npm run css:build)   # vygeneruje wwwroot/styles.css
+(cd src/Zagejmi.Api && npm ci)                        # Tailwind; wwwroot/styles.css pak generuje build
 docker compose up -d postgresdb minio                 # nebo konfigurace "Docker Infra only"
 dotnet build Zagejmi.slnx
 dotnet test --solution Zagejmi.slnx
 ```
 
-Při vývoji UI stačí nechat běžet `npm run css:watch`.
+`dotnet build` spouští `npm run css:build` sám, když se změní `app.css`, `tailwind.config.js` nebo `.razor` soubory.
+Při vývoji UI se `styles.css` dá průběžně generovat přes `npm run css:watch`, ale spolehlivě se v prohlížeči projeví až po buildu:
+`MapStaticAssets` servíruje verzi zachycenou při posledním buildu.
 
 ### Migrace
 
