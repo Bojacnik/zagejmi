@@ -1,6 +1,7 @@
-﻿@inject NavigationManager NavigationManager
+@inject NavigationManager NavigationManager
 @inject SidebarStateService SidebarStateService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ActiveProfileService ActiveProfiles
 @using System.Diagnostics
 @using System.Security.Claims
 @using Zagejmi.Api.Services
@@ -8,7 +9,7 @@
 @rendermode InteractiveServer
 
 <header
-    class="sticky top-0 z-10 flex items-center justify-between h-16 px-4 bg-primary-950/80 backdrop-blur-sm border-b border-accent-800/50">
+    class="sticky top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 h-16 px-4 bg-primary-950/70 backdrop-blur-md backdrop-saturate-150 border-b border-accent-800/50 shadow-lg shadow-black/30">
     <div class="flex items-center gap-4">
         <button @onclick="ToggleSidebar"
                 class="p-2 rounded-md text-text-muted hover:bg-accent-800/50 hover:text-text-default transition-colors">
@@ -19,7 +20,7 @@
             </svg>
         </button>
         <a href="/" @onclick='() => NavigateToSection("Home")' @onclick:preventDefault class="flex items-center gap-2">
-            <img src="img/cat.jpg" class="h-10 w-10 rounded-full" alt="Zagejmi Logo"/>
+            <img src="img/cat.jpg" class="h-10 w-10 rounded-full" alt="Logo Zagejmi"/>
             <span class="text-xl font-bold text-text-default">Zagejmi</span>
         </a>
     </div>
@@ -27,41 +28,42 @@
     <nav class="hidden md:flex items-center gap-2">
         <a @onclick='() => NavigateToSection("Home")' @onclick:preventDefault href="#"
            class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Home") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
-            Home
+            Domů
         </a>
         <a @onclick='() => NavigateToSection("People")' @onclick:preventDefault href="#"
            class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("People") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
-            People
+            Hráči
         </a>
         <a @onclick='() => NavigateToSection("Wallets")' @onclick:preventDefault href="#"
            class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Wallets") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
-            Wallets
+            Peněženky
         </a>
         @if (isAuthenticated)
         {
             <a @onclick='() => NavigateToSection("Profile")' @onclick:preventDefault href="#"
                class="px-3 py-2 rounded-md text-sm font-medium @(IsActive("Profile") ? "text-text-default bg-accent-800/50" : "text-text-muted hover:bg-accent-800/50 hover:text-text-default") transition-colors">
-                Profile
+                Profil
             </a>
         }
     </nav>
 
-    <div class="flex items-center gap-4">
+    <div class="col-start-3 flex items-center justify-end gap-4">
         @if (isAuthenticated)
         {
-            <span class="text-sm text-text-default font-semibold">@username</span>
+            <ProfileSwitch/>
+            <span class="hidden sm:inline text-sm text-text-default font-semibold whitespace-nowrap">@username</span>
             <button @onclick="HandleLogout"
-                    class="px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
-                Logout
+                    class="shrink-0 whitespace-nowrap px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors shadow-md">
+                Odhlásit se
             </button>
         }
         else
         {
             <a href="/login"
-               class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors @(IsActive("Login") ? "bg-accent-800/50 text-text-default" : "hover:bg-primary-800/50 text-text-default")">Login</a>
+               class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors @(IsActive("Login") ? "bg-accent-800/50 text-text-default" : "hover:bg-primary-800/50 text-text-default")">Přihlásit se</a>
             <a href="/register"
                class="px-4 py-2 text-sm font-semibold text-text-default rounded-lg transition-colors shadow-lg shadow-accent-800/40 @(IsActive("Register") ? "bg-accent-700" : "bg-accent-600 hover:bg-accent-700")">
-                Register
+                Registrace
             </a>
         }
     </div>
@@ -113,6 +115,12 @@
                 }
 
                 Debug.WriteLine($"NavMenu: User authenticated - username={username}");
+
+                string? userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+                if (Guid.TryParse(userIdClaim, out Guid userId))
+                {
+                    await ActiveProfiles.LoadAsync(userId);
+                }
 
                 // Log all claims for debugging
                 IEnumerable<Claim> allClaims = user.Claims;
@@ -183,6 +191,7 @@
 
         isAuthenticated = false;
         username = null;
+        ActiveProfiles.Clear();
 
         // Route through logout page to complete remote WriteAPI logout and final redirect.
         NavigationManager.NavigateTo("/logout", true);

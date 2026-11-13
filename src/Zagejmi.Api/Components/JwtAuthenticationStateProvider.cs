@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Linq;
 
 namespace Zagejmi.Api.Components;
 
@@ -108,11 +111,8 @@ public sealed class JwtAuthenticationStateProvider : AuthenticationStateProvider
                 return new ClaimsIdentity();
             }
 
-            List<Claim> claims =
-            [
-                .. token.Claims,
-                new("access_token", jwtToken)
-            ];
+            var claims = token.Claims.ToList();
+            claims.Add(new Claim("access_token", jwtToken));
 
             string? subject = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
             if (!string.IsNullOrWhiteSpace(subject) && claims.All(c => c.Type != ClaimTypes.NameIdentifier))

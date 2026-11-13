@@ -1,6 +1,6 @@
-﻿@page "/wallets"
+@page "/wallets"
 @using System.Globalization
-@using Zagejmi.Read.Api.Models
+@using Zagejmi.Api.Models
 
 <style>
     .wallet-link {
@@ -25,20 +25,20 @@
     border-accent-500 border-sky-500 border-emerald-500 border-amber-500 border-fuchsia-500
 -->
 
-<PageTitle>Wallets</PageTitle>
+<PageTitle>Peněženky</PageTitle>
 
 <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-text-default">My Wallets</h1>
+    <h1 class="text-2xl font-bold text-text-default">Moje peněženky</h1>
     <button class="px-4 py-2 bg-accent-600 text-text-default rounded-lg hover:bg-accent-700 transition-colors">
-        Add New Wallet
+        Přidat peněženku
     </button>
 </div>
 
 <!-- Total Balance Summary -->
 <div class="mb-6">
     <Card Class="bg-primary-950 p-6 rounded-lg">
-        <p class="text-sm text-text-muted">Total Estimated Balance</p>
-        <p class="text-4xl font-bold text-text-default mt-2">@TotalBalanceUsd.ToString("C", new CultureInfo("en-US"))</p>
+        <p class="text-sm text-text-muted">Odhadovaný celkový zůstatek</p>
+        <p class="text-4xl font-bold text-text-default mt-2">@TotalBalanceUsd.ToString("C")</p>
     </Card>
 </div>
 
@@ -50,7 +50,7 @@
             <Card
                 Class="@($"bg-primary-900 hover:bg-primary-800/50 flex flex-col justify-between p-4 aspect-video rounded-lg {wallet.ColorCssClass}")">
                 <div class="flex items-center w-full">
-                    <img src="@wallet.IconUrl" alt="Wallet Icon" class="w-10 h-10 mr-3 rounded-full"/>
+                    <img src="@wallet.IconUrl" alt="Ikona peněženky" class="w-10 h-10 mr-3 rounded-full"/>
                     <div>
                         <p class="text-lg font-semibold text-text-default">@wallet.Name</p>
                         <p class="text-xs text-text-muted">@wallet.Id.ToString("N")[..8]</p>
@@ -70,7 +70,7 @@
 <div class="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
     <!-- Recent Transactions -->
     <div class="lg:col-span-3">
-        <h2 class="text-xl font-bold text-text-default mb-4">Recent Transactions</h2>
+        <h2 class="text-xl font-bold text-text-default mb-4">Poslední transakce</h2>
         <div class="bg-primary-950 p-4 rounded-lg space-y-3">
             @foreach (TransactionViewModel tx in Transactions)
             {
@@ -83,7 +83,7 @@
                             </div>
                             <div>
                                 <p class="font-semibold text-text-default">@tx.Description</p>
-                                <p class="text-sm text-text-muted">@tx.Date.ToString("MMM dd, yyyy")</p>
+                                <p class="text-sm text-text-muted">@tx.Date.ToString("d. MMMM yyyy")</p>
                             </div>
                         </div>
                         <div class="text-right ml-4">
@@ -100,7 +100,7 @@
 
     <!-- Wallet Distribution Chart -->
     <div class="lg:col-span-2">
-        <h2 class="text-xl font-bold text-text-default mb-4">Wallet Distribution</h2>
+        <h2 class="text-xl font-bold text-text-default mb-4">Rozložení peněženek</h2>
         <div class="bg-primary-950 p-4 rounded-lg flex flex-col items-center">
             <svg width="150" height="150" viewBox="0 0 100 100" class="-rotate-90">
                 @foreach (ChartSegment segment in ChartSegments)

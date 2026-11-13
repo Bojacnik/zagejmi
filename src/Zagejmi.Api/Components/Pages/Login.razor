@@ -1,8 +1,9 @@
-﻿@page "/login"
-@using System.Text.Json
+@page "/login"
+@using Zagejmi.Application.Auth.Users.LoginUser
+@using Zagejmi.Shared
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
-@inject IHttpClientFactory HttpClientFactory
+@inject LoginUserHandler LoginHandler
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="w-full h-full flex flex-col justify-center items-center p-4">
@@ -10,8 +11,8 @@
           class="w-full max-w-sm p-8 space-y-6 bg-primary-900 rounded-xl border border-accent-700/50 shadow-2xl shadow-accent-900/30">
 
         <header class="text-center">
-            <h1 class="text-4xl font-bold text-gray-100">Welcome Back</h1>
-            <p class="text-gray-400 mt-2">Please enter your credentials to login.</p>
+            <h1 class="text-4xl font-bold text-gray-100">Vítejte zpět</h1>
+            <p class="text-gray-400 mt-2">Přihlaste se svými údaji.</p>
         </header>
 
         @if (!string.IsNullOrEmpty(ErrorMessage))
@@ -37,15 +38,15 @@
 
         <div class="space-y-4">
             <div>
-                <label for="useridentifier" class="sr-only">Username or Email</label>
+                <label for="useridentifier" class="sr-only">Uživatelské jméno nebo e-mail</label>
                 <input @bind="userIdentifier" type="text" id="useridentifier"
-                       placeholder="Username or Email" required
+                       placeholder="Uživatelské jméno nebo e-mail" required
                        class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
             </div>
 
             <div>
-                <label for="password" class="sr-only">Password</label>
-                <input @bind="password" type="password" id="password" placeholder="Password" required
+                <label for="password" class="sr-only">Heslo</label>
+                <input @bind="password" type="password" id="password" placeholder="Heslo" required
                        class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
             </div>
         </div>
@@ -54,7 +55,7 @@
             <button type="submit"
                     disabled="@isSubmitting"
                     class="w-full px-4 py-3 font-bold text-lg text-white bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-900 focus:ring-accent-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                <span>@(isSubmitting ? "Logging in..." : "Login")</span>
+                <span>@(isSubmitting ? "Přihlašujeme…" : "Přihlásit se")</span>
             </button>
             <button type="button"
                     @onclick="ResendVerificationEmail"
@@ -62,21 +63,21 @@
                     class="w-full px-4 py-3 font-semibold text-white bg-primary-700 hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 @if (isResending)
                 {
-                    <span>Sending verification email...</span>
+                    <span>Odesíláme ověřovací e-mail…</span>
                 }
                 else if (showResendVerification)
                 {
-                    <span>Resend verification email (account not verified)</span>
+                    <span>Znovu poslat ověřovací e-mail (účet není ověřený)</span>
                 }
                 else
                 {
-                    <span>Resend verification email</span>
+                    <span>Znovu poslat ověřovací e-mail</span>
                 }
             </button>
             <div class="text-center">
                 <a href="/register"
                    class="text-sm font-medium text-accent-400 hover:text-accent-300 hover:underline transition-colors">
-                    Don't have an account? Register
+                    Nemáte účet? Zaregistrujte se.
                 </a>
             </div>
         </div>
@@ -84,11 +85,6 @@
 </div>
 
 @code {
-
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
 
     [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
 
@@ -125,7 +121,7 @@
 
         if (Registered != 1) return;
 
-        registeredMessage = "Account created. Verify your email, then sign in.";
+        registeredMessage = "Účet je vytvořený. Ověřte svůj e-mail a pak se přihlaste.";
         if (!string.IsNullOrWhiteSpace(RegisteredEmail))
         {
             userIdentifier = RegisteredEmail.Trim();
@@ -134,39 +130,7 @@
 
     private async Task ResendVerificationEmail()
     {
-        if (string.IsNullOrWhiteSpace(userIdentifier) || isResending)
-        {
-            return;
-        }
-
-        isResending = true;
-        resendMessage = string.Empty;
-
-        try
-        {
-            HttpClient client = HttpClientFactory.CreateClient("WriteAPI");
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                "api/v1/auth/verify-email/send",
-                new { UserIdentifier = userIdentifier });
-
-            if (response.IsSuccessStatusCode)
-            {
-                resendMessage = "Verification email sent. Please check your inbox.";
-                return;
-            }
-
-            string error = await response.Content.ReadAsStringAsync();
-            List<string> errors = TryParseErrors(error);
-            ErrorMessage = errors.Count == 0 ? "Unable to resend verification email." : string.Join(", ", errors);
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"An error occurred: {ex.Message}";
-        }
-        finally
-        {
-            isResending = false;
-        }
+        
     }
 
     private async Task HandleLoginAsync()
@@ -178,95 +142,34 @@
 
         ErrorMessage = null;
         resendMessage = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(userIdentifier) || string.IsNullOrWhiteSpace(password))
-        {
-            ErrorMessage = "Username/email and password are required.";
-            return;
-        }
-
+        registeredMessage = null;
         isSubmitting = true;
 
         try
         {
-            HttpClient client = HttpClientFactory.CreateClient("WriteAPI");
-
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                "api/v1/auth/login",
-                new
-                {
-                    UserIdentifier = userIdentifier,
-                    Password = password
-                });
-
-            string body = await response.Content.ReadAsStringAsync();
-            if (!response.IsSuccessStatusCode)
+            Result<LoginUserResult> result = await LoginHandler.Handle(new LoginUserCommand
             {
-                List<string> errors = TryParseErrors(body);
-                ErrorMessage = errors.Count == 0 ? "Login failed." : string.Join(", ", errors);
-                showResendVerification = ErrorMessage.Contains("not verified", StringComparison.OrdinalIgnoreCase);
-                return;
-            }
+                UserIdentifier = userIdentifier,
+                Password = password,
+            });
 
-            LoginTokenResponse? tokenResponse = JsonSerializer.Deserialize<LoginTokenResponse>(body, JsonOptions);
-            if (tokenResponse == null ||
-                string.IsNullOrWhiteSpace(tokenResponse.AccessToken) ||
-                string.IsNullOrWhiteSpace(tokenResponse.RefreshToken))
+            if (result.IsFailure)
             {
-                ErrorMessage = "Login response did not contain required tokens.";
+                ErrorMessage = result.Error!.Message;
                 return;
             }
 
             if (AuthenticationStateProvider is JwtAuthenticationStateProvider jwtProvider)
             {
-                await jwtProvider.SetTokensAsync(tokenResponse.AccessToken, tokenResponse.RefreshToken);
+                await jwtProvider.SetTokensAsync(result.Value.AccessToken, result.Value.RefreshToken);
             }
 
-            NavManager.NavigateTo(normalizedReturnUrl, true);
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"An error occurred: {ex.Message}";
+            NavManager.NavigateTo(normalizedReturnUrl, forceLoad: true);
         }
         finally
         {
             isSubmitting = false;
         }
-    }
-
-    private static List<string> TryParseErrors(string errorContent)
-    {
-        if (string.IsNullOrWhiteSpace(errorContent))
-        {
-            return new();
-        }
-
-        ValidationErrorResponse? errorResponse = JsonSerializer.Deserialize<ValidationErrorResponse>(errorContent, JsonOptions);
-        if (errorResponse?.Errors.Count > 0)
-        {
-            return errorResponse.Errors;
-        }
-
-        JsonElement root = JsonSerializer.Deserialize<JsonElement>(errorContent);
-        if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("errors", out JsonElement errorsElement) ||
-            errorsElement.ValueKind != JsonValueKind.Array) return new();
-        List<string> errors = new();
-        errors.AddRange(
-            from item in errorsElement.EnumerateArray()
-            where item.ValueKind == JsonValueKind.String
-            select item.GetString()
-            into value
-            where !string.IsNullOrWhiteSpace(value)
-            select value);
-
-        return errors.Count > 0 ? errors : [];
-    }
-
-    private sealed class LoginTokenResponse
-    {
-        public string AccessToken { get; set; } = string.Empty;
-
-        public string RefreshToken { get; set; } = string.Empty;
     }
 
 }

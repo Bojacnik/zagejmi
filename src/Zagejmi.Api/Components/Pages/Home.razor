@@ -1,21 +1,20 @@
-﻿@page "/"
+@page "/"
 @rendermode InteractiveServer
 
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Your E-Girl Companion</PageTitle>
+<PageTitle>Zagejmi – hraj s námi</PageTitle>
 
 <div class="font-sans text-gray-800 text-center">
     <div class="p-8 md:p-12 bg-pink-100 rounded-2xl mb-8">
-        <h1 class="text-4xl md:text-5xl font-bold text-pink-600 mb-2">Hello, Gorgeous!</h1>
-        <p class="text-lg text-gray-700">Find your perfect e-girl companion for unforgettable gaming sessions, heartfelt
-            chats, and endless fun. Your next online bestie is just a click away.</p>
+        <h1 class="text-4xl md:text-5xl font-bold text-pink-600 mb-2">Ahoj, vítej na Zagejmi!</h1>
+        <p class="text-lg text-gray-700">Najděte si parťáka nebo parťačku na nezapomenutelné herní večery, upřímné rozhovory a spoustu zábavy. Váš nový online kamarád je jen na jedno kliknutí.</p>
     </div>
 
     <div class="py-10 px-5">
-        <h2 class="text-3xl md:text-4xl font-bold mb-2 text-gray-800">Pedestal Highlights</h2>
-        <p class="text-gray-600 mb-8">Top requested and top starred associates right now.</p>
+        <h2 class="text-3xl md:text-4xl font-bold mb-2 text-gray-800">Nejoblíbenější</h2>
+        <p class="text-gray-600 mb-8">Hráči a hráčky, kteří jsou teď nejžádanější a nejlépe hodnocení.</p>
 
         @if (isLoadingHighlights)
         {
@@ -34,7 +33,7 @@
         else if (highlights == null || (highlights.MostRequested == null && highlights.MostStarred == null))
         {
             <div class="rounded-xl bg-yellow-100 border border-yellow-300 text-yellow-800 p-4 max-w-3xl mx-auto">
-                <p class="text-sm font-medium">No highlight associates yet.</p>
+                <p class="text-sm font-medium">Zatím tu nikdo není.</p>
             </div>
         }
         else
@@ -42,7 +41,7 @@
             <div class="flex flex-wrap justify-center gap-8">
                 @if (highlights.MostRequested != null)
                 {
-                    <NavLink href="@($"/associates/{highlights.MostRequested.ProfileId}")"
+                    <NavLink href="@($"/players/{highlights.MostRequested.ProfileId}")"
                              class="bg-white rounded-2xl shadow-lg p-6 w-80 transition-transform duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl">
                         <div class="flex items-center justify-center mb-4">
                             @if (!string.IsNullOrWhiteSpace(highlights.MostRequested.ProfileImageUrl))
@@ -61,18 +60,17 @@
                         </div>
                         <div
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-pink-100 text-pink-700 mb-2">
-                            Most Requested
+                            Nejžádanější
                         </div>
                         <h3 class="text-2xl font-bold mb-1 text-pink-600">@highlights.MostRequested.DisplayName</h3>
-                        <p class="text-gray-600 text-sm">Completed
-                            sessions: @highlights.MostRequested.CompletedSessions</p>
+                        <p class="text-gray-600 text-sm">Odehraných sezení: @highlights.MostRequested.CompletedSessions</p>
                         <p class="text-gray-600 text-sm">⭐ @highlights.MostRequested.Reputation.ToString("F1")</p>
                     </NavLink>
                 }
 
                 @if (highlights.MostStarred != null)
                 {
-                    <NavLink href="@($"/associates/{highlights.MostStarred.ProfileId}")"
+                    <NavLink href="@($"/players/{highlights.MostStarred.ProfileId}")"
                              class="bg-white rounded-2xl shadow-lg p-6 w-80 transition-transform duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl">
                         <div class="flex items-center justify-center mb-4">
                             @if (!string.IsNullOrWhiteSpace(highlights.MostStarred.ProfileImageUrl))
@@ -91,12 +89,11 @@
                         </div>
                         <div
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 mb-2">
-                            Most Starred
+                            Nejlépe hodnocení
                         </div>
                         <h3 class="text-2xl font-bold mb-1 text-purple-600">@highlights.MostStarred.DisplayName</h3>
                         <p class="text-gray-600 text-sm">⭐ @highlights.MostStarred.Reputation.ToString("F1")</p>
-                        <p class="text-gray-600 text-sm">Completed
-                            sessions: @highlights.MostStarred.CompletedSessions</p>
+                        <p class="text-gray-600 text-sm">Odehraných sezení: @highlights.MostStarred.CompletedSessions</p>
                     </NavLink>
                 }
             </div>
@@ -104,16 +101,14 @@
     </div>
 
     <div class="py-12 px-5 bg-yellow-100 my-8 rounded-2xl">
-        <h2 class="text-3xl font-bold text-yellow-800">Sending You a Warm Hug</h2>
-        <p class="text-gray-700 mt-2">We're all about creating a positive and uplifting space. Whatever you're looking
-            for, we're happy to have you here!</p>
+        <h2 class="text-3xl font-bold text-yellow-800">Posíláme vřelé objetí</h2>
+        <p class="text-gray-700 mt-2">Chceme tu vytvářet pozitivní a přátelské místo. Ať hledáte cokoli, jsme rádi, že jste tady!</p>
     </div>
 
     <footer class="py-10 px-5 bg-purple-100 rounded-2xl">
-        <h2 class="text-2xl font-bold mb-4">Ready to Join Us?</h2>
+        <h2 class="text-2xl font-bold mb-4">Přidáte se k nám?</h2>
         <a href="/become-an-egirl"
-           class="inline-block py-3 px-8 text-lg font-bold text-white bg-purple-500 rounded-full no-underline transition-colors duration-300 hover:bg-purple-600">Become
-            an E-Girl</a>
+           class="inline-block py-3 px-8 text-lg font-bold text-white bg-purple-500 rounded-full no-underline transition-colors duration-300 hover:bg-purple-600">Staňte se hráčem nebo hráčkou</a>
     </footer>
 </div>
 
@@ -132,11 +127,23 @@
         HttpClient client = HttpClientFactory.CreateClient();
         client.BaseAddress = new Uri(NavigationManager.BaseUri);
 
-        HttpResponseMessage response = await client.GetAsync("api/v1/read/associates/highlights");
+        // TODO: The read API was merged into this app; replace this self-HTTP call with a direct query handler.
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.GetAsync("api/v1/read/associates/highlights");
+        }
+        catch (HttpRequestException ex)
+        {
+            highlightsError = $"Nepodařilo se načíst nejoblíbenější: {ex.Message}";
+            isLoadingHighlights = false;
+            return;
+        }
+
         if (!response.IsSuccessStatusCode)
         {
             string errorText = await response.Content.ReadAsStringAsync();
-            highlightsError = $"Highlights failed: {(int)response.StatusCode} {response.StatusCode}. {errorText}";
+            highlightsError = $"Nepodařilo se načíst nejoblíbenější ({(int)response.StatusCode}). {errorText}";
             isLoadingHighlights = false;
             return;
         }

@@ -35,7 +35,7 @@
     private void SetSelectedPageFromUri(string uri)
     {
         string relativePath = new Uri(uri).AbsolutePath.Trim('/').ToLower();
-        if (relativePath.StartsWith("people"))
+        if (relativePath.StartsWith("people") || relativePath.StartsWith("players"))
         {
             SidebarStateService.SetSelectedPage("People");
         }

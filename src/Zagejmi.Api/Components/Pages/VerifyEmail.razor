@@ -1,5 +1,6 @@
 @page "/verify-email"
 @using System.Text.Json
+@using Zagejmi.Api.Models
 @rendermode InteractiveServer
 
 @inject IHttpClientFactory HttpClientFactory
@@ -8,11 +9,11 @@
 <div class="w-full h-full flex items-center justify-center p-4">
     <div
         class="w-full max-w-lg p-8 space-y-4 bg-primary-900 rounded-xl border border-accent-700/50 shadow-2xl shadow-accent-900/30">
-        <h1 class="text-3xl font-bold text-gray-100">Email verification</h1>
+        <h1 class="text-3xl font-bold text-gray-100">Ověření e-mailu</h1>
 
         @if (isLoading)
         {
-            <p class="text-gray-300">Verifying your email...</p>
+            <p class="text-gray-300">Ověřujeme váš e-mail…</p>
         }
         else if (isSuccess)
         {
@@ -21,7 +22,7 @@
             </div>
             <button class="px-4 py-3 font-bold text-white bg-accent-600 hover:bg-accent-700 rounded-lg"
                     @onclick="GoToLogin">
-                Go to login
+                Přejít na přihlášení
             </button>
         }
         else
@@ -32,11 +33,11 @@
             <div class="flex gap-3">
                 <button class="px-4 py-3 font-bold text-white bg-accent-600 hover:bg-accent-700 rounded-lg"
                         @onclick="GoToLogin">
-                    Go to login
+                    Přejít na přihlášení
                 </button>
                 <button class="px-4 py-3 font-bold text-white bg-primary-700 hover:bg-primary-600 rounded-lg"
                         @onclick="GoToRegister">
-                    Go to register
+                    Přejít na registraci
                 </button>
             </div>
         }
@@ -67,7 +68,7 @@
         {
             isLoading = false;
             isSuccess = false;
-            message = "Invalid verification link.";
+            message = "Neplatný ověřovací odkaz.";
             return;
         }
 
@@ -82,18 +83,18 @@
             if (response.IsSuccessStatusCode)
             {
                 isSuccess = true;
-                message = "Email verified successfully. You can now log in.";
+                message = "E-mail je ověřený. Teď se můžete přihlásit.";
             }
             else
             {
                 string payload = await response.Content.ReadAsStringAsync();
-                message = TryReadError(payload) ?? "Unable to verify email. The link may be invalid or expired.";
+                message = TryReadError(payload) ?? "E-mail se nepodařilo ověřit. Odkaz je možná neplatný nebo mu vypršela platnost.";
             }
         }
         catch
         {
             isSuccess = false;
-            message = "Unable to verify email right now. Please try again later.";
+            message = "E-mail teď nejde ověřit. Zkuste to prosím později.";
         }
         finally
         {

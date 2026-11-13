@@ -1,7 +1,6 @@
-﻿@using Zagejmi.Read.Api.Components.Layout
+﻿@using Zagejmi.Api.Components.Layout
 <CascadingAuthenticationState>
-    <Router AppAssembly="typeof(Program).Assembly"
-            AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
+    <Router AppAssembly="typeof(Program).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
                 <NotAuthorized>

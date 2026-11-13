@@ -1,107 +1,174 @@
-﻿@page "/people"
+@page "/people"
+@page "/players/{ProfileId:guid}"
+@using System.Threading
+@using Zagejmi.Api.Services
+@using Zagejmi.Application.Profiles.SearchPlayers
+@using Zagejmi.Shared
 @rendermode InteractiveServer
+@implements IDisposable
 
-@inject IHttpClientFactory HttpClientFactory
+@inject SearchPlayersHandler SearchPlayersHandler
 @inject NavigationManager NavigationManager
 
-@* 
-    People Directory Page
-    Displays a grid of associates that customers can view.
-    Clicking on an associate opens their detailed profile page with services listing.
+@*
+    Player directory: every player profile, newest first, with a name filter.
+    Clicking a card opens the player popup at /players/{id} (shareable; Back closes it) without leaving the page.
 *@
+
+<PageTitle>Hráči</PageTitle>
 
 <div class="w-full">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="mb-8">
-            <h1 class="text-4xl font-bold text-text-default">Find Associates</h1>
-            <p class="text-text-muted mt-2">Browse and connect with service providers in our community</p>
+        <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+                <h1 class="text-4xl font-bold text-text-default">Najít hráče a hráčky</h1>
+                <p class="text-text-muted mt-2">Procházejte hráče a hráčky v naší komunitě a spojte se s nimi</p>
+            </div>
+            <div class="relative w-full md:w-80">
+                <label for="player-search" class="sr-only">Hledat podle přezdívky</label>
+                <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" fill="none"
+                     stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"></path>
+                </svg>
+                <input id="player-search" type="search" placeholder="Hledat podle přezdívky…" autocomplete="off"
+                       @bind="searchText" @bind:event="oninput" @bind:after="OnSearchChanged"
+                       class="w-full pl-10 pr-4 py-2.5 rounded-full bg-primary-900/80 border border-accent-700/50 text-text-default placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors"/>
+            </div>
         </div>
 
-        @if (isLoading)
+        @if (isLoading && players.Count == 0)
         {
             <div class="flex items-center justify-center py-12">
                 <div class="text-center">
                     <div class="inline-block animate-spin mb-4">
                         <div class="w-12 h-12 border-4 border-accent-700/30 border-t-accent-600 rounded-full"></div>
                     </div>
-                    <p class="text-text-muted">Loading associates...</p>
+                    <p class="text-text-muted">Načítáme hráče…</p>
                 </div>
             </div>
         }
-        else if (peopleList.Count == 0)
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="rounded-lg bg-red-900/20 border border-red-500/40 text-red-300 p-4" role="alert">
+                <p class="text-sm font-medium">@errorMessage</p>
+            </div>
+        }
+        else if (players.Count == 0)
         {
             <div class="rounded-lg border border-dashed border-accent-700/50 bg-primary-950/40 p-12 text-center">
-                <p class="text-xl text-text-muted">No associates found yet</p>
+                <p class="text-xl text-text-muted">
+                    @(string.IsNullOrWhiteSpace(searchText)
+                        ? "Zatím tu nejsou žádní hráči"
+                        : $"Nikoho s přezdívkou „{searchText.Trim()}“ jsme nenašli")
+                </p>
             </div>
         }
         else
         {
-            <div
-                class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 grid-flow-row-dense gap-4">
-                @foreach (PersonModel person in peopleList)
+            <div class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 transition-opacity @(isLoading ? "opacity-60" : "")">
+                @foreach (PlayerListItem player in players)
                 {
-                    <NavLink href="@($"/associates/{person.ProfileId}")"
-                             class="relative group rounded-lg overflow-hidden shadow-lg bg-primary-900 transform transition-transform duration-300 hover:scale-105 hover:shadow-accent-700/40 aspect-square cursor-pointer active">
-                        <div class="absolute inset-0">
-                            @if (!string.IsNullOrWhiteSpace(person.ImageUrl))
-                            {
-                                <img src="@person.ImageUrl" class="w-full h-full object-cover"
-                                     alt="Profile picture of @person.Name"/>
-                            }
-                            else
-                            {
-                                <div
-                                    class="w-full h-full bg-gradient-to-br from-accent-700/40 to-accent-900/20 flex items-center justify-center">
-                                    <span class="text-4xl font-bold text-accent-400">@GetInitials(person.Name)</span>
-                                </div>
-                            }
-                        </div>
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                        <div
-                            class="absolute left-0 bottom-0 z-10 p-4 flex flex-col items-start w-full text-text-default">
-                            <p class="font-bold text-lg">@person.Name</p>
-                            <div
-                                class="inline-flex px-2 py-1 mt-1 text-xs rounded-full bg-accent-600 text-text-default">
-                                ⭐ @person.Reputation.ToString("F1")
-                            </div>
-                        </div>
-                        @if (person.IsOnline)
+                    <NavLink href="@($"/players/{player.ProfileId}")"
+                             class="relative group rounded-lg overflow-hidden shadow-lg bg-primary-900 transform transition-transform duration-300 hover:scale-105 hover:shadow-accent-700/40 aspect-square cursor-pointer">
+                        @if (player.ProfileImageId is not null)
                         {
-                            <div
-                                class="absolute top-2 right-2 w-3 h-3 rounded-full bg-green-500 border border-white"></div>
+                            <img src="@ImageUrls.For(player.ProfileImageId)" alt="Profilová fotka – @player.DisplayName"
+                                 loading="lazy" class="absolute inset-0 w-full h-full object-cover"/>
                         }
+                        else
+                        {
+                            <div class="absolute inset-0 bg-gradient-to-br from-accent-700/40 to-accent-900/20 flex items-center justify-center">
+                                <span class="text-4xl font-bold text-accent-400">@GetInitials(player.DisplayName)</span>
+                            </div>
+                        }
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                        <div class="absolute left-0 bottom-0 z-10 p-4 flex flex-col items-start w-full text-text-default">
+                            <p class="font-bold text-lg">@player.DisplayName</p>
+                            @if (!string.IsNullOrWhiteSpace(player.Description))
+                            {
+                                <p class="text-sm text-text-muted line-clamp-2">@player.Description</p>
+                            }
+                        </div>
                     </NavLink>
                 }
-            </div>
-        }
-
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="mt-4 rounded-lg bg-red-100 border border-red-300 text-red-700 p-4">
-                <p class="text-sm font-medium">@errorMessage</p>
             </div>
         }
     </div>
 </div>
 
+@if (ProfileId is { } openProfileId)
+{
+    <PlayerDetailModal ProfileId="openProfileId" OnClose="ClosePlayer"/>
+}
+
 @code {
-    private List<PersonModel> peopleList = new();
+    private readonly CancellationTokenSource disposed = new();
+
+    private List<PlayerListItem> players = new();
     private bool isLoading = true;
     private string? errorMessage;
+    private string searchText = string.Empty;
+    private CancellationTokenSource? debounce;
 
     /// <summary>
-    ///     Initializes the people list by fetching associates from the API.
+    ///     Gets or sets the player whose popup is open (from /players/{id}), or <see langword="null" />.
     /// </summary>
+    [Parameter]
+    public Guid? ProfileId { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        await LoadAsync();
+    }
+
+    private async Task OnSearchChanged()
+    {
+        // Wait until the user stops typing; a newer keystroke cancels the pending search.
+        debounce?.Cancel();
+        debounce = CancellationTokenSource.CreateLinkedTokenSource(disposed.Token);
+        CancellationToken token = debounce.Token;
+
         try
         {
-            await LoadAssociatesAsync();
+            await Task.Delay(300, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            Result<IReadOnlyList<PlayerListItem>> result = await SearchPlayersHandler.Handle(
+                new SearchPlayersQuery { Search = searchText },
+                disposed.Token);
+
+            if (result.IsFailure)
+            {
+                errorMessage = result.Error!.Message;
+                players = new();
+                return;
+            }
+
+            players = result.Value.ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was left while loading.
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load associates: {ex.Message}";
-            peopleList = new();
+            errorMessage = $"Hráče se nepodařilo načíst: {ex.Message}";
+            players = new();
         }
         finally
         {
@@ -109,135 +176,26 @@
         }
     }
 
-    /// <summary>
-    ///     Loads associates from the API search endpoint.
-    /// </summary>
-    private async Task LoadAssociatesAsync()
+    private void ClosePlayer()
     {
-        HttpClient client = HttpClientFactory.CreateClient();
-        client.BaseAddress = new Uri(NavigationManager.BaseUri);
-
-        HttpResponseMessage response = await client.GetAsync("api/v1/read/associates/search");
-
-        if (!response.IsSuccessStatusCode)
-        {
-            string errorText = await response.Content.ReadAsStringAsync();
-            errorMessage = $"Search failed: {(int)response.StatusCode} {response.StatusCode}. {errorText}";
-            return;
-        }
-
-        SearchResult? result = await response.Content.ReadFromJsonAsync<SearchResult>();
-        if (result?.Data == null)
-        {
-            errorMessage = "Search returned no data payload.";
-            return;
-        }
-
-        peopleList = result.Data.Select(a => new PersonModel
-        {
-            ProfileId = a.ProfileId,
-            Name = a.DisplayName,
-            ImageUrl = a.ProfileImageUrl,
-            Reputation = a.Reputation,
-            IsOnline = a.IsOnline,
-        }).ToList();
+        NavigationManager.NavigateTo("/people");
     }
 
-    /// <summary>
-    ///     Builds initials from a display name.
-    /// </summary>
     private static string GetInitials(string name)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return "?";
-        }
-
         string[] parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0)
+        return parts.Length switch
         {
-            return name[..1].ToUpperInvariant();
-        }
-
-        if (parts.Length == 1)
-        {
-            return parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant();
-        }
-
-        return string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant();
+            0 => "?",
+            1 => parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant(),
+            _ => string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant(),
+        };
     }
 
-    /// <summary>
-    ///     Represents a person (associate) in the people directory.
-    /// </summary>
-    public class PersonModel
+    public void Dispose()
     {
-        /// <summary>
-        ///     Gets or sets the profile ID used for navigation to the detailed profile page.
-        /// </summary>
-        public Guid ProfileId { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the associate's display name.
-        /// </summary>
-        public string Name { get; set; } = "";
-
-        /// <summary>
-        ///     Gets or sets the URL to the profile image.
-        /// </summary>
-        public string? ImageUrl { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the associate's reputation rating.
-        /// </summary>
-        public decimal Reputation { get; set; }
-
-        /// <summary>
-        ///     Gets or sets a value indicating whether the associate is online.
-        /// </summary>
-        public bool IsOnline { get; set; }
+        disposed.Cancel();
+        disposed.Dispose();
+        debounce?.Dispose();
     }
-
-    /// <summary>
-    ///     Represents the search API response.
-    /// </summary>
-    private class SearchResult
-    {
-        /// <summary>
-        ///     Gets or sets the list of associates.
-        /// </summary>
-        public List<AssociateData>? Data { get; set; }
-    }
-
-    /// <summary>
-    ///     Represents an associate from the search API.
-    /// </summary>
-    private class AssociateData
-    {
-        /// <summary>
-        ///     Gets or sets the profile ID.
-        /// </summary>
-        public Guid ProfileId { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the display name.
-        /// </summary>
-        public string DisplayName { get; } = "";
-
-        /// <summary>
-        ///     Gets or sets the profile image URL.
-        /// </summary>
-        public string? ProfileImageUrl { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the reputation rating.
-        /// </summary>
-        public decimal Reputation { get; set; }
-
-        /// <summary>
-        ///     Gets or sets a value indicating whether the associate is online.
-        /// </summary>
-        public bool IsOnline { get; set; }
-    }
-
 }

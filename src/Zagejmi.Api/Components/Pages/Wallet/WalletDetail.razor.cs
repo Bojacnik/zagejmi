@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
 
+using Zagejmi.Api.Models;
+
 namespace Zagejmi.Api.Components.Pages.Wallet;
 
 /// <summary>
@@ -49,23 +51,23 @@ public partial class WalletDetail : ComponentBase
                     WalletName = "My Main Wallet",
                     Description = "Salary",
                     Date = new DateTime(2023, 10, 26),
-                    Amount = 2000.00m
+                    Amount = 2000.00m,
                 },
                 new()
                 {
                     WalletName = "My Main Wallet",
                     Description = "Groceries",
                     Date = new DateTime(2023, 10, 25),
-                    Amount = -75.50m
+                    Amount = -75.50m,
                 },
                 new()
                 {
                     WalletName = "My Main Wallet",
                     Description = "Gas",
                     Date = new DateTime(2023, 10, 24),
-                    Amount = -40.00m
-                }
-            }
+                    Amount = -40.00m,
+                },
+            },
         };
     }
 }

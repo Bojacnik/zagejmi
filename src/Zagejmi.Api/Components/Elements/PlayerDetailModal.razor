@@ -1,0 +1,224 @@
+@using System.Threading
+@using Zagejmi.Api.Localization
+@using Zagejmi.Api.Services
+@using Zagejmi.Application.Profiles.GetPlayerDetail
+@using Zagejmi.Domain.Auth
+@using Zagejmi.Shared
+@implements IDisposable
+@inject GetPlayerDetailHandler GetPlayerDetailHandler
+
+@* Player popup: banner, logo, description and services. Closes on ✕, backdrop click or Esc. *@
+
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8" role="dialog" aria-modal="true"
+     aria-labelledby="player-modal-title" @onkeydown="OnKeyDown" tabindex="-1" @ref="dialog">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm modal-fade-in" @onclick="Close"></div>
+
+    <div class="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-accent-700/50 bg-primary-950 shadow-2xl shadow-black/60 modal-pop-in">
+        <button type="button" @onclick="Close" aria-label="Zavřít"
+                class="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm border border-white/10 text-text-default hover:bg-black/70 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        @if (isLoading)
+        {
+            <div class="flex flex-col items-center justify-center py-24">
+                <div class="w-12 h-12 border-4 border-accent-700/30 border-t-accent-600 rounded-full animate-spin"></div>
+                <p class="text-text-muted mt-4">Načítáme profil…</p>
+            </div>
+        }
+        else if (errorMessage is not null)
+        {
+            <div class="p-8 text-center">
+                <h2 id="player-modal-title" class="text-xl font-bold text-red-300">Profil se nepodařilo načíst</h2>
+                <p class="text-text-muted mt-2">@errorMessage</p>
+            </div>
+        }
+        else if (player is not null)
+        {
+            bool feminine = player.GrammaticalGender == GrammaticalGender.Feminine;
+
+            @* Banner *@
+            <div class="relative aspect-[4/1] overflow-hidden">
+                @if (player.BannerImageId is not null)
+                {
+                    <img src="@ImageUrls.For(player.BannerImageId)" alt="" class="w-full h-full object-cover"/>
+                }
+                else
+                {
+                    <div class="w-full h-full bg-gradient-to-br from-accent-600/50 via-accent-900/60 to-primary-950"></div>
+                }
+                <div class="absolute inset-0 bg-gradient-to-t from-primary-950 via-primary-950/10 to-transparent"></div>
+            </div>
+
+            @* Logo + name *@
+            <div class="relative px-6 sm:px-8 -mt-14 flex flex-col sm:flex-row sm:items-end gap-4">
+                @if (player.ProfileImageId is not null)
+                {
+                    <img src="@ImageUrls.For(player.ProfileImageId)" alt="@player.DisplayName"
+                         class="w-28 h-28 rounded-full object-cover border-4 border-primary-950 ring-2 ring-accent-600 shadow-xl"/>
+                }
+                else
+                {
+                    <div class="w-28 h-28 rounded-full bg-gradient-to-br from-accent-500 to-accent-800 border-4 border-primary-950 ring-2 ring-accent-600 shadow-xl flex items-center justify-center text-3xl font-bold text-white">
+                        @Initials(player.DisplayName)
+                    </div>
+                }
+                <div class="pb-1">
+                    <h2 id="player-modal-title" class="text-3xl font-bold text-text-default">@player.DisplayName</h2>
+                    <div class="flex flex-wrap items-center gap-2 mt-1 text-sm">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-accent-700/30 text-accent-300 border border-accent-600/50">
+                            @CzechLabels.Role(ProfileType.Player, player.GrammaticalGender)
+                        </span>
+                        <span class="text-text-muted">Na Zagejmi od @player.CreatedAt.ToLocalTime().ToString("d. MMMM yyyy")</span>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(player.Description))
+            {
+                <p class="px-6 sm:px-8 mt-5 text-text-default/90 leading-relaxed whitespace-pre-line">@player.Description</p>
+            }
+
+            @* Services *@
+            <section class="px-6 sm:px-8 py-6 mt-2">
+                <h3 class="text-xl font-bold text-text-default">Služby</h3>
+
+                @if (player.Services.Count == 0)
+                {
+                    <div class="mt-4 rounded-xl border border-dashed border-accent-700/50 bg-primary-900/40 p-8 text-center">
+                        <p class="text-text-muted">
+                            @(feminine ? "Tato hráčka zatím nenabízí" : "Tento hráč zatím nenabízí") žádné služby.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="mt-4 grid sm:grid-cols-2 gap-4">
+                        @foreach (PlayerServiceItem service in player.Services)
+                        {
+                            <article class="rounded-xl overflow-hidden border border-accent-800/40 bg-primary-900/60 @(service.IsAvailable ? "" : "opacity-60")">
+                                <div class="aspect-video bg-gradient-to-br from-accent-700/40 to-accent-900/20">
+                                    @if (service.ImageId is not null)
+                                    {
+                                        <img src="@ImageUrls.For(service.ImageId)" alt="" class="w-full h-full object-cover"/>
+                                    }
+                                </div>
+                                <div class="p-4">
+                                    @if (!string.IsNullOrWhiteSpace(service.Category))
+                                    {
+                                        <span class="text-xs font-medium text-accent-300">@service.Category</span>
+                                    }
+                                    <h4 class="font-bold text-text-default">@service.Name</h4>
+                                    <p class="text-sm text-text-muted line-clamp-3 mt-1">@service.Description</p>
+                                    <div class="mt-3 flex items-center justify-between">
+                                        <span class="font-bold text-accent-300">@CzechLabels.Goins(service.Price) @service.PriceUnit</span>
+                                        @if (!service.IsAvailable)
+                                        {
+                                            <span class="text-xs text-text-muted">Nedostupné</span>
+                                        }
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </section>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly CancellationTokenSource disposed = new();
+
+    private ElementReference dialog;
+    private Guid? loadedProfileId;
+    private PlayerDetail? player;
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    /// <summary>
+    ///     Gets or sets the player profile to show.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public Guid ProfileId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the callback invoked when the user closes the popup.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedProfileId == ProfileId)
+        {
+            return;
+        }
+
+        loadedProfileId = ProfileId;
+        isLoading = true;
+        errorMessage = null;
+        player = null;
+
+        try
+        {
+            Result<PlayerDetail> result = await GetPlayerDetailHandler.Handle(ProfileId, disposed.Token);
+            if (result.IsFailure)
+            {
+                errorMessage = result.Error!.Type == ErrorType.NotFound
+                    ? "Tento profil neexistuje nebo byl smazán."
+                    : result.Error.Message;
+                return;
+            }
+
+            player = result.Value;
+        }
+        catch (OperationCanceledException)
+        {
+            // The popup was closed while loading.
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Focus the dialog so Esc closes it right away.
+            await dialog.FocusAsync();
+        }
+    }
+
+    private Task Close()
+    {
+        return OnClose.InvokeAsync();
+    }
+
+    private Task OnKeyDown(KeyboardEventArgs e)
+    {
+        return e.Key == "Escape" ? Close() : Task.CompletedTask;
+    }
+
+    private static string Initials(string name)
+    {
+        string[] parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch
+        {
+            0 => "?",
+            1 => parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant(),
+            _ => string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant(),
+        };
+    }
+
+    public void Dispose()
+    {
+        disposed.Cancel();
+        disposed.Dispose();
+    }
+}

@@ -1,46 +1,65 @@
-﻿@page "/profile"
+@page "/profile"
 @using System.IdentityModel.Tokens.Jwt
 @using System.IO
-@using System.Net
-@using System.Net.Http.Headers
 @using System.Security.Claims
-@using System.Text.Json
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.Extensions.Configuration
-@using Zagejmi.Contracts.Commands
-@using Zagejmi.Contracts.Dtos
-@using Zagejmi.Read.Api.Models
+@using Zagejmi.Api.Localization
+@using Zagejmi.Api.Models
+@using Zagejmi.Api.Services
+@using Zagejmi.Application.Auth.Users.SetDefaultProfile
+@using Zagejmi.Application.Auth.Users.SetGhostMode
+@using Zagejmi.Application.Images
+@using Zagejmi.Application.Images.Abstractions
+@using Zagejmi.Application.Profiles.AddPlayerService
+@using Zagejmi.Application.Profiles.CreatePlayerProfile
+@using Zagejmi.Application.Profiles.DeletePlayerService
+@using Zagejmi.Application.Profiles.GetPlayerDetail
+@using Zagejmi.Application.Profiles.SetPlayerBanner
+@using Zagejmi.Application.Profiles.SetProfileImage
+@using Zagejmi.Application.Profiles.UpdatePlayerService
+@using Zagejmi.Application.Profiles.GetUserProfiles
+@using Zagejmi.Domain.Auth
+@using Zagejmi.Shared
 @rendermode InteractiveServer
 @attribute [Authorize]
+@implements IDisposable
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IHttpClientFactory HttpClientFactory
-@inject IConfiguration Configuration
+@inject ActiveProfileService ActiveProfiles
+@inject SetDefaultProfileHandler SetDefaultProfileHandler
+@inject SetProfileImageHandler SetProfileImageHandler
+@inject SetPlayerBannerHandler SetPlayerBannerHandler
+@inject IImageProcessor ImageProcessor
+@inject AddPlayerServiceHandler AddPlayerServiceHandler
+@inject UpdatePlayerServiceHandler UpdatePlayerServiceHandler
+@inject DeletePlayerServiceHandler DeletePlayerServiceHandler
+@inject GetPlayerDetailHandler GetPlayerDetailHandler
+@inject CreatePlayerProfileHandler CreatePlayerProfileHandler
+@inject SetGhostModeHandler SetGhostModeHandler
 
-<PageTitle>Profile</PageTitle>
+<PageTitle>Profil</PageTitle>
 
 <div class="w-full max-w-6xl mx-auto py-8 px-4 sm:px-8">
     <div
         class="rounded-3xl border border-accent-800/40 bg-gradient-to-br from-primary-900/80 via-primary-950/80 to-primary-900/70 p-6 sm:p-8 shadow-2xl shadow-primary-950/50">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
-                <h1 class="text-4xl font-extrabold tracking-tight text-text-default">Profile Hub</h1>
-                <p class="text-text-muted mt-2">Switch between your profiles, create missing ones, and manage identity
-                    at a glance.</p>
+                <h1 class="text-4xl font-extrabold tracking-tight text-text-default">Moje profily</h1>
+                <p class="text-text-muted mt-2">Přepínejte mezi svými profily a spravujte je na jednom místě.</p>
             </div>
         </div>
 
         @if (isLoading)
         {
             <div class="mt-8 text-center p-8 bg-primary-900/40 rounded-2xl border border-accent-700/40">
-                <p class="text-text-muted animate-pulse">Loading profile...</p>
+                <p class="text-text-muted animate-pulse">Načítáme profil…</p>
             </div>
         }
         else if (!string.IsNullOrWhiteSpace(errorMessage))
         {
             <div class="mt-8 p-4 text-sm text-red-300 bg-red-900/20 border border-red-500/40 rounded-xl" role="alert">
-                <h2 class="font-bold">Unable to load profile</h2>
+                <h2 class="font-bold">Profil se nepodařilo načíst</h2>
                 <p>@errorMessage</p>
             </div>
         }
@@ -61,7 +80,7 @@
                         {
                             <button @onclick="OpenCreatePanel"
                                     class="w-10 h-10 rounded-full border border-accent-600 text-accent-300 hover:bg-accent-700/20 transition-colors text-xl font-bold"
-                                    aria-label="Create profile">
+                                    aria-label="Vytvořit profil">
                                 +
                             </button>
                         }
@@ -71,13 +90,12 @@
                 @if (showCreatePanel)
                 {
                     <section class="rounded-2xl border border-accent-700/50 bg-primary-900/50 p-6">
-                        <h2 class="text-2xl font-bold text-text-default">Create New Profile</h2>
-                        <p class="text-text-muted mt-1">You can create one profile per type: Customer, Associate, and
-                            Anon.</p>
+                        <h2 class="text-2xl font-bold text-text-default">Vytvořit profil @PlayerGenitive</h2>
+                        <p class="text-text-muted mt-1">Ke svému zákaznickému profilu si můžete přidat jeden profil @PlayerGenitive.</p>
 
                         <div class="grid sm:grid-cols-2 gap-4 mt-5">
                             <div>
-                                <label class="block text-sm text-text-muted mb-2">Profile type</label>
+                                <label class="block text-sm text-text-muted mb-2">Typ profilu</label>
                                 <select @bind="newProfileType"
                                         class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default">
                                     @foreach (ProfileType type in availableTypes)
@@ -90,10 +108,10 @@
                             @if (RequiresDisplayName(newProfileType))
                             {
                                 <div>
-                                    <label class="block text-sm text-text-muted mb-2">Display name</label>
+                                    <label class="block text-sm text-text-muted mb-2">Přezdívka</label>
                                     <input @bind="newDisplayName" maxlength="40"
                                            class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default"
-                                           placeholder="Enter display name"/>
+                                           placeholder="Zadejte přezdívku"/>
                                 </div>
                             }
                         </div>
@@ -101,9 +119,8 @@
                         @if (newProfileType == ProfileType.Customer)
                         {
                             <div class="mt-5">
-                                <label class="block text-sm text-text-muted mb-2">Profile picture (PNG/JPEG, max 2
-                                    MB)</label>
-                                <InputFile OnChange="OnCustomerImageSelected" accept="image/png,image/jpeg"
+                                <label class="block text-sm text-text-muted mb-2">Profilová fotka (PNG/JPEG, max. 2 MB)</label>
+                                <InputFile OnChange="OnCustomerImageSelected" accept="image/png,image/jpeg,image/webp"
                                            class="block w-full text-sm text-text-default file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-accent-700 file:text-white hover:file:bg-accent-600"/>
                                 @if (!string.IsNullOrWhiteSpace(customerImageErrorMessage))
                                 {
@@ -111,7 +128,7 @@
                                 }
                                 else if (!string.IsNullOrWhiteSpace(newCustomerImageDataUrl))
                                 {
-                                    <img src="@newCustomerImageDataUrl" alt="Customer profile preview"
+                                    <img src="@newCustomerImageDataUrl" alt="Náhled profilové fotky"
                                          class="mt-3 h-20 w-20 rounded-full object-cover border border-accent-700/50"/>
                                 }
                             </div>
@@ -120,11 +137,11 @@
                         <div class="flex items-center gap-3 mt-5">
                             <button @onclick="CreateProfile"
                                     class="px-4 py-2 rounded-lg font-semibold bg-accent-600 hover:bg-accent-700 text-white transition-colors">
-                                Create Profile
+                                Vytvořit profil
                             </button>
                             <button @onclick="CloseCreatePanel"
                                     class="px-4 py-2 rounded-lg font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors">
-                                Cancel
+                                Zrušit
                             </button>
                         </div>
 
@@ -140,9 +157,8 @@
                     <div class="min-h-[45vh] grid place-items-center">
                         <section
                             class="w-full max-w-3xl rounded-2xl border border-dashed border-accent-700/50 bg-primary-950/40 p-10 text-center">
-                            <h2 class="text-3xl font-bold text-text-default">No profile yet</h2>
-                            <p class="text-text-muted mt-2 max-w-2xl mx-auto">Create your first profile to continue. You
-                                can have up to three profile types: Customer, Associate, and Anon.</p>
+                            <h2 class="text-3xl font-bold text-text-default">Zatím nemáte žádný profil</h2>
+                            <p class="text-text-muted mt-2 max-w-2xl mx-auto">Zákaznický profil se vytváří při registraci. Pokud ho nevidíte, kontaktujte prosím podporu.</p>
                         </section>
                     </div>
                 }
@@ -152,178 +168,106 @@
                     {
                         case ProfileType.Customer:
                             <section class="grid lg:grid-cols-3 gap-6">
-                                <div class="rounded-2xl border border-accent-700/50 bg-primary-950/60 p-6">
-                                    @if (!string.IsNullOrWhiteSpace(selectedProfile.ProfileImageUrl))
-                                    {
-                                        <img src="@selectedProfile.ProfileImageUrl" alt="Customer profile picture"
-                                             class="w-28 h-28 rounded-full object-cover border border-accent-700/50 mx-auto"/>
-                                    }
-                                    else
-                                    {
-                                        <div
-                                            class="w-28 h-28 rounded-full bg-accent-700 text-text-default text-3xl font-bold flex items-center justify-center mx-auto">
-                                            @BuildInitials(selectedProfile.DisplayName)
-                                        </div>
-                                    }
+                                <div class="rounded-2xl border border-accent-700/50 bg-primary-950/60 p-6 flex flex-col items-center">
+                                    @AvatarPicker
                                     <h3 class="text-2xl font-bold text-text-default text-center mt-4">@selectedProfile.DisplayName</h3>
-                                    <p class="text-text-muted text-center mt-1">Customer profile</p>
-                                    <p class="text-xs text-text-muted text-center mt-4">Profile photo recommendation:
-                                        square 1024 x 1024 px, JPEG/PNG, up to 2 MB.</p>
-
-                                    <div class="mt-6 p-4 rounded-xl border border-accent-800/50 bg-primary-900/40">
-                                        <label class="block text-sm font-medium text-text-muted mb-2">Change profile
-                                            picture</label>
-                                        <InputFile OnChange="OnExistingCustomerImageSelected"
-                                                   accept="image/png,image/jpeg,image/jpg"
-                                                   class="block w-full text-sm text-text-default file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-accent-700 file:text-white hover:file:bg-accent-600"/>
-
-                                        @if (!string.IsNullOrWhiteSpace(pendingExistingCustomerImageDataUrl))
-                                        {
-                                            <div class="mt-3 flex items-center gap-3">
-                                                <img src="@pendingExistingCustomerImageDataUrl"
-                                                     alt="New customer profile preview"
-                                                     class="h-16 w-16 rounded-full object-cover border border-accent-700/50"/>
-                                                <span class="text-sm text-text-muted">New picture selected.</span>
-                                            </div>
-                                        }
-
-                                        @if (!string.IsNullOrWhiteSpace(updateImageErrorMessage))
-                                        {
-                                            <p class="text-sm text-red-300 mt-2">@updateImageErrorMessage</p>
-                                        }
-                                        else if (!string.IsNullOrWhiteSpace(updateImageSuccessMessage))
-                                        {
-                                            <p class="text-sm text-green-300 mt-2">@updateImageSuccessMessage</p>
-                                        }
-
-                                        <button @onclick="UpdateCustomerPicture"
-                                                disabled="@isUpdatingImage"
-                                                class="mt-3 px-4 py-2 rounded-lg font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                            @(isUpdatingImage ? "Saving..." : "Save picture")
-                                        </button>
-                                    </div>
+                                    <p class="text-text-muted text-center mt-1">Zákaznický profil</p>
+                                    @PictureControls
                                 </div>
                                 <div
                                     class="lg:col-span-2 rounded-2xl border border-accent-700/50 bg-primary-900/60 p-6">
-                                    <h3 class="text-xl font-bold text-text-default">Customer Stats</h3>
-                                    <p class="text-text-muted text-sm mt-1">Placeholders for future metrics.</p>
+                                    <h3 class="text-xl font-bold text-text-default">Statistiky</h3>
+                                    <p class="text-text-muted text-sm mt-1">Zatím jen ukázkové hodnoty.</p>
                                     <div class="mt-5 grid sm:grid-cols-3 gap-4">
                                         <div class="rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
-                                            <p class="text-xs text-text-muted">Level</p>
+                                            <p class="text-xs text-text-muted">Úroveň</p>
                                             <p class="text-3xl font-bold text-accent-300">@selectedProfile.Stats.Level</p>
                                         </div>
                                         <div class="rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
-                                            <p class="text-xs text-text-muted">Reputation</p>
+                                            <p class="text-xs text-text-muted">Hodnocení</p>
                                             <p class="text-3xl font-bold text-accent-300">@selectedProfile.Stats.Reputation</p>
                                         </div>
                                         <div class="rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
-                                            <p class="text-xs text-text-muted">Completed sessions</p>
+                                            <p class="text-xs text-text-muted">Odehraná sezení</p>
                                             <p class="text-3xl font-bold text-accent-300">@selectedProfile.Stats.CompletedSessions</p>
                                         </div>
                                     </div>
                                 </div>
                             </section>
                             break;
-                        case ProfileType.Associate:
+                        case ProfileType.Player:
                             <section class="rounded-2xl border border-accent-700/50 bg-primary-900/60 p-6 space-y-4">
-                                <h3 class="text-2xl font-bold text-text-default">Associate Profile</h3>
-                                <p class="text-text-muted">Display name: <span
+                                <h3 class="text-2xl font-bold text-text-default">Profil @PlayerGenitive</h3>
+                                <p class="text-text-muted">Přezdívka: <span
                                         class="text-text-default font-semibold">@selectedProfile.DisplayName</span></p>
 
                                 @* Associate banner and profile image management *@
                                 <div class="grid lg:grid-cols-3 gap-4">
                                     <div
                                         class="lg:col-span-1 rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
-                                        <p class="text-xs text-text-muted">Profile picture</p>
-                                        @if (!string.IsNullOrWhiteSpace(selectedProfile.ProfileImageUrl))
-                                        {
-                                            <img src="@selectedProfile.ProfileImageUrl" alt="Associate profile picture"
-                                                 class="w-28 h-28 rounded-full object-cover border border-accent-700/50 mx-auto"/>
-                                        }
-                                        else
-                                        {
-                                            <div
-                                                class="w-28 h-28 rounded-full bg-accent-700 text-text-default text-3xl font-bold flex items-center justify-center mx-auto">
-                                                @BuildInitials(selectedProfile.DisplayName)
-                                            </div>
-                                        }
-
-                                        <div class="mt-4">
-                                            <label class="block text-sm font-medium text-text-muted mb-2">Change profile
-                                                picture</label>
-                                            <InputFile OnChange="OnExistingAssociateImageSelected"
-                                                       accept="image/png,image/jpeg,image/jpg"
-                                                       class="block w-full text-sm text-text-default file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-accent-700 file:text-white hover:file:bg-accent-600"/>
-
-                                            @if (!string.IsNullOrWhiteSpace(pendingExistingAssociateImageDataUrl))
-                                            {
-                                                <div class="mt-3 flex items-center gap-3">
-                                                    <img src="@pendingExistingAssociateImageDataUrl"
-                                                         alt="New associate profile preview"
-                                                         class="h-16 w-16 rounded-full object-cover border border-accent-700/50"/>
-                                                    <span class="text-sm text-text-muted">New picture selected.</span>
-                                                </div>
-                                            }
-
-                                            @if (!string.IsNullOrWhiteSpace(updateImageErrorMessage))
-                                            {
-                                                <p class="text-sm text-red-300 mt-2">@updateImageErrorMessage</p>
-                                            }
-                                            else if (!string.IsNullOrWhiteSpace(updateImageSuccessMessage))
-                                            {
-                                                <p class="text-sm text-green-300 mt-2">@updateImageSuccessMessage</p>
-                                            }
-
-                                            <button @onclick="UpdateAssociatePicture"
-                                                    disabled="@isUpdatingImage"
-                                                    class="mt-3 px-4 py-2 rounded-lg font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                                @(isUpdatingImage ? "Saving..." : "Save picture")
-                                            </button>
+                                        <p class="text-xs text-text-muted">Profilová fotka</p>
+                                        <div class="mt-2 flex flex-col items-center">
+                                            @AvatarPicker
+                                            @PictureControls
                                         </div>
                                     </div>
 
                                     <div
                                         class="lg:col-span-2 rounded-xl bg-primary-950/60 border border-accent-900/50 p-4">
-                                        <p class="text-xs text-text-muted">Banner image</p>
+                                        <p class="text-xs text-text-muted">Banner</p>
 
-                                        @if (!string.IsNullOrWhiteSpace(pendingAssociateBannerDataUrl))
-                                        {
-                                            <img src="@pendingAssociateBannerDataUrl" alt="New banner preview"
-                                                 class="w-full h-40 object-cover rounded-md border border-accent-700/50"/>
-                                        }
-                                        else if (!string.IsNullOrWhiteSpace(associateDetails?.BannerImageUrl))
-                                        {
-                                            <img src="@associateDetails.BannerImageUrl" alt="Banner"
-                                                 class="w-full h-40 object-cover rounded-md border border-accent-700/50"/>
-                                        }
-                                        else
-                                        {
-                                            <div
-                                                class="w-full h-40 rounded-md bg-gradient-to-br from-accent-700/20 to-accent-900/10"></div>
-                                        }
-
-                                        <div class="mt-3 flex items-center gap-3">
-                                            <InputFile OnChange="OnAssociateBannerSelected"
-                                                       accept="image/png,image/jpeg"
-                                                       class="block text-sm text-text-default file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-accent-700 file:text-white hover:file:bg-accent-600"/>
-                                            <button @onclick="SaveAssociateBanner" disabled="@isSavingBanner"
-                                                    class="px-4 py-2 rounded-lg font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                                @(isSavingBanner ? "Saving..." : "Save banner")
-                                            </button>
-                                        </div>
+                                        @* Click (or tap) the banner to change it; the input lives inside so keyboard focus shows the overlay too. *@
+                                        <label title="Změnit banner"
+                                               class="group relative mt-2 block w-full aspect-[4/1] overflow-hidden rounded-md border border-accent-700/50 cursor-pointer focus-within:ring-2 focus-within:ring-accent-500">
+                                            @if (!string.IsNullOrWhiteSpace(associateDetails?.BannerImageUrl))
+                                            {
+                                                <img src="@associateDetails.BannerImageUrl" alt="Banner"
+                                                     class="w-full h-full object-cover"/>
+                                            }
+                                            else
+                                            {
+                                                <div class="w-full h-full bg-gradient-to-br from-accent-600/50 via-accent-900/60 to-primary-950"></div>
+                                            }
+                                            <span class="absolute inset-0 flex items-center justify-center gap-2 bg-black/55 text-white font-semibold opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                                                @CameraIcon
+                                                Změnit banner
+                                            </span>
+                                            @* Touch screens have no hover: show a small badge instead. *@
+                                            <span class="touch-only absolute right-2 bottom-2 w-9 h-9 items-center justify-center rounded-full bg-black/60 text-white">
+                                                @CameraIcon
+                                            </span>
+                                            <InputFile @key="bannerInputKey" @ref="bannerInput" OnChange="OnBannerPicked"
+                                                       accept="image/png,image/jpeg,image/webp" class="sr-only"
+                                                       aria-label="Změnit banner"/>
+                                        </label>
+                                        <p class="mt-2 text-xs text-text-muted">Poměr 4 : 1, ideálně aspoň 1600 × 400 px. JPG, PNG nebo WebP do 10 MB.</p>
                                         @if (!string.IsNullOrWhiteSpace(bannerErrorMessage))
                                         {
                                             <p class="text-sm text-red-300 mt-2">@bannerErrorMessage</p>
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(bannerSuccessMessage))
+                                        {
+                                            <p class="text-sm text-green-300 mt-2">@bannerSuccessMessage</p>
                                         }
                                     </div>
                                 </div>
 
                                 @* Services management panel *@
                                 <div class="rounded-xl border border-accent-800/40 bg-primary-950/40 p-4">
-                                    <div class="flex items-center justify-between">
-                                        <h4 class="text-lg font-bold">Services
-                                            (@(associateDetails?.Services?.Count ?? 0))</h4>
-                                        <div class="text-sm text-text-muted">You can add up to 255 services.</div>
+                                    @{ int serviceCount = associateDetails?.Services?.Count ?? 0; }
+                                    <div class="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h4 class="text-lg font-bold">Služby (@serviceCount)</h4>
+                                            <div class="text-sm text-text-muted">Můžete přidat až @AddPlayerServiceHandler.MaxServicesPerPlayer služeb.</div>
+                                        </div>
+                                        <button type="button" @onclick="OpenAddService"
+                                                disabled="@(isSavingService || serviceCount >= AddPlayerServiceHandler.MaxServicesPerPlayer)"
+                                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-accent-600 hover:bg-accent-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-width="2" d="M12 5v14M5 12h14"></path>
+                                            </svg>
+                                            Přidat službu
+                                        </button>
                                     </div>
 
                                     <div class="mt-4 space-y-3">
@@ -332,100 +276,156 @@
                                             <div class="grid sm:grid-cols-2 gap-4">
                                                 @foreach (ServiceDto svc in associateDetails.Services)
                                                 {
-                                                    <div
-                                                        class="rounded-lg border border-accent-800/30 p-3 bg-primary-900/50 flex gap-3">
-                                                        <img
-                                                            src="@(string.IsNullOrWhiteSpace(svc.ImageUrl) ? null : svc.ImageUrl)"
-                                                            alt="svc"
-                                                            class="w-24 h-16 object-cover rounded-md bg-primary-900/30"/>
-                                                        <div class="flex-1">
-                                                            <div class="font-semibold">@svc.Name</div>
-                                                            <div
-                                                                class="text-xs text-text-muted">@svc.Category • @svc.Price.ToString("F2")</div>
+                                                    bool isEditing = editingServiceId == svc.ServiceId;
+                                                    <div class="rounded-lg border p-3 bg-primary-900/50 flex gap-3 transition-colors @(isEditing ? "border-accent-500 ring-2 ring-accent-500/40" : "border-accent-800/30")">
+                                                        @if (!string.IsNullOrWhiteSpace(svc.ImageUrl))
+                                                        {
+                                                            <img src="@svc.ImageUrl" alt=""
+                                                                 class="w-24 aspect-video self-start shrink-0 object-cover rounded-md bg-primary-900/30"/>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="w-24 aspect-video self-start shrink-0 rounded-md bg-gradient-to-br from-accent-700/40 to-accent-900/20"></div>
+                                                        }
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="font-semibold truncate">@svc.Name</div>
+                                                            <div class="text-xs text-text-muted">@(string.IsNullOrWhiteSpace(svc.Category) ? "" : svc.Category + " • ")@CzechLabels.Goins(svc.Price) @svc.PriceSuffix</div>
+
+                                                            @if (deletingServiceId == svc.ServiceId)
+                                                            {
+                                                                <div class="mt-2 flex flex-wrap items-center gap-2 text-sm" role="alert">
+                                                                    <span class="text-red-300">Opravdu smazat?</span>
+                                                                    <button type="button" @onclick="() => DeleteServiceAsync(svc.ServiceId)" disabled="@isSavingService"
+                                                                            class="px-3 py-1 rounded-md font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50">
+                                                                        Ano, smazat
+                                                                    </button>
+                                                                    <button type="button" @onclick="() => deletingServiceId = null"
+                                                                            class="px-3 py-1 rounded-md font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors">
+                                                                        Ne
+                                                                    </button>
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="mt-2 flex items-center gap-2">
+                                                                    <button type="button" @onclick="() => StartEditService(svc)"
+                                                                            disabled="@isSavingService"
+                                                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors disabled:opacity-50">
+                                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16.86 3.49 3.65 3.65M4 20l1-4.5L16.86 3.5l3.65 3.65L8.5 19 4 20z"></path>
+                                                                        </svg>
+                                                                        Upravit
+                                                                    </button>
+                                                                    <button type="button" @onclick="() => { deletingServiceId = svc.ServiceId; serviceErrorMessage = null; }"
+                                                                            disabled="@isSavingService"
+                                                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-red-300 hover:bg-red-900/30 transition-colors disabled:opacity-50">
+                                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"></path>
+                                                                        </svg>
+                                                                        Smazat
+                                                                    </button>
+                                                                </div>
+                                                            }
                                                         </div>
                                                     </div>
                                                 }
                                             </div>
                                         }
+                                        else
+                                        {
+                                            <p class="text-sm text-text-muted">Zatím nenabízíte žádné služby. Přidejte první tlačítkem nahoře.</p>
+                                        }
 
-                                        @* Add service form *@
-                                        <div class="mt-4 rounded-lg border border-accent-800/40 p-4 bg-primary-900/60">
-                                            <h5 class="font-semibold mb-2">Add service</h5>
-                                            <div class="grid sm:grid-cols-2 gap-3">
-                                                <input @bind="newService.Name" placeholder="Service name"
-                                                       maxlength="100"
-                                                       class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default"/>
-                                                <input @bind="newService.Category" placeholder="Category" maxlength="50"
-                                                       class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default"/>
-                                                <input @bind="newService.PriceString" placeholder="Price (e.g. 9.99)"
-                                                       class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default"/>
-                                                <input @bind="newService.PriceSuffix"
-                                                       placeholder="Price suffix (optional)" maxlength="20"
-                                                       class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default"/>
-                                            </div>
-
-                                            <div class="mt-3">
-                                                <textarea @bind="newService.Description" rows="3"
-                                                          placeholder="Short description"
-                                                          class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default"></textarea>
-                                            </div>
-
-                                            <div class="mt-3 flex items-center gap-3">
-                                                <InputFile OnChange="OnNewServiceImageSelected"
-                                                           accept="image/png,image/jpeg"
-                                                           class="block text-sm text-text-default file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-accent-700 file:text-white hover:file:bg-accent-600"/>
-                                                @if (!string.IsNullOrWhiteSpace(newService.ImageDataUrl))
-                                                {
-                                                    <img src="@newService.ImageDataUrl" alt="preview"
-                                                         class="w-24 h-16 object-cover rounded-md"/>
-                                                }
-                                                <button @onclick="AddService"
-                                                        class="px-4 py-2 rounded-lg font-semibold bg-accent-600 hover:bg-accent-700 text-white transition-colors">
-                                                    Add Service
-                                                </button>
-                                            </div>
-
+                                        @if (!isServiceFormOpen)
+                                        {
                                             @if (!string.IsNullOrWhiteSpace(serviceErrorMessage))
                                             {
-                                                <p class="text-sm text-red-300 mt-2">@serviceErrorMessage</p>
+                                                <p class="text-sm text-red-300">@serviceErrorMessage</p>
                                             }
-                                        </div>
+                                            else if (!string.IsNullOrWhiteSpace(serviceSuccessMessage))
+                                            {
+                                                <p class="text-sm text-green-300">@serviceSuccessMessage</p>
+                                            }
+                                        }
                                     </div>
-                                </div>
-                            </section>
-                            break;
-                        case ProfileType.Anon:
-                            <section class="rounded-2xl border border-accent-700/50 bg-primary-900/60 p-6">
-                                <h3 class="text-2xl font-bold text-text-default">Anon Profile</h3>
-                                <p class="text-text-muted mt-2">This profile keeps identity minimal. A generated
-                                    anonymous handle is shown below.</p>
-                                <div
-                                    class="mt-4 inline-flex items-center rounded-lg bg-primary-950/60 border border-accent-900/50 px-4 py-2">
-                                    <span class="text-text-muted mr-2">Handle:</span>
-                                    <span class="font-semibold text-text-default">@selectedProfile.DisplayName</span>
                                 </div>
                             </section>
                             break;
                     }
                 }
 
+                @if (profiles.Count > 1)
+                {
+                    <section class="rounded-2xl border border-accent-800/40 bg-primary-950/40 p-6">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-text-default">Výchozí profil</h3>
+                                <p class="text-text-muted text-sm mt-1">
+                                    Tento profil se zapne po přihlášení. Kdykoli ho můžete přepnout vpravo nahoře.
+                                </p>
+                            </div>
+                            <div role="radiogroup" aria-label="Výchozí profil"
+                                 class="flex items-center gap-1 p-1 rounded-full bg-primary-950/70 border border-accent-700/60">
+                                @foreach (UserProfileCard profile in profiles)
+                                {
+                                    bool isDefault = defaultProfile == profile.Type;
+                                    <button type="button" role="radio" aria-checked="@(isDefault ? "true" : "false")"
+                                            @onclick="() => SetDefaultProfileAsync(profile.Type)"
+                                            disabled="@(isSavingDefault || isGhostMode)"
+                                            class="px-4 py-1.5 rounded-full text-sm font-semibold transition-colors disabled:cursor-not-allowed @(isDefault ? "bg-accent-600 text-white shadow-md shadow-accent-800/40" : "text-text-muted hover:text-text-default disabled:opacity-50")">
+                                        @GetTypeLabel(profile.Type)
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                        @if (isGhostMode)
+                        {
+                            <p class="text-sm text-text-muted mt-3">V režimu ducha výchozí profil změnit nelze.</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(defaultProfileErrorMessage))
+                        {
+                            <p class="text-sm text-red-400 mt-3">@defaultProfileErrorMessage</p>
+                        }
+                    </section>
+                }
+
                 <section class="rounded-2xl border border-accent-800/40 bg-primary-950/40 p-6">
-                    <h3 class="text-lg font-bold text-text-default">Account Session</h3>
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-text-default">Režim ducha</h3>
+                            <p class="text-text-muted text-sm mt-1">
+                                Jako duch procházíte web jako běžn@(grammaticalGender == GrammaticalGender.Feminine ? "á zákaznice" : "ý zákazník"),
+                                nikdo vás neuvidí online a nezanecháte žádné stopy. Nemůžete ale psát, nakupovat ani hodnotit.
+                            </p>
+                        </div>
+                        <button type="button" @onclick="ToggleGhostModeAsync" disabled="@isTogglingGhost"
+                                class="px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50 @(isGhostMode ? "bg-accent-600 hover:bg-accent-700 text-white" : "bg-primary-800 hover:bg-primary-700 text-text-default")">
+                            @(isGhostMode ? "Vypnout režim ducha" : "Zapnout režim ducha")
+                        </button>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(ghostErrorMessage))
+                    {
+                        <p class="text-sm text-red-400 mt-3">@ghostErrorMessage</p>
+                    }
+                </section>
+
+                <section class="rounded-2xl border border-accent-800/40 bg-primary-950/40 p-6">
+                    <h3 class="text-lg font-bold text-text-default">Účet</h3>
                     <div class="mt-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <p class="text-xs text-text-muted">Username</p>
+                            <p class="text-xs text-text-muted">Uživatelské jméno</p>
                             <p class="text-text-default break-all">@username</p>
                         </div>
                         <div>
-                            <p class="text-xs text-text-muted">Email</p>
+                            <p class="text-xs text-text-muted">E-mail</p>
                             <p class="text-text-default break-all">@email</p>
                         </div>
                         <div>
-                            <p class="text-xs text-text-muted">User Id</p>
+                            <p class="text-xs text-text-muted">ID uživatele</p>
                             <p class="text-text-default break-all">@userId</p>
                         </div>
                         <div>
-                            <p class="text-xs text-text-muted">Authentication</p>
+                            <p class="text-xs text-text-muted">Přihlášení</p>
                             <p class="text-text-default">@authenticationType</p>
                         </div>
                     </div>
@@ -435,8 +435,179 @@
     </div>
 </div>
 
+
+@if (isServiceFormOpen)
+{
+    @* Add / edit service popup. The image cropper opens on top of it. *@
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true"
+         aria-labelledby="service-modal-title" @onkeydown="OnServiceModalKeyDown">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm modal-fade-in" @onclick="CancelEditService"></div>
+
+        <div class="relative w-full max-w-2xl max-h-[95vh] overflow-y-auto rounded-2xl border border-accent-700/50 bg-primary-950 shadow-2xl shadow-black/60 modal-pop-in">
+            <header class="flex items-start justify-between gap-4 px-5 sm:px-6 pt-5">
+                <h2 id="service-modal-title" class="text-xl font-bold text-text-default">
+                    @(editingServiceId is null ? "Přidat službu" : "Upravit službu")
+                </h2>
+                <button type="button" @onclick="CancelEditService" aria-label="Zavřít" disabled="@isSavingService"
+                        class="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-text-muted hover:text-text-default hover:bg-primary-800 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="px-5 sm:px-6 pt-4">
+                @* Image: click it to pick a file, then crop it, same as the profile picture and banner. *@
+                @{
+                    string? shownServiceImage = newService.Image?.PreviewUrl
+                                                ?? (removeServiceImage ? null : editingServiceImageUrl);
+                }
+                <label title="@(shownServiceImage is null ? "Vybrat obrázek" : "Změnit obrázek")"
+                       class="group relative block w-full aspect-video overflow-hidden rounded-xl border border-accent-800/40 cursor-pointer focus-within:ring-2 focus-within:ring-accent-500">
+                    @if (shownServiceImage is not null)
+                    {
+                        <img src="@shownServiceImage" alt="Obrázek služby" class="w-full h-full object-cover"/>
+                    }
+                    else
+                    {
+                        <div class="w-full h-full bg-gradient-to-br from-accent-700/40 via-accent-900/30 to-primary-950"></div>
+                    }
+                    <span class="absolute inset-0 flex items-center justify-center gap-2 bg-black/55 text-white font-semibold transition-opacity @(shownServiceImage is null ? "" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100")">
+                        @CameraIcon
+                        @(shownServiceImage is null ? "Vybrat obrázek" : "Změnit obrázek")
+                    </span>
+                    @if (shownServiceImage is not null)
+                    {
+                        @* Touch screens have no hover: show a small badge instead. *@
+                        <span class="touch-only absolute right-2 bottom-2 w-9 h-9 items-center justify-center rounded-full bg-black/60 text-white">
+                            @CameraIcon
+                        </span>
+                    }
+                    @* A new key after every pick/close lets the same file be picked again. *@
+                    <InputFile @key="serviceFormKey" @ref="serviceImageInput" OnChange="OnServiceImagePicked"
+                               accept="image/png,image/jpeg,image/webp" class="sr-only" aria-label="Obrázek služby"/>
+                </label>
+                <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-xs text-text-muted">Poměr 16 : 9, ideálně aspoň 1280 × 720 px. JPG, PNG nebo WebP do 10 MB.</p>
+                    @if (newService.Image is not null)
+                    {
+                        <button type="button" @onclick="() => newService.Image = null"
+                                class="text-sm text-red-300 hover:underline">
+                            Zrušit výběr
+                        </button>
+                    }
+                    else if (editingServiceImageUrl is not null && !removeServiceImage)
+                    {
+                        <button type="button" @onclick="() => removeServiceImage = true"
+                                class="text-sm text-red-300 hover:underline">
+                            Odebrat obrázek
+                        </button>
+                    }
+                    else if (editingServiceImageUrl is not null)
+                    {
+                        <span class="text-sm text-text-muted">
+                            Obrázek bude odebrán.
+                            <button type="button" @onclick="() => removeServiceImage = false"
+                                    class="text-accent-300 hover:underline">
+                                Vrátit
+                            </button>
+                        </span>
+                    }
+                </div>
+
+                <div class="mt-4 grid sm:grid-cols-2 gap-3">
+                    <input @ref="serviceNameInput" @bind="newService.Name" placeholder="Název služby"
+                           maxlength="100"
+                           class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default"/>
+                    <input @bind="newService.Category" placeholder="Kategorie" maxlength="50"
+                           class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default"/>
+                    <input @bind="newService.PriceString" placeholder="Cena v Goinech (např. 199 nebo 199,50)"
+                           class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default"/>
+                    <input @bind="newService.PriceSuffix" @bind:event="oninput"
+                           placeholder="Za jednotku (nepovinné, např. / hodina)" maxlength="20"
+                           class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default"/>
+                </div>
+
+                @* Price unit presets; the text field above stays editable for anything custom. *@
+                <div class="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Předvolby jednotky ceny">
+                    <span class="text-sm text-text-muted">Účtovat:</span>
+                    @{ PriceUnitPreset activePreset = ActivePriceUnitPreset; }
+                    <button type="button" @onclick="() => TogglePriceUnitPreset(PriceUnitPreset.PerHour)"
+                            aria-pressed="@(activePreset == PriceUnitPreset.PerHour)"
+                            class="@PresetChipClass(activePreset == PriceUnitPreset.PerHour)">
+                        Za hodinu
+                    </button>
+                    <button type="button" @onclick="() => TogglePriceUnitPreset(PriceUnitPreset.PerService)"
+                            aria-pressed="@(activePreset == PriceUnitPreset.PerService)"
+                            class="@PresetChipClass(activePreset == PriceUnitPreset.PerService)">
+                        Za službu
+                    </button>
+                    <button type="button" @onclick="() => TogglePriceUnitPreset(PriceUnitPreset.PerServiceWithLimit)"
+                            aria-pressed="@(activePreset == PriceUnitPreset.PerServiceWithLimit)"
+                            class="@PresetChipClass(activePreset == PriceUnitPreset.PerServiceWithLimit)">
+                        Za službu s časovým limitem
+                    </button>
+                    @if (activePreset == PriceUnitPreset.PerServiceWithLimit)
+                    {
+                        <label class="flex items-center gap-2 text-sm">
+                            <span class="text-text-muted">max.</span>
+                            <input type="number" min="1" max="@MaxServiceTimeLimitMinutes" step="1"
+                                   @bind="ServiceTimeLimitMinutes"
+                                   class="w-20 rounded-lg bg-primary-900 border border-accent-800/70 px-2 py-1 text-text-default"/>
+                            <span class="text-text-muted">min</span>
+                        </label>
+                    }
+                </div>
+
+                <textarea @bind="newService.Description" rows="3" placeholder="Krátký popis"
+                          class="mt-3 w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default"></textarea>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(serviceErrorMessage))
+            {
+                <p class="px-5 sm:px-6 mt-3 text-sm text-red-300" role="alert">@serviceErrorMessage</p>
+            }
+
+            <footer class="sticky bottom-0 mt-5 flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-accent-800/40 bg-primary-950/95 backdrop-blur-sm">
+                <button type="button" @onclick="CancelEditService" disabled="@isSavingService"
+                        class="px-4 py-2 rounded-lg font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors disabled:opacity-50">
+                    Zrušit
+                </button>
+                <button type="button" @onclick="SaveServiceAsync" disabled="@isSavingService"
+                        class="min-w-28 px-4 py-2 rounded-lg font-semibold bg-accent-600 hover:bg-accent-700 text-white shadow-lg shadow-accent-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    @(isSavingService ? "Ukládáme…" : editingServiceId is null ? "Přidat službu" : "Uložit změny")
+                </button>
+            </footer>
+        </div>
+    </div>
+}
+
+@if (cropTarget == CropTarget.Service)
+{
+    <ImageCropperModal FileInput="cropFileInput"
+                       Title="Upravit obrázek služby"
+                       AspectRatio="@ServiceImageAspectRatio"
+                       RecommendedMinWidth="800"
+                       PreviewTemplate="ServiceCropPreview"
+                       OnSave="SaveCroppedImageAsync"
+                       OnClose="CloseCropper"/>
+}
+else if (cropTarget is { } target)
+{
+    bool isBanner = target == CropTarget.Banner;
+    <ImageCropperModal FileInput="cropFileInput"
+                       Title="@(isBanner ? "Upravit banner" : "Upravit profilovou fotku")"
+                       Round="@(!isBanner)"
+                       AspectRatio="@(isBanner ? 4.0 : 1.0)"
+                       RecommendedMinWidth="@(isBanner ? 1200 : 256)"
+                       PreviewName="@selectedProfile?.DisplayName"
+                       PreviewAvatarUrl="@selectedProfile?.ProfileImageUrl"
+                       OnSave="SaveCroppedImageAsync"
+                       OnClose="CloseCropper"/>
+}
+
 @code {
-    private const string UnknownValue = "Not available";
+    private const string UnknownValue = "Není k dispozici";
 
     private bool isLoading = true;
     private string? errorMessage;
@@ -446,8 +617,14 @@
     private string email = UnknownValue;
     private string userId = UnknownValue;
     private string authenticationType = UnknownValue;
-    private string? accessToken;
     private Guid currentUserId;
+    private GrammaticalGender grammaticalGender;
+    private bool isGhostMode;
+    private ProfileType defaultProfile = ProfileType.Customer;
+    private bool isSavingDefault;
+    private string? defaultProfileErrorMessage;
+    private bool isTogglingGhost;
+    private string? ghostErrorMessage;
 
     private List<UserProfileCard> profiles = new();
     private UserProfileCard? selectedProfile;
@@ -458,10 +635,8 @@
     private string newDisplayName = string.Empty;
     private string? newCustomerImageDataUrl;
     private string? customerImageErrorMessage;
-    private string? pendingExistingCustomerImageDataUrl;
     private string? updateImageErrorMessage;
     private string? updateImageSuccessMessage;
-    private bool isUpdatingImage;
 
     private const long CustomerImageMaxSizeBytes = 2 * 1024 * 1024;
 
@@ -501,18 +676,18 @@
 
             if (!Guid.TryParse(userId, out currentUserId))
             {
-                errorMessage = "Could not determine your user id.";
+                errorMessage = "Nepodařilo se zjistit vaše ID uživatele.";
                 return;
             }
 
             authenticationType = user.Identity.AuthenticationType ?? UnknownValue;
-            accessToken = user.FindFirst("access_token")?.Value;
 
+            ActiveProfiles.Changed += OnActiveProfileChanged;
             await LoadProfilesAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = $"An unexpected error occurred while loading your profile: {ex.Message}";
+            errorMessage = $"Při načítání profilu nastala neočekávaná chyba: {ex.Message}";
         }
         finally
         {
@@ -541,7 +716,7 @@
             return "?";
         }
 
-        string[] parts = value.Split([' ', '.', '_', '-'], StringSplitOptions.RemoveEmptyEntries);
+        string[] parts = value.Split(new[] { ' ', '.', '_', '-' }, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0)
         {
             return value[..1].ToUpperInvariant();
@@ -555,29 +730,85 @@
         return string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant();
     }
 
-    private static string GetTypeLabel(ProfileType type)
+    /// <summary>Genitive of the player role for the current user: "hráče" or "hráčky".</summary>
+    private string PlayerGenitive => grammaticalGender == GrammaticalGender.Feminine ? "hráčky" : "hráče";
+
+    private string GetTypeLabel(ProfileType type)
     {
-        return type switch
-        {
-            ProfileType.Customer => "Customer",
-            ProfileType.Associate => "Associate",
-            ProfileType.Anon => "Anon",
-            _ => type.ToString(),
-        };
+        return CzechLabels.Role(type, grammaticalGender);
     }
 
     private static bool RequiresDisplayName(ProfileType type)
     {
-        return type is ProfileType.Customer or ProfileType.Associate;
+        return true;
     }
 
     private void SelectProfile(ProfileType type)
     {
-        selectedProfile = profiles.FirstOrDefault(p => p.Type == type);
-        if (selectedProfile is not null && selectedProfile.Type == ProfileType.Associate)
+        ShowProfile(type);
+
+        // The tabs and the switch in the top bar always agree. In ghost mode the switch stays on Zákazník,
+        // but the page can still show the player profile.
+        ActiveProfiles.SetActive(type);
+    }
+
+    private void ShowProfile(ProfileType type)
+    {
+        if (selectedProfile?.Type == type)
+        {
+            return;
+        }
+
+        selectedProfile = profiles.FirstOrDefault(p => p.Type == type) ?? selectedProfile;
+        if (selectedProfile is not null && selectedProfile.Type == ProfileType.Player)
         {
             _ = LoadAssociateDetailsAsync(selectedProfile.ProfileId);
         }
+    }
+
+    private void OnActiveProfileChanged()
+    {
+        _ = InvokeAsync(() =>
+        {
+            ShowProfile(ActiveProfiles.Active);
+            StateHasChanged();
+        });
+    }
+
+    private async Task SetDefaultProfileAsync(ProfileType type)
+    {
+        if (type == defaultProfile || isSavingDefault)
+        {
+            return;
+        }
+
+        defaultProfileErrorMessage = null;
+        isSavingDefault = true;
+        try
+        {
+            Result result = await SetDefaultProfileHandler.Handle(new SetDefaultProfileCommand
+            {
+                UserId = currentUserId,
+                Profile = type,
+            });
+
+            if (result.IsFailure)
+            {
+                defaultProfileErrorMessage = result.Error!.Message;
+                return;
+            }
+
+            defaultProfile = type;
+        }
+        finally
+        {
+            isSavingDefault = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        ActiveProfiles.Changed -= OnActiveProfileChanged;
     }
 
     private void OpenCreatePanel()
@@ -593,7 +824,6 @@
         newProfileType = availableTypes[0];
         newDisplayName = string.Empty;
         newCustomerImageDataUrl = null;
-        pendingExistingCustomerImageDataUrl = null;
         updateImageErrorMessage = null;
         updateImageSuccessMessage = null;
         showCreatePanel = true;
@@ -605,13 +835,18 @@
         createErrorMessage = null;
         customerImageErrorMessage = null;
         newCustomerImageDataUrl = null;
-        pendingExistingCustomerImageDataUrl = null;
         updateImageErrorMessage = null;
         updateImageSuccessMessage = null;
     }
 
     private async Task OnCustomerImageSelected(InputFileChangeEventArgs e)
     {
+        // Closing the file dialog without picking anything still fires a change with no file; keep the current pick.
+        if (e.FileCount == 0)
+        {
+            return;
+        }
+
         customerImageErrorMessage = null;
         updateImageSuccessMessage = null;
         newCustomerImageDataUrl = null;
@@ -620,13 +855,13 @@
 
         if (file.Size > CustomerImageMaxSizeBytes)
         {
-            customerImageErrorMessage = "Profile picture must be 2 MB or smaller.";
+            customerImageErrorMessage = "Profilová fotka může mít nejvýše 2 MB.";
             return;
         }
 
         if (!IsSupportedImageType(file.ContentType))
         {
-            customerImageErrorMessage = "Only JPG or PNG images are supported.";
+            customerImageErrorMessage = "Podporujeme jen obrázky JPG, PNG nebo WebP.";
             return;
         }
 
@@ -637,146 +872,111 @@
         newCustomerImageDataUrl = $"data:{file.ContentType};base64,{base64}";
     }
 
-    private async Task OnExistingCustomerImageSelected(InputFileChangeEventArgs e)
-    {
-        updateImageErrorMessage = null;
-        updateImageSuccessMessage = null;
-        pendingExistingCustomerImageDataUrl = null;
-
-        IBrowserFile file = e.File;
-
-        if (file.Size > CustomerImageMaxSizeBytes)
-        {
-            updateImageErrorMessage = "Profile picture must be 2 MB or smaller.";
-            return;
-        }
-
-        if (!IsSupportedImageType(file.ContentType))
-        {
-            updateImageErrorMessage = "Only JPG or PNG images are supported.";
-            return;
-        }
-
-        await using Stream stream = file.OpenReadStream(CustomerImageMaxSizeBytes);
-        using MemoryStream buffer = new();
-        await stream.CopyToAsync(buffer);
-        string base64 = Convert.ToBase64String(buffer.ToArray());
-        pendingExistingCustomerImageDataUrl = $"data:{file.ContentType};base64,{base64}";
-    }
-
     private async Task CreateProfile()
     {
         createErrorMessage = null;
 
-        if (availableTypes.Count == 0)
+        if (newProfileType != ProfileType.Player)
         {
-            createErrorMessage = "All profile types already exist for this user.";
+            // The customer profile is created at registration; only the player profile can be added here.
+            createErrorMessage = "Přidat lze pouze profil hráče.";
             return;
         }
 
-        if (RequiresDisplayName(newProfileType) && string.IsNullOrWhiteSpace(newDisplayName))
+        if (string.IsNullOrWhiteSpace(newDisplayName))
         {
-            createErrorMessage = "Display name is required for Customer and Associate profiles.";
+            createErrorMessage = "Vyplňte přezdívku.";
             return;
         }
 
-        string effectiveDisplayName = newProfileType == ProfileType.Anon
-            ? $"anon-{Guid.NewGuid():N}"[..13]
-            : newDisplayName.Trim();
-
-        string? profileImageUrl = newProfileType == ProfileType.Customer ? newCustomerImageDataUrl : null;
-
-        UserCreateProfileCommand command = new()
+        Result<Guid> result = await CreatePlayerProfileHandler.Handle(new CreatePlayerProfileCommand
         {
             UserId = currentUserId,
-            ProfileType = ToWriteProfileType(newProfileType),
-            DisplayName = effectiveDisplayName,
-            ProfileImageDataUrl = profileImageUrl,
-        };
+            DisplayName = newDisplayName,
+        });
 
-        HttpClient writeApi = CreateWriteApiClient();
-        HttpResponseMessage response = await writeApi.PostAsJsonAsync($"api/v1/users/{currentUserId}/profiles", command);
-
-        if (!response.IsSuccessStatusCode)
+        if (result.IsFailure)
         {
-            string responseText = await response.Content.ReadAsStringAsync();
-            createErrorMessage = ExtractErrorMessage(response.StatusCode, responseText);
+            createErrorMessage = result.Error!.Message;
             return;
         }
 
-        await LoadProfilesAsync();
+        await LoadProfilesAsync(force: true);
+        SelectProfile(ProfileType.Player);
         showCreatePanel = false;
         newDisplayName = string.Empty;
         newCustomerImageDataUrl = null;
         customerImageErrorMessage = null;
     }
 
-    private async Task UpdateCustomerPicture()
+    private async Task ToggleGhostModeAsync()
     {
-        updateImageErrorMessage = null;
-        updateImageSuccessMessage = null;
-
-        if (selectedProfile is null || selectedProfile.Type != ProfileType.Customer)
-        {
-            updateImageErrorMessage = "Select a customer profile first.";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(pendingExistingCustomerImageDataUrl))
-        {
-            updateImageErrorMessage = "Choose an image first.";
-            return;
-        }
-
-        isUpdatingImage = true;
+        ghostErrorMessage = null;
+        isTogglingGhost = true;
         try
         {
-            UserUpdateProfileImageCommand command = new()
+            Result result = await SetGhostModeHandler.Handle(new SetGhostModeCommand
             {
                 UserId = currentUserId,
-                ProfileId = selectedProfile.ProfileId,
-                ProfileImageDataUrl = pendingExistingCustomerImageDataUrl,
-            };
+                Enabled = !isGhostMode,
+            });
 
-            HttpClient writeApi = CreateWriteApiClient();
-            HttpResponseMessage response =
-                await writeApi.PutAsJsonAsync($"api/v1/users/{currentUserId}/profiles/{selectedProfile.ProfileId}/image", command);
-
-            if (!response.IsSuccessStatusCode)
+            if (result.IsFailure)
             {
-                string responseText = await response.Content.ReadAsStringAsync();
-                updateImageErrorMessage = ExtractErrorMessage(response.StatusCode, responseText);
+                ghostErrorMessage = result.Error!.Message;
                 return;
             }
 
-            await LoadProfilesAsync();
-            pendingExistingCustomerImageDataUrl = null;
-            updateImageSuccessMessage = "Profile picture updated.";
+            // Reload so the top-bar switch hides/shows and falls back to Zákazník for a ghost.
+            await LoadProfilesAsync(force: true);
         }
         finally
         {
-            isUpdatingImage = false;
+            isTogglingGhost = false;
         }
     }
 
-    private async Task LoadProfilesAsync()
+    private async Task LoadProfilesAsync(bool force = false)
     {
-        HttpClient readApi = CreateReadApiClient();
-        HttpResponseMessage response = await readApi.GetAsync($"api/v1/read/users/{currentUserId}/profiles");
-        if (!response.IsSuccessStatusCode)
+        // Shared with the top-bar switch, which loads the same data at the same time on this circuit.
+        await ActiveProfiles.LoadAsync(currentUserId, force);
+        if (ActiveProfiles.View is not { } view)
         {
-            string responseText = await response.Content.ReadAsStringAsync();
-            errorMessage = ExtractErrorMessage(response.StatusCode, responseText);
+            errorMessage = "Profily se nepodařilo načíst.";
             return;
         }
 
-        IReadOnlyList<UserProfileDto>? result = await response.Content.ReadFromJsonAsync<IReadOnlyList<UserProfileDto>>();
-        profiles = result?.Select(MapProfile).ToList() ?? [];
-        selectedProfile = profiles.FirstOrDefault();
-        if (selectedProfile is not null && selectedProfile.Type == ProfileType.Associate)
+        grammaticalGender = view.GrammaticalGender;
+        isGhostMode = view.IsGhostMode;
+        defaultProfile = view.DefaultProfile;
+
+        profiles = new List<UserProfileCard>();
+        if (view.Customer is not null)
         {
-            _ = LoadAssociateDetailsAsync(selectedProfile.ProfileId);
+            profiles.Add(new UserProfileCard
+            {
+                ProfileId = view.Customer.ProfileId,
+                Type = ProfileType.Customer,
+                DisplayName = view.Customer.DisplayName,
+                ProfileImageUrl = ImageUrls.For(view.Customer.ImageId),
+            });
         }
+
+        if (view.Player is not null)
+        {
+            profiles.Add(new UserProfileCard
+            {
+                ProfileId = view.Player.ProfileId,
+                Type = ProfileType.Player,
+                DisplayName = view.Player.DisplayName,
+                ProfileImageUrl = ImageUrls.For(view.Player.ImageId),
+            });
+        }
+
+        // Profiles were rebuilt, so re-resolve the selection against the new list.
+        ProfileType show = selectedProfile?.Type ?? ActiveProfiles.Active;
+        selectedProfile = null;
+        ShowProfile(profiles.Any(p => p.Type == show) ? show : ProfileType.Customer);
 
         availableTypes = GetMissingTypes(profiles);
 
@@ -785,142 +985,109 @@
             newProfileType = availableTypes[0];
         }
 
-        showCreatePanel = profiles.Count == 0;
-    }
-
-    private UserProfileCard MapProfile(UserProfileDto dto)
-    {
-        return new UserProfileCard
-        {
-            ProfileId = dto.ProfileId,
-            Type = FromWriteProfileType(dto.ProfileType),
-            DisplayName = dto.DisplayName,
-            ProfileImageUrl = ResolveProfileImageUrl(dto.ProfileImageUrl),
-        };
-    }
-
-    private string? ResolveProfileImageUrl(string? imageUrl)
-    {
-        if (string.IsNullOrWhiteSpace(imageUrl))
-        {
-            return null;
-        }
-
-        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out _)
-            || imageUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
-        {
-            return imageUrl;
-        }
-
-        Uri? writeApiBaseUri = HttpClientFactory.CreateClient("WriteAPI").BaseAddress;
-        if (writeApiBaseUri != null)
-        {
-            return new Uri(writeApiBaseUri, imageUrl).ToString();
-        }
-
-        string? writeBaseAddress = Configuration["WriteApi:BaseAddress"];
-        if (string.IsNullOrWhiteSpace(writeBaseAddress))
-        {
-            return imageUrl;
-        }
-
-        return new Uri(new Uri(writeBaseAddress), imageUrl).ToString();
+        showCreatePanel = false;
     }
 
     private static List<ProfileType> GetMissingTypes(IReadOnlyCollection<UserProfileCard> currentProfiles)
     {
         HashSet<ProfileType> existing = currentProfiles.Select(p => p.Type).ToHashSet();
-        List<ProfileType> allTypes = [ProfileType.Customer, ProfileType.Associate, ProfileType.Anon];
+        List<ProfileType> allTypes = new() { ProfileType.Customer, ProfileType.Player };
         return allTypes.Where(type => !existing.Contains(type)).ToList();
-    }
-
-    private static string ToWriteProfileType(ProfileType type)
-    {
-        return type switch
-        {
-            ProfileType.Anon => "Anonymous",
-            _ => type.ToString(),
-        };
-    }
-
-    private static ProfileType FromWriteProfileType(string type)
-    {
-        if (string.Equals(type, "Anonymous", StringComparison.OrdinalIgnoreCase))
-        {
-            return ProfileType.Anon;
-        }
-
-        return Enum.TryParse(type, true, out ProfileType parsed)
-            ? parsed
-            : ProfileType.Anon;
-    }
-
-    private static string ExtractErrorMessage(HttpStatusCode statusCode, string body)
-    {
-        if (string.IsNullOrWhiteSpace(body))
-        {
-            return $"Request failed ({(int)statusCode}).";
-        }
-
-        try
-        {
-            ValidationErrorResponse? parsed = JsonSerializer.Deserialize<ValidationErrorResponse>(
-                body,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            if (parsed?.Errors.Count > 0)
-            {
-                return parsed.Errors[0];
-            }
-        }
-        catch
-        {
-            // Fallback to plain response body.
-        }
-
-        return body;
-    }
-
-    private HttpClient CreateWriteApiClient()
-    {
-        HttpClient client = HttpClientFactory.CreateClient("WriteAPI");
-
-        if (!string.IsNullOrWhiteSpace(accessToken))
-        {
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", accessToken);
-        }
-
-        return client;
-    }
-
-    private HttpClient CreateReadApiClient()
-    {
-        HttpClient client = HttpClientFactory.CreateClient();
-        client.BaseAddress = new Uri(NavigationManager.BaseUri);
-
-        if (!string.IsNullOrWhiteSpace(accessToken))
-        {
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", accessToken);
-        }
-
-        return client;
     }
 
     private static bool IsSupportedImageType(string? contentType)
     {
-        return contentType is "image/png" or "image/jpeg" or "image/jpg" or "image/pjpeg";
+        return contentType is "image/png" or "image/jpeg" or "image/jpg" or "image/pjpeg" or "image/webp";
     }
 
     // --- Associate management helper state ---
-    private AssociateProfileDto? associateDetails;
-    private string? pendingExistingAssociateImageDataUrl;
-    private string? pendingAssociateBannerDataUrl;
-    private bool isSavingBanner;
+    private PlayerProfileDto? associateDetails;
+    private bool isSavingService;
+    private Guid? editingServiceId;
+    private string? editingServiceImageUrl;
+    private bool removeServiceImage;
+    private Guid? deletingServiceId;
+    private int serviceFormKey;
+    private string? serviceSuccessMessage;
+    private ElementReference serviceNameInput;
+    private bool isServiceFormOpen;
+    private bool focusServiceName;
     private string? bannerErrorMessage;
 
     private ServiceCreateModel newService = new();
     private string? serviceErrorMessage;
+
+    // Preset price units. All must fit PlayerService.PriceUnitMaxLength (20):
+    // "/ služba, do 999 min" is exactly 20 characters, hence the 999 cap.
+    private const string PerHourUnit = "/ hodina";
+    private const string PerServiceUnit = "/ služba";
+    private const string TimeLimitUnitPrefix = "/ služba, do ";
+    private const string TimeLimitUnitSuffix = " min";
+    private const int DefaultServiceTimeLimitMinutes = 60;
+    private const int MaxServiceTimeLimitMinutes = 999;
+
+    private enum PriceUnitPreset
+    {
+        None,
+        PerHour,
+        PerService,
+        PerServiceWithLimit,
+        Custom,
+    }
+
+    /// <summary>The preset matching the current unit text, so the chips also light up for edited services.</summary>
+    private PriceUnitPreset ActivePriceUnitPreset => newService.PriceSuffix.Trim() switch
+    {
+        "" => PriceUnitPreset.None,
+        PerHourUnit => PriceUnitPreset.PerHour,
+        PerServiceUnit => PriceUnitPreset.PerService,
+        var unit when TryParseTimeLimit(unit, out _) => PriceUnitPreset.PerServiceWithLimit,
+        _ => PriceUnitPreset.Custom,
+    };
+
+    private int ServiceTimeLimitMinutes
+    {
+        get => TryParseTimeLimit(newService.PriceSuffix.Trim(), out int minutes) ? minutes : DefaultServiceTimeLimitMinutes;
+        set => newService.PriceSuffix = FormatTimeLimitUnit(value);
+    }
+
+    private void TogglePriceUnitPreset(PriceUnitPreset preset)
+    {
+        if (ActivePriceUnitPreset == preset)
+        {
+            newService.PriceSuffix = string.Empty;
+            return;
+        }
+
+        newService.PriceSuffix = preset switch
+        {
+            PriceUnitPreset.PerHour => PerHourUnit,
+            PriceUnitPreset.PerService => PerServiceUnit,
+            PriceUnitPreset.PerServiceWithLimit => FormatTimeLimitUnit(DefaultServiceTimeLimitMinutes),
+            _ => string.Empty,
+        };
+    }
+
+    private static string FormatTimeLimitUnit(int minutes) =>
+        $"{TimeLimitUnitPrefix}{Math.Clamp(minutes, 1, MaxServiceTimeLimitMinutes)}{TimeLimitUnitSuffix}";
+
+    private static bool TryParseTimeLimit(string unit, out int minutes)
+    {
+        minutes = 0;
+        return unit.Length > TimeLimitUnitPrefix.Length + TimeLimitUnitSuffix.Length
+               && unit.StartsWith(TimeLimitUnitPrefix, StringComparison.Ordinal)
+               && unit.EndsWith(TimeLimitUnitSuffix, StringComparison.Ordinal)
+               && int.TryParse(
+                   unit.AsSpan(TimeLimitUnitPrefix.Length, unit.Length - TimeLimitUnitPrefix.Length - TimeLimitUnitSuffix.Length),
+                   System.Globalization.NumberStyles.None,
+                   System.Globalization.CultureInfo.InvariantCulture,
+                   out minutes)
+               && minutes is >= 1 and <= MaxServiceTimeLimitMinutes;
+    }
+
+    private static string PresetChipClass(bool active) => active
+        ? "px-3 py-1 rounded-full text-sm font-semibold bg-accent-600 text-white transition-colors"
+        : "px-3 py-1 rounded-full text-sm font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors";
 
     private record ServiceCreateModel
     {
@@ -934,268 +1101,505 @@
 
         public string PriceSuffix { get; set; } = string.Empty;
 
-        public string? ImageDataUrl { get; set; }
+        /// <summary>Gets or sets the newly picked (not yet uploaded) image, or <see langword="null" /> to keep the current one.</summary>
+        public PendingServiceImage? Image { get; set; }
     }
 
-    private async Task OnExistingAssociateImageSelected(InputFileChangeEventArgs e)
+    /// <summary>
+    ///     A service image chosen in the cropper. It is uploaded together with the service, so cancelling the form
+    ///     leaves nothing behind in storage.
+    /// </summary>
+    /// <param name="Content">The original file.</param>
+    /// <param name="Crop">The part of the file to keep.</param>
+    /// <param name="PreviewUrl">A small already-cropped thumbnail as a data URL.</param>
+    private sealed record PendingServiceImage(byte[] Content, CropRegion Crop, string PreviewUrl);
+
+    private enum CropTarget
     {
+        Picture,
+        Banner,
+        Service,
+    }
+
+    private const double ServiceImageAspectRatio = 16.0 / 9.0;
+
+    // Small enough to send to the browser as a data URL, big enough for the form preview.
+    private static readonly ImageLimits ServiceThumbnailLimits = new(480, 270, ServiceImageAspectRatio);
+
+    private InputFile? serviceImageInput;
+
+    private InputFile? pictureInput;
+    private InputFile? bannerInput;
+    private int pictureInputKey;
+    private int bannerInputKey;
+    private CropTarget? cropTarget;
+    private ElementReference cropFileInput;
+    private Task<byte[]>? cropFileBytes;
+    private string? bannerSuccessMessage;
+
+    private static RenderFragment CameraIcon => @<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.6l1.2-1.8A1.5 1.5 0 0 1 9.5 3.5h5a1.5 1.5 0 0 1 1.2.7L16.9 6h1.6A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-9z"></path>
+        <circle cx="12" cy="13" r="3.5" stroke-width="2"></circle>
+    </svg>;
+
+    /// <summary>
+    ///     The profile picture; click it to pick a new one.
+    /// </summary>
+    private RenderFragment AvatarPicker => @<label title="Změnit profilovou fotku"
+                                                  class="group relative block w-28 h-28 rounded-full cursor-pointer focus-within:ring-2 focus-within:ring-accent-500 focus-within:ring-offset-2 focus-within:ring-offset-primary-950">
+        @if (!string.IsNullOrWhiteSpace(selectedProfile?.ProfileImageUrl))
+        {
+            <img src="@selectedProfile.ProfileImageUrl" alt="Profilová fotka"
+                 class="w-28 h-28 rounded-full object-cover border border-accent-700/50"/>
+        }
+        else
+        {
+            <div class="w-28 h-28 rounded-full bg-accent-700 text-text-default text-3xl font-bold flex items-center justify-center">
+                @BuildInitials(selectedProfile?.DisplayName ?? string.Empty)
+            </div>
+        }
+        <span class="absolute inset-0 rounded-full flex flex-col items-center justify-center gap-1 bg-black/55 text-white text-xs font-semibold opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+            @CameraIcon
+            Změnit
+        </span>
+        @* Touch screens have no hover: show a small badge instead. *@
+        <span class="touch-only absolute -right-1 -bottom-1 w-9 h-9 items-center justify-center rounded-full bg-accent-600 text-white border-2 border-primary-950">
+            @CameraIcon
+        </span>
+        <InputFile @key="pictureInputKey" @ref="pictureInput" OnChange="OnPicturePicked"
+                   accept="image/png,image/jpeg,image/webp" class="sr-only" aria-label="Změnit profilovou fotku"/>
+    </label>;
+
+    /// <summary>
+    ///     Hint and messages under the profile picture.
+    /// </summary>
+    private RenderFragment PictureControls => @<div class="mt-3 flex flex-col items-center text-center">
+        <p class="text-xs text-text-muted">Kliknutím na fotku ji změníte. JPG, PNG nebo WebP do 10 MB.</p>
+        @if (!string.IsNullOrWhiteSpace(updateImageErrorMessage))
+        {
+            <p class="text-sm text-red-300 mt-2">@updateImageErrorMessage</p>
+        }
+        else if (!string.IsNullOrWhiteSpace(updateImageSuccessMessage))
+        {
+            <p class="text-sm text-green-300 mt-2">@updateImageSuccessMessage</p>
+        }
+    </div>;
+
+    private Task OnPicturePicked(InputFileChangeEventArgs e)
+    {
+        return OnImagePicked(e, CropTarget.Picture);
+    }
+
+    private Task OnBannerPicked(InputFileChangeEventArgs e)
+    {
+        return OnImagePicked(e, CropTarget.Banner);
+    }
+
+    private Task OnServiceImagePicked(InputFileChangeEventArgs e)
+    {
+        serviceErrorMessage = null;
+        serviceSuccessMessage = null;
+        return OnImagePicked(e, CropTarget.Service);
+    }
+
+    /// <summary>
+    ///     How a service card will look with the cropped picture (filled in live by the cropper).
+    /// </summary>
+    private RenderFragment ServiceCropPreview => @<div class="mt-3 mx-auto max-w-xs overflow-hidden rounded-lg border border-accent-800/40 bg-primary-950">
+        <div data-crop-preview class="crop-preview w-full aspect-video"><img alt=""/></div>
+        <div class="px-3 py-2">
+            <p class="font-bold text-text-default truncate">@(string.IsNullOrWhiteSpace(newService.Name) ? "Název služby" : newService.Name)</p>
+            @if (!string.IsNullOrWhiteSpace(newService.Category))
+            {
+                <p class="text-xs text-text-muted truncate">@newService.Category</p>
+            }
+        </div>
+    </div>;
+
+    private Task OnImagePicked(InputFileChangeEventArgs e, CropTarget target)
+    {
+        // Closing the file dialog without picking anything still fires a change with no file.
+        if (e.FileCount == 0)
+        {
+            ResetFileInputs();
+            return Task.CompletedTask;
+        }
+
         updateImageErrorMessage = null;
         updateImageSuccessMessage = null;
-        pendingExistingAssociateImageDataUrl = null;
+        bannerErrorMessage = null;
+        bannerSuccessMessage = null;
 
         IBrowserFile file = e.File;
+        string? error = !IsSupportedImageType(file.ContentType)
+            ? "Podporujeme jen obrázky JPG, PNG nebo WebP."
+            : file.Size > ImageUploader.MaxUploadBytes
+                ? "Obrázek může mít nejvýše 10 MB."
+                : null;
 
-        if (file.Size > CustomerImageMaxSizeBytes)
+        InputFile? input = target switch
         {
-            updateImageErrorMessage = "Profile picture must be 2 MB or smaller.";
-            return;
-        }
-
-        if (!IsSupportedImageType(file.ContentType))
+            CropTarget.Banner => bannerInput,
+            CropTarget.Service => serviceImageInput,
+            _ => pictureInput,
+        };
+        if (error is not null || input?.Element is not { } element)
         {
-            updateImageErrorMessage = "Only JPG or PNG images are supported.";
-            return;
-        }
-
-        await using Stream stream = file.OpenReadStream(CustomerImageMaxSizeBytes);
-        using MemoryStream buffer = new();
-        await stream.CopyToAsync(buffer);
-        string base64 = Convert.ToBase64String(buffer.ToArray());
-        pendingExistingAssociateImageDataUrl = $"data:{file.ContentType};base64,{base64}";
-    }
-
-    private async Task UpdateAssociatePicture()
-    {
-        updateImageErrorMessage = null;
-        updateImageSuccessMessage = null;
-
-        if (selectedProfile is null || selectedProfile.Type != ProfileType.Associate)
-        {
-            updateImageErrorMessage = "Select an associate profile first.";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(pendingExistingAssociateImageDataUrl))
-        {
-            updateImageErrorMessage = "Choose an image first.";
-            return;
-        }
-
-        isUpdatingImage = true;
-        try
-        {
-            UserUpdateProfileImageCommand command = new()
+            switch (target)
             {
-                UserId = currentUserId,
-                ProfileId = selectedProfile.ProfileId,
-                ProfileImageDataUrl = pendingExistingAssociateImageDataUrl,
-            };
-
-            HttpClient writeApi = CreateWriteApiClient();
-            HttpResponseMessage response =
-                await writeApi.PutAsJsonAsync($"api/v1/users/{currentUserId}/profiles/{selectedProfile.ProfileId}/image", command);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                string responseText = await response.Content.ReadAsStringAsync();
-                updateImageErrorMessage = ExtractErrorMessage(response.StatusCode, responseText);
-                return;
+                case CropTarget.Banner:
+                    bannerErrorMessage = error;
+                    break;
+                case CropTarget.Service:
+                    serviceErrorMessage = error;
+                    break;
+                default:
+                    updateImageErrorMessage = error;
+                    break;
             }
 
-            await LoadProfilesAsync();
-            pendingExistingAssociateImageDataUrl = null;
-            updateImageSuccessMessage = "Profile picture updated.";
+            ResetFileInputs();
+            return Task.CompletedTask;
+        }
 
-            // reload associate details to reflect changes
-            await LoadAssociateDetailsAsync(selectedProfile.ProfileId);
-        }
-        finally
-        {
-            isUpdatingImage = false;
-        }
+        // The cropper shows the file straight from the browser; meanwhile the bytes travel to the server.
+        cropFileInput = element;
+        cropFileBytes = ReadAllBytesAsync(file);
+        cropTarget = target;
+        return Task.CompletedTask;
     }
 
-    private async Task OnAssociateBannerSelected(InputFileChangeEventArgs e)
+    private static async Task<byte[]> ReadAllBytesAsync(IBrowserFile file)
     {
-        bannerErrorMessage = null;
-        pendingAssociateBannerDataUrl = null;
-
-        IBrowserFile file = e.File;
-        const long BannerMax = 5 * 1024 * 1024; // 5MB
-
-        if (file.Size > BannerMax)
-        {
-            bannerErrorMessage = "Banner must be 5 MB or smaller.";
-            return;
-        }
-
-        if (!IsSupportedImageType(file.ContentType))
-        {
-            bannerErrorMessage = "Only JPG or PNG images are supported.";
-            return;
-        }
-
-        await using Stream stream = file.OpenReadStream(BannerMax);
-        using MemoryStream buffer = new();
+        await using Stream stream = file.OpenReadStream(ImageUploader.MaxUploadBytes);
+        using MemoryStream buffer = new((int)file.Size);
         await stream.CopyToAsync(buffer);
-        string base64 = Convert.ToBase64String(buffer.ToArray());
-        pendingAssociateBannerDataUrl = $"data:{file.ContentType};base64,{base64}";
+        return buffer.ToArray();
     }
 
-    private async Task SaveAssociateBanner()
+    private async Task<string?> SaveCroppedImageAsync(CropRegion crop)
     {
-        bannerErrorMessage = null;
-
-        if (selectedProfile is null || selectedProfile.Type != ProfileType.Associate)
+        if (cropTarget is not { } target || cropFileBytes is null || selectedProfile is null)
         {
-            bannerErrorMessage = "Select an associate profile first.";
-            return;
+            return "Obrázek se nepodařilo uložit. Zkuste to prosím znovu.";
         }
 
-        if (string.IsNullOrWhiteSpace(pendingAssociateBannerDataUrl))
-        {
-            bannerErrorMessage = "Choose a banner image first.";
-            return;
-        }
-
-        isSavingBanner = true;
+        byte[] bytes;
         try
         {
-            // We POST banner data to a convention endpoint. Backend implementation may vary.
-            var payload = new
+            bytes = await cropFileBytes;
+        }
+        catch (Exception)
+        {
+            return "Soubor se nepodařilo načíst. Zkuste ho prosím vybrat znovu.";
+        }
+
+        if (target == CropTarget.Service)
+        {
+            return await KeepServiceImageAsync(bytes, crop);
+        }
+
+        await using MemoryStream content = new(bytes, writable: false);
+        Result<Guid> result = target == CropTarget.Banner
+            ? await SetPlayerBannerHandler.Handle(new SetPlayerBannerCommand
             {
                 UserId = currentUserId,
-                selectedProfile.ProfileId,
-                BannerImageDataUrl = pendingAssociateBannerDataUrl,
-            };
-
-            HttpClient writeApi = CreateWriteApiClient();
-            HttpResponseMessage response = await writeApi.PutAsJsonAsync($"api/v1/users/{currentUserId}/profiles/{selectedProfile.ProfileId}/banner", payload);
-
-            if (!response.IsSuccessStatusCode)
+                Content = content,
+                Crop = crop,
+            })
+            : await SetProfileImageHandler.Handle(new SetProfileImageCommand
             {
-                string responseText = await response.Content.ReadAsStringAsync();
-                bannerErrorMessage = ExtractErrorMessage(response.StatusCode, responseText);
-                return;
-            }
+                UserId = currentUserId,
+                Profile = selectedProfile.Type,
+                Content = content,
+                Crop = crop,
+            });
 
-            // reload associate details
-            await LoadAssociateDetailsAsync(selectedProfile.ProfileId);
-            pendingAssociateBannerDataUrl = null;
-        }
-        finally
+        if (result.IsFailure)
         {
-            isSavingBanner = false;
+            return result.Error!.Message;
         }
+
+        if (target == CropTarget.Banner)
+        {
+            bannerSuccessMessage = "Banner je změněný.";
+        }
+        else
+        {
+            // Refresh the cards (and the top bar) with the new picture.
+            await LoadProfilesAsync(force: true);
+            updateImageSuccessMessage = "Profilová fotka je změněná.";
+        }
+
+        if (selectedProfile.Type == ProfileType.Player)
+        {
+            await LoadAssociateDetailsAsync(selectedProfile.ProfileId);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Remembers the cropped service image for when the service form is saved and makes a small preview of it.
+    /// </summary>
+    private async Task<string?> KeepServiceImageAsync(byte[] bytes, CropRegion crop)
+    {
+        await using MemoryStream content = new(bytes, writable: false);
+        Result<ProcessedImage> thumbnail = await ImageProcessor.ProcessAsync(content, ServiceThumbnailLimits, crop);
+        if (thumbnail.IsFailure)
+        {
+            return thumbnail.Error!.Message;
+        }
+
+        ProcessedImage preview = thumbnail.Value;
+        newService.Image = new PendingServiceImage(
+            bytes,
+            crop,
+            $"data:{preview.ContentType};base64,{Convert.ToBase64String(preview.Content)}");
+        removeServiceImage = false;
+        return null;
+    }
+
+    private void CloseCropper()
+    {
+        cropTarget = null;
+        cropFileBytes = null;
+        ResetFileInputs();
+    }
+
+    /// <summary>
+    ///     Re-creates the file inputs so picking the same file again still fires a change.
+    /// </summary>
+    private void ResetFileInputs()
+    {
+        pictureInputKey++;
+        bannerInputKey++;
+        serviceFormKey++;
     }
 
     private async Task LoadAssociateDetailsAsync(Guid profileId)
     {
-        try
+        Result<PlayerDetail> result = await GetPlayerDetailHandler.Handle(profileId);
+        if (result.IsFailure)
         {
-            HttpClient readApi = CreateReadApiClient();
-            HttpResponseMessage response = await readApi.GetAsync($"api/v1/read/associates/{profileId}");
-            if (!response.IsSuccessStatusCode)
-            {
-                return;
-            }
+            return;
+        }
 
-            associateDetails = await response.Content.ReadFromJsonAsync<AssociateProfileDto>();
-        }
-        catch
+        PlayerDetail detail = result.Value;
+        associateDetails = new PlayerProfileDto
         {
-            // ignore; non-critical for UI
-        }
+            ProfileId = detail.ProfileId,
+            DisplayName = detail.DisplayName,
+            Bio = detail.Description,
+            GrammaticalGender = detail.GrammaticalGender,
+            CreatedAt = detail.CreatedAt,
+            ProfileImageUrl = ImageUrls.For(detail.ProfileImageId),
+            BannerImageUrl = ImageUrls.For(detail.BannerImageId),
+            Services = detail.Services
+                .Select(svc => new ServiceDto
+                {
+                    ServiceId = svc.ServiceId,
+                    Name = svc.Name,
+                    Description = svc.Description,
+                    Category = svc.Category,
+                    Price = svc.Price,
+                    PriceSuffix = svc.PriceUnit,
+                    ImageUrl = ImageUrls.For(svc.ImageId),
+                    IsAvailable = svc.IsAvailable,
+                })
+                .ToList(),
+        };
+
+        await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnNewServiceImageSelected(InputFileChangeEventArgs e)
+    private async Task SaveServiceAsync()
     {
         serviceErrorMessage = null;
-        newService.ImageDataUrl = null;
+        serviceSuccessMessage = null;
+        deletingServiceId = null;
 
-        IBrowserFile file = e.File;
-        const long ServiceImageMax = 3 * 1024 * 1024; // 3MB
-
-        if (file.Size > ServiceImageMax)
+        if (selectedProfile is null || selectedProfile.Type != ProfileType.Player)
         {
-            serviceErrorMessage = "Service image must be 3 MB or smaller.";
-            return;
-        }
-
-        if (!IsSupportedImageType(file.ContentType))
-        {
-            serviceErrorMessage = "Only JPG or PNG images are supported.";
-            return;
-        }
-
-        await using Stream stream = file.OpenReadStream(ServiceImageMax);
-        using MemoryStream buffer = new();
-        await stream.CopyToAsync(buffer);
-        string base64 = Convert.ToBase64String(buffer.ToArray());
-        newService.ImageDataUrl = $"data:{file.ContentType};base64,{base64}";
-    }
-
-    private async Task AddService()
-    {
-        serviceErrorMessage = null;
-
-        if (selectedProfile is null || selectedProfile.Type != ProfileType.Associate)
-        {
-            serviceErrorMessage = "Select an associate profile first.";
-            return;
-        }
-
-        int currentCount = associateDetails?.Services?.Count ?? 0;
-        if (currentCount >= 255)
-        {
-            serviceErrorMessage = "Maximum number of services (255) reached.";
+            serviceErrorMessage = $"Nejdřív vyberte profil {PlayerGenitive}.";
             return;
         }
 
         if (string.IsNullOrWhiteSpace(newService.Name))
         {
-            serviceErrorMessage = "Service name is required.";
+            serviceErrorMessage = "Vyplňte název služby.";
             return;
         }
 
-        if (!decimal.TryParse(newService.PriceString, out decimal price))
+        // cs-CZ: "199" or "199,50".
+        decimal price = 0m;
+        if (!string.IsNullOrWhiteSpace(newService.PriceString)
+            && !decimal.TryParse(newService.PriceString.Replace(" ", string.Empty), out price))
         {
-            price = 0m;
+            serviceErrorMessage = "Cena musí být číslo, např. 199 nebo 199,50.";
+            return;
         }
 
-        var payload = new
-        {
-            UserId = currentUserId,
-            selectedProfile.ProfileId,
-            Name = newService.Name.Trim(),
-            Description = newService.Description?.Trim(),
-            Category = newService.Category?.Trim(),
-            Price = price,
-            PriceSuffix = newService.PriceSuffix?.Trim(),
-            newService.ImageDataUrl,
-        };
-
+        isSavingService = true;
         try
         {
-            HttpClient writeApi = CreateWriteApiClient();
-            HttpResponseMessage response = await writeApi.PostAsJsonAsync($"api/v1/users/{currentUserId}/profiles/{selectedProfile.ProfileId}/services", payload);
+            PendingServiceImage? picked = newService.Image;
+            await using MemoryStream? image = picked is null ? null : new MemoryStream(picked.Content, writable: false);
 
-            if (!response.IsSuccessStatusCode)
+            Result result = editingServiceId is { } serviceId
+                ? await UpdatePlayerServiceHandler.Handle(new UpdatePlayerServiceCommand
+                {
+                    UserId = currentUserId,
+                    ServiceId = serviceId,
+                    Name = newService.Name,
+                    Description = newService.Description,
+                    Category = newService.Category,
+                    Price = price,
+                    PriceUnit = newService.PriceSuffix,
+                    NewImage = image,
+                    ImageCrop = picked?.Crop,
+                    RemoveImage = removeServiceImage,
+                })
+                : await AddPlayerServiceHandler.Handle(new AddPlayerServiceCommand
+                {
+                    UserId = currentUserId,
+                    Name = newService.Name,
+                    Description = newService.Description,
+                    Category = newService.Category,
+                    Price = price,
+                    PriceUnit = newService.PriceSuffix,
+                    Image = image,
+                    ImageCrop = picked?.Crop,
+                });
+
+            if (result.IsFailure)
             {
-                string responseText = await response.Content.ReadAsStringAsync();
-                serviceErrorMessage = ExtractErrorMessage(response.StatusCode, responseText);
+                serviceErrorMessage = result.Error!.Message;
                 return;
             }
 
-            // reload services
+            serviceSuccessMessage = editingServiceId is null ? "Služba je přidaná." : "Změny jsou uložené.";
+            ResetServiceForm();
             await LoadAssociateDetailsAsync(selectedProfile.ProfileId);
-
-            // clear form
-            newService = new ServiceCreateModel();
         }
-        catch (Exception ex)
+        finally
         {
-            serviceErrorMessage = ex.Message;
+            isSavingService = false;
+        }
+    }
+
+    private Task StartEditService(ServiceDto service)
+    {
+        serviceErrorMessage = null;
+        serviceSuccessMessage = null;
+        deletingServiceId = null;
+
+        editingServiceId = service.ServiceId;
+        editingServiceImageUrl = service.ImageUrl;
+        removeServiceImage = false;
+        serviceFormKey++;
+        newService = new ServiceCreateModel
+        {
+            Name = service.Name,
+            Category = service.Category ?? string.Empty,
+            PriceString = service.Price.ToString("0.##"),
+            PriceSuffix = service.PriceSuffix ?? string.Empty,
+            Description = service.Description ?? string.Empty,
+        };
+
+        isServiceFormOpen = true;
+        focusServiceName = true;
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusServiceName && isServiceFormOpen)
+        {
+            focusServiceName = false;
+            await serviceNameInput.FocusAsync();
+        }
+    }
+
+    private void OpenAddService()
+    {
+        serviceErrorMessage = null;
+        serviceSuccessMessage = null;
+        deletingServiceId = null;
+        ResetServiceForm();
+        isServiceFormOpen = true;
+        focusServiceName = true;
+    }
+
+    private Task OnServiceModalKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            CancelEditService();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void CancelEditService()
+    {
+        if (isSavingService)
+        {
+            return;
+        }
+
+        serviceErrorMessage = null;
+        serviceSuccessMessage = null;
+        ResetServiceForm();
+    }
+
+    private void ResetServiceForm()
+    {
+        isServiceFormOpen = false;
+        editingServiceId = null;
+        editingServiceImageUrl = null;
+        removeServiceImage = false;
+        serviceFormKey++;
+        newService = new ServiceCreateModel();
+    }
+
+    private async Task DeleteServiceAsync(Guid serviceId)
+    {
+        if (selectedProfile is null)
+        {
+            return;
+        }
+
+        serviceErrorMessage = null;
+        serviceSuccessMessage = null;
+        isSavingService = true;
+        try
+        {
+            Result result = await DeletePlayerServiceHandler.Handle(new DeletePlayerServiceCommand
+            {
+                UserId = currentUserId,
+                ServiceId = serviceId,
+            });
+
+            if (result.IsFailure)
+            {
+                serviceErrorMessage = result.Error!.Message;
+                return;
+            }
+
+            if (editingServiceId == serviceId)
+            {
+                ResetServiceForm();
+            }
+
+            serviceSuccessMessage = "Služba je smazaná.";
+            await LoadAssociateDetailsAsync(selectedProfile.ProfileId);
+        }
+        finally
+        {
+            deletingServiceId = null;
+            isSavingService = false;
         }
     }
 

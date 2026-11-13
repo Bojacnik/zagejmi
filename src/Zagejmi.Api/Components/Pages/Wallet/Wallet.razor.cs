@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using Zagejmi.Api.Models;
+
 namespace Zagejmi.Api.Components.Pages.Wallet;
 
 /// <summary>
@@ -9,7 +11,7 @@ namespace Zagejmi.Api.Components.Pages.Wallet;
 /// </summary>
 public partial class Wallet
 {
-    private readonly string[] colors = ["accent", "sky", "emerald", "amber", "fuchsia"];
+    private readonly string[] colors = new[] { "accent", "sky", "emerald", "amber", "fuchsia" };
 
     /// <summary>
     ///     Gets or sets the aggregated wallet balance in USD.
@@ -45,34 +47,34 @@ public partial class Wallet
         Random random = new();
         string[] shuffledColors = this.colors.OrderBy(_ => random.Next()).ToArray();
 
-        this.Wallets =
-        [
-            new WalletViewModel
+        this.Wallets = new List<WalletViewModel>
+        {
+            new()
             {
                 Id = Guid.NewGuid(), Name = "Primary Savings", Balance = 5248.75m, Currency = "USD",
                 IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 5248.75m,
             },
-            new WalletViewModel
+            new()
             {
                 Id = Guid.NewGuid(), Name = "Ethereum", Balance = 12.5m, Currency = "ETH",
                 IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 30123.45m,
             },
-            new WalletViewModel
+            new()
             {
                 Id = Guid.NewGuid(), Name = "Vacation Fund", Balance = 1234.56m, Currency = "EUR",
                 IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 1350.25m,
             },
-            new WalletViewModel
+            new()
             {
                 Id = Guid.NewGuid(), Name = "Stock Portfolio", Balance = 8765.43m, Currency = "USD",
                 IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 8765.43m,
             },
-            new WalletViewModel
+            new()
             {
                 Id = Guid.NewGuid(), Name = "Bitcoin", Balance = 0.5m, Currency = "BTC",
                 IconUrl = $"https://picsum.photos/seed/{Guid.NewGuid()}/40", BalanceInUsd = 29876.54m,
             },
-        ];
+        };
 
         for (int i = 0; i < this.Wallets.Count; i++)
         {
@@ -85,39 +87,39 @@ public partial class Wallet
 
         Dictionary<string, Guid> walletIdLut = this.Wallets.ToDictionary(w => w.Name, w => w.Id);
 
-        this.Transactions =
-        [
-            new TransactionViewModel
+        this.Transactions = new List<TransactionViewModel>
+        {
+            new()
             {
                 WalletId = walletIdLut["Primary Savings"],
                 WalletName = "Primary Savings", Description = "Grocery Shopping", Date = DateTime.Now.AddDays(-1),
                 Amount = -75.50m,
             },
-            new TransactionViewModel
+            new()
             {
                 WalletId = walletIdLut["Ethereum"],
                 WalletName = "Ethereum", Description = "NFT Purchase", Date = DateTime.Now.AddDays(-2),
                 Amount = -2.5m,
             },
-            new TransactionViewModel
+            new()
             {
                 WalletId = walletIdLut["Primary Savings"],
                 WalletName = "Primary Savings", Description = "Salary Deposit", Date = DateTime.Now.AddDays(-3),
                 Amount = 2500.00m,
             },
-            new TransactionViewModel
+            new()
             {
                 WalletId = walletIdLut["Vacation Fund"],
                 WalletName = "Vacation Fund", Description = "Flight Tickets", Date = DateTime.Now.AddDays(-4),
                 Amount = -450.00m,
             },
-            new TransactionViewModel
+            new()
             {
                 WalletId = walletIdLut["Stock Portfolio"],
                 WalletName = "Stock Portfolio", Description = "Dividend", Date = DateTime.Now.AddDays(-5),
                 Amount = 120.00m,
             },
-        ];
+        };
     }
 
     private void CalculateChartSegments()

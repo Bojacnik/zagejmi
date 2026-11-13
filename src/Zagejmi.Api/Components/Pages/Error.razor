@@ -1,19 +1,19 @@
-﻿@page "/Error"
+@page "/Error"
 @using System.Diagnostics
 @using Microsoft.AspNetCore.Http
 
-<PageTitle>Error</PageTitle>
+<PageTitle>Chyba</PageTitle>
 
 <div class="w-full h-full grid place-items-center text-center">
     <div class="max-w-2xl">
-        <h1 class="text-5xl font-bold text-red-500">Error.</h1>
-        <h2 class="mt-2 text-xl text-red-400">An error occurred while processing your request.</h2>
+        <h1 class="text-5xl font-bold text-red-500">Chyba.</h1>
+        <h2 class="mt-2 text-xl text-red-400">Při zpracování požadavku nastala chyba.</h2>
 
         @if (ShowRequestId)
         {
             <div class="mt-6">
                 <p class="text-text-muted">
-                    <strong>Request ID:</strong>
+                    <strong>ID požadavku:</strong>
                     <code class="ml-2 p-2 bg-primary-950 rounded-md text-accent-400">@RequestId</code>
                 </p>
             </div>

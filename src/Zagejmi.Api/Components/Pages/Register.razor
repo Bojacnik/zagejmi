@@ -1,189 +1,189 @@
 ﻿@page "/register"
-@using System.Text.Json
-@using System.Text.RegularExpressions
+@using Zagejmi.Api.Localization
+@using Zagejmi.Application.Auth.Users.CreateUser
+@using Zagejmi.Domain.Auth
+@using Zagejmi.Shared
 @rendermode InteractiveServer
 
-@inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
+@inject CreateUserHandler Handler
+
+<PageTitle>Registrace | Zagejmi</PageTitle>
 
 <div class="w-full h-full flex flex-col justify-center items-center p-4">
     <form @onsubmit="HandleRegister" @onsubmit:preventDefault novalidate
           class="w-full max-w-sm p-8 space-y-6 bg-primary-900 rounded-xl border border-accent-700/50 shadow-2xl shadow-accent-900/30">
 
         <header class="text-center">
-            <h1 class="text-4xl font-bold text-gray-100">Create Account</h1>
-            <p class="text-gray-400 mt-2">Begin your journey with us.</p>
+            <h1 class="text-4xl font-bold text-gray-100">Vytvořit účet</h1>
+            <p class="text-gray-400 mt-2">Každý účet je zároveň zákaznický. Profil hráče si můžete přidat později.</p>
         </header>
 
-        @if (!string.IsNullOrEmpty(errorMessage))
+        @if (!string.IsNullOrEmpty(ErrorMessage))
         {
             <div class="p-4 text-sm text-red-400 bg-red-900/30 border border-red-400/50 rounded-lg" role="alert">
-                <p>@errorMessage</p>
+                <p>@ErrorMessage</p>
             </div>
         }
 
-        @if (!isSuccess)
-        {
-            <div class="space-y-4">
-                <div>
-                    <label for="username" class="sr-only">Username</label>
-                    <input @bind="registerModel.Username" type="text" id="username" placeholder="Username" required
-                           disabled="@isSubmitting"
-                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
-                </div>
-
-                <div>
-                    <label for="email" class="sr-only">Email</label>
-                    <input @bind="registerModel.Email" type="email" id="email" placeholder="Email" required
-                           disabled="@isSubmitting"
-                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
-                </div>
-
-                <div>
-                    <label for="password" class="sr-only">Password</label>
-                    <input @bind="registerModel.Password" type="password" id="password" placeholder="Password" required
-                           disabled="@isSubmitting"
-                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
-                </div>
-
-                <div>
-                    <label for="password-again" class="sr-only">Confirm Password</label>
-                    <input @bind="registerModel.PasswordAgain" type="password" id="password-again"
-                           placeholder="Confirm Password" required disabled="@isSubmitting"
-                           class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
-                </div>
+        <div class="space-y-4">
+            <div>
+                <label for="username" class="sr-only">Uživatelské jméno</label>
+                <input @bind="registerModel.Username" type="text" id="username" placeholder="Uživatelské jméno"
+                       required autocomplete="username" disabled="@IsSubmitting"
+                       class="@InputClass"/>
             </div>
 
-            <div class="flex flex-col gap-4 pt-4">
-                <button type="submit" disabled="@isSubmitting"
-                        class="w-full px-4 py-3 font-bold text-lg text-white bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-900 focus:ring-accent-500 disabled:bg-accent-800 disabled:cursor-not-allowed">
-                    @if (isSubmitting)
-                    {
-                        <span class="animate-pulse">Creating account...</span>
-                    }
-                    else
-                    {
-                        <span>Register</span>
-                    }
-                </button>
-                <div class="text-center">
-                    <a href="/login"
-                       class="text-sm font-medium text-accent-400 hover:text-accent-300 hover:underline transition-colors @(isSubmitting ? "pointer-events-none" : "")">
-                        Already have an account? Login instead.
-                    </a>
-                </div>
+            <div>
+                <label for="email" class="sr-only">E-mail</label>
+                <input @bind="registerModel.Email" type="email" id="email" placeholder="E-mail" required
+                       autocomplete="email" disabled="@IsSubmitting"
+                       class="@InputClass"/>
             </div>
-        }
+
+            <div>
+                <label for="password" class="sr-only">Heslo</label>
+                <input @bind="registerModel.Password" type="password" id="password" placeholder="Heslo (alespoň 8 znaků)"
+                       required autocomplete="new-password" disabled="@IsSubmitting"
+                       class="@InputClass"/>
+            </div>
+
+            <div>
+                <label for="password-again" class="sr-only">Heslo znovu</label>
+                <input @bind="registerModel.PasswordAgain" type="password" id="password-again"
+                       placeholder="Heslo znovu" required autocomplete="new-password" disabled="@IsSubmitting"
+                       class="@InputClass"/>
+            </div>
+
+            <div>
+                <label for="gender" class="block text-sm font-medium text-gray-300 mb-1">Pohlaví</label>
+                <select id="gender" @bind="registerModel.Gender" @bind:after="OnGenderChanged" disabled="@IsSubmitting"
+                        class="@InputClass">
+                    @foreach (Gender option in GenderOptions)
+                    {
+                        <option value="@option">@CzechLabels.GenderLabel(option)</option>
+                    }
+                </select>
+            </div>
+
+            @if (NeedsGrammaticalGenderChoice)
+            {
+                <fieldset class="space-y-2">
+                    <legend class="text-sm font-medium text-gray-300 mb-1">Jak vás máme oslovovat?</legend>
+                    @foreach (GrammaticalGender option in Enum.GetValues<GrammaticalGender>())
+                    {
+                        <label class="flex items-center gap-2 text-gray-200 text-sm cursor-pointer">
+                            <input type="radio" name="grammatical-gender" disabled="@IsSubmitting"
+                                   checked="@(registerModel.GrammaticalGender == option)"
+                                   @onchange="() => registerModel.GrammaticalGender = option"
+                                   class="accent-accent-500"/>
+                            @CzechLabels.GrammaticalGenderLabel(option)
+                        </label>
+                    }
+                </fieldset>
+            }
+        </div>
+
+        <div class="flex flex-col gap-4 pt-4">
+            <button type="submit" disabled="@IsSubmitting"
+                    class="w-full px-4 py-3 font-bold text-lg text-white bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors shadow-lg shadow-accent-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-900 focus:ring-accent-500 disabled:bg-accent-800 disabled:cursor-not-allowed">
+                @if (IsSubmitting)
+                {
+                    <span class="animate-pulse">Vytváříme účet…</span>
+                }
+                else
+                {
+                    <span>Zaregistrovat se</span>
+                }
+            </button>
+            <div class="text-center">
+                <a href="/login"
+                   class="text-sm font-medium text-accent-400 hover:text-accent-300 hover:underline transition-colors @(IsSubmitting ? "pointer-events-none" : "")">
+                    Už máte účet? Přihlaste se.
+                </a>
+            </div>
+        </div>
     </form>
 </div>
 
 @code {
+    private const string InputClass =
+        "w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all";
+
+    private static readonly Gender[] GenderOptions = [Gender.Female, Gender.Male, Gender.Other, Gender.Unknown];
+
     private readonly RegisterModel registerModel = new();
-    private string? errorMessage;
-    private bool isSubmitting;
-    private bool isSuccess;
 
-    private class RegisterModel
+    private string? ErrorMessage { get; set; }
+
+    private bool IsSubmitting { get; set; }
+
+    private bool NeedsGrammaticalGenderChoice => registerModel.Gender is Gender.Other or Gender.Unknown;
+
+    private void OnGenderChanged()
     {
-        public string Username { get; set; } = "";
-
-        public string Email { get; set; } = "";
-
-        public string Password { get; set; } = "";
-
-        public string PasswordAgain { get; set; } = "";
+        // The choice only applies to Jiné / Nechci uvádět; reset it so a stale value is never sent.
+        if (!NeedsGrammaticalGenderChoice)
+        {
+            registerModel.GrammaticalGender = null;
+        }
     }
 
     private async Task HandleRegister()
     {
-        if (isSubmitting || isSuccess) return;
-
-        errorMessage = null;
-
-        registerModel.Username = registerModel.Username.Trim();
-        registerModel.Email = registerModel.Email.Trim();
-
-        if (string.IsNullOrWhiteSpace(registerModel.Username) ||
-            string.IsNullOrWhiteSpace(registerModel.Email) ||
-            string.IsNullOrWhiteSpace(registerModel.Password))
-        {
-            errorMessage = "Please fill in all fields.";
-            return;
-        }
-
-        if (!Regex.IsMatch(registerModel.Email, @"^[^\s@]+@[^\s@]+\.[^\s@]+$"))
-        {
-            errorMessage = "Please enter a valid email address.";
-            return;
-        }
+        ErrorMessage = null;
 
         if (registerModel.Password != registerModel.PasswordAgain)
         {
-            errorMessage = "Passwords do not match.";
+            ErrorMessage = "Hesla se neshodují.";
             return;
         }
 
-        isSubmitting = true;
+        if (NeedsGrammaticalGenderChoice && registerModel.GrammaticalGender is null)
+        {
+            ErrorMessage = "Vyberte, zda vás máme oslovovat v mužském, nebo v ženském rodě.";
+            return;
+        }
 
+        IsSubmitting = true;
         try
         {
-            CreateUserRequest command = new()
+            CreateUserCommand command = new()
             {
-                UserName = registerModel.Username,
                 Email = registerModel.Email,
-                Password = registerModel.Password
+                UserName = registerModel.Username,
+                Password = registerModel.Password,
+                Gender = registerModel.Gender,
+                GrammaticalGender = registerModel.GrammaticalGender,
             };
-            HttpClient client = HttpClientFactory.CreateClient("WriteAPI");
-            HttpResponseMessage response = await client.PostAsJsonAsync("api/v1/users", command);
 
-            if (response.IsSuccessStatusCode)
+            Result<Guid> result = await Handler.Handle(command);
+            if (result.IsFailure)
             {
-                isSuccess = true;
-                string encodedEmail = Uri.EscapeDataString(registerModel.Email);
-                NavigationManager.NavigateTo($"/login?registered=1&email={encodedEmail}", true);
+                ErrorMessage = result.Error!.Message;
+                return;
             }
-            else
-            {
-                string errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Registration failed with status {response.StatusCode}");
-                Console.WriteLine($"Response content-type: {response.Content.Headers.ContentType}");
-                Console.WriteLine($"Response body: {errorContent}");
 
-                try
-                {
-                    ValidationErrorResponse? errorResponse = JsonSerializer.Deserialize<ValidationErrorResponse>(errorContent);
-                    errorMessage = errorResponse?.Errors.FirstOrDefault() ?? $"Error: {response.StatusCode}";
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"JSON parsing error: {ex.Message}");
-                    errorMessage = string.IsNullOrWhiteSpace(errorContent) ? $"Error: {response.StatusCode}" : errorContent;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Registration error: {ex}");
-            errorMessage = $"An unexpected error occurred: {ex.Message}";
+            NavigationManager.NavigateTo($"/login?registered=1&email={Uri.EscapeDataString(command.Email.Trim())}");
         }
         finally
         {
-            isSubmitting = false;
+            IsSubmitting = false;
         }
     }
 
-    private class CreateUserRequest
+    private sealed class RegisterModel
     {
-        public string UserName { get; set; } = "";
+        public string Username { get; set; } = string.Empty;
 
-        public string Email { get; set; } = "";
+        public string Email { get; set; } = string.Empty;
 
-        public string Password { get; set; } = "";
+        public string Password { get; set; } = string.Empty;
+
+        public string PasswordAgain { get; set; } = string.Empty;
+
+        public Gender Gender { get; set; } = Gender.Female;
+
+        public GrammaticalGender? GrammaticalGender { get; set; }
     }
-
-    private class ValidationErrorResponse
-    {
-        public List<string> Errors { get; init; } = new();
-    }
-
 }
