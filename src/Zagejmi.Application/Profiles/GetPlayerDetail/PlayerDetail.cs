@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using Zagejmi.Domain.Auth;
+using Zagejmi.Domain.Games;
 
 namespace Zagejmi.Application.Profiles.GetPlayerDetail;
 
@@ -34,7 +35,10 @@ public sealed record PlayerDetail(
 /// <param name="Description">What the service includes.</param>
 /// <param name="Price">The price in Goins.</param>
 /// <param name="PriceUnit">What the price is for, e.g. "/ hodina".</param>
-/// <param name="Category">Optional category (e.g. a game).</param>
+/// <param name="Category">Optional category (e.g. "Koučink").</param>
+/// <param name="GameKey">The game key, or <see langword="null" /> when the service is not tied to a game.</param>
+/// <param name="RankKey">The player's rank in the game, or <see langword="null" />.</param>
+/// <param name="PlayStyles">Competitive, casual or both (<see cref="PlayStyles.None" /> without a game).</param>
 /// <param name="ImageId">The service image, if any.</param>
 /// <param name="IsAvailable">Whether the service can be ordered right now.</param>
 public sealed record PlayerServiceItem(
@@ -44,5 +48,8 @@ public sealed record PlayerServiceItem(
     long Price,
     string? PriceUnit,
     string? Category,
+    string? GameKey,
+    string? RankKey,
+    PlayStyles PlayStyles,
     Guid? ImageId,
     bool IsAvailable);

@@ -16,7 +16,7 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261113083418_WholeGoinPrices";
+    public override string LastMigrationId => "20261113121607_AddServiceGameRankPlayStyles";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -112,6 +112,10 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
                     .HasMaxLength(1000)
                     .HasColumnType("character varying(1000)");
 
+                b.Property<string>("GameKey")
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
+
                 b.Property<Guid?>("ImageId")
                     .HasColumnType("uuid");
 
@@ -122,6 +126,9 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
                     .IsRequired()
                     .HasMaxLength(100)
                     .HasColumnType("character varying(100)");
+
+                b.Property<int>("PlayStyles")
+                    .HasColumnType("integer");
 
                 b.Property<Guid>("PlayerProfileId")
                     .HasColumnType("uuid");
@@ -137,7 +144,13 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
                     .HasMaxLength(50)
                     .HasColumnType("character varying(50)");
 
+                b.Property<string>("RankKey")
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
+
                 b.HasKey("Id");
+
+                b.HasIndex("GameKey");
 
                 b.HasIndex("PlayerProfileId", "CreatedAt");
 

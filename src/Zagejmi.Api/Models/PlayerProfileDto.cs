@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using Zagejmi.Domain.Auth;
+using Zagejmi.Domain.Games;
 
 namespace Zagejmi.Api.Models;
 
@@ -100,6 +101,21 @@ public sealed class ServiceDto
     ///     Gets or sets the service category.
     /// </summary>
     public string? Category { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the game key, or <see langword="null" /> when the service is not tied to a game.
+    /// </summary>
+    public string? GameKey { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the player's rank key in the game.
+    /// </summary>
+    public string? RankKey { get; set; }
+
+    /// <summary>
+    ///     Gets or sets competitive, casual or both.
+    /// </summary>
+    public PlayStyles PlayStyles { get; set; }
 
     /// <summary>
     ///     Gets or sets the service price.

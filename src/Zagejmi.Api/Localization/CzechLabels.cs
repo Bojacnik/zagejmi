@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 
 using Zagejmi.Api.Models;
 using Zagejmi.Domain.Auth;
+using Zagejmi.Domain.Games;
 using Zagejmi.Domain.Profiles;
 
 namespace Zagejmi.Api.Localization;
@@ -98,5 +100,49 @@ public static class CzechLabels
     public static DateTimeOffset InPragueTime(DateTimeOffset value)
     {
         return PragueTimeZone is null ? value.ToUniversalTime() : TimeZoneInfo.ConvertTime(value, PragueTimeZone);
+    }
+
+    /// <summary>
+    ///     Gets how a player plays: "Kompetitivně", "Pro zábavu" or "Kompetitivně i pro zábavu".
+    /// </summary>
+    /// <param name="playStyles">The play styles.</param>
+    /// <returns>The label, or <see langword="null" /> for <see cref="PlayStyles.None" />.</returns>
+    public static string? PlayStyle(PlayStyles playStyles)
+    {
+        return playStyles switch
+        {
+            PlayStyles.Competitive => "Kompetitivně",
+            PlayStyles.Casual => "Pro zábavu",
+            PlayStyles.Both => "Kompetitivně i pro zábavu",
+            _ => null,
+        };
+    }
+
+    /// <summary>
+    ///     Gets a one-line summary of a service's game, e.g. "Valorant · Gold · Kompetitivně".
+    /// </summary>
+    /// <param name="gameKey">The game key.</param>
+    /// <param name="rankKey">The rank key.</param>
+    /// <param name="playStyles">The play styles.</param>
+    /// <returns>The summary, or <see langword="null" /> when the service is not tied to a known game.</returns>
+    public static string? ServiceGame(string? gameKey, string? rankKey, PlayStyles playStyles)
+    {
+        if (GameCatalog.Find(gameKey) is not { } game)
+        {
+            return null;
+        }
+
+        List<string> parts = [game.Name];
+        if (game.FindRank(rankKey) is { } rank)
+        {
+            parts.Add(rank.Name);
+        }
+
+        if (PlayStyle(playStyles) is { } style)
+        {
+            parts.Add(style);
+        }
+
+        return string.Join(" · ", parts);
     }
 }

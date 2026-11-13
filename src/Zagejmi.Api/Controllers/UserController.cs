@@ -25,6 +25,7 @@ using Zagejmi.Application.Profiles.GetUserProfiles;
 using Zagejmi.Application.Profiles.SetPlayerBanner;
 using Zagejmi.Application.Profiles.SetProfileImage;
 using Zagejmi.Application.Profiles.UpdatePlayerService;
+using Zagejmi.Domain.Games;
 using Zagejmi.Domain.Profiles;
 using Zagejmi.Shared;
 
@@ -348,6 +349,9 @@ public class UserController : ControllerBase
                 Name = request.Name,
                 Description = request.Description,
                 Category = request.Category,
+                GameKey = request.GameKey,
+                RankKey = request.RankKey,
+                PlayStyles = request.PlayStyles,
                 Price = price,
                 PriceUnit = request.PriceUnit,
                 Image = image,
@@ -393,6 +397,9 @@ public class UserController : ControllerBase
                 Name = request.Name,
                 Description = request.Description,
                 Category = request.Category,
+                GameKey = request.GameKey,
+                RankKey = request.RankKey,
+                PlayStyles = request.PlayStyles,
                 Price = price,
                 PriceUnit = request.PriceUnit,
                 NewImage = image,
@@ -535,6 +542,21 @@ public class UserController : ControllerBase
         public string? Category { get; set; }
 
         /// <summary>
+        ///     Gets or sets the game key from <c>GET api/v1/games</c>, or empty for a service without a game.
+        /// </summary>
+        public string? GameKey { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the player's rank key in the game, or empty.
+        /// </summary>
+        public string? RankKey { get; set; }
+
+        /// <summary>
+        ///     Gets or sets competitive, casual or both ("Competitive", "Casual", "Both"); required with a game.
+        /// </summary>
+        public PlayStyles PlayStyles { get; set; }
+
+        /// <summary>
         ///     Gets or sets the price in whole Goins (e.g. "199").
         /// </summary>
         public string? Price { get; set; }
@@ -574,6 +596,21 @@ public class UserController : ControllerBase
         ///     Gets or sets an optional category.
         /// </summary>
         public string? Category { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the game key from <c>GET api/v1/games</c>, or empty for a service without a game.
+        /// </summary>
+        public string? GameKey { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the player's rank key in the game, or empty.
+        /// </summary>
+        public string? RankKey { get; set; }
+
+        /// <summary>
+        ///     Gets or sets competitive, casual or both ("Competitive", "Casual", "Both"); required with a game.
+        /// </summary>
+        public PlayStyles PlayStyles { get; set; }
 
         /// <summary>
         ///     Gets or sets the price in whole Goins (e.g. "199").
