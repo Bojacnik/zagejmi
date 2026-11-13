@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 
-using Zagejmi.Domain.Abstractions;
-using Zagejmi.Domain.Auth.Events;
+using Zagejmi.Domain.Profiles;
 
 namespace Zagejmi.Domain.Auth;
 
@@ -12,17 +10,8 @@ namespace Zagejmi.Domain.Auth;
 ///     related to user accounts, including creation, updates, and deletion. It ensures that all operations on the user
 ///     account are consistent and adhere to the business rules defined for user management.
 /// </summary>
-public sealed class User : Aggregate
+public sealed class User
 {
-    /// <summary>
-    ///     A private list of person IDs associated with the user. This list is used to manage the relationships between the
-    ///     user and the person entities in the domain model. The PersonIds property exposes a read-only view of this list to
-    ///     ensure that external code cannot modify it directly, maintaining the integrity of the user aggregate. The user can
-    ///     be associated with multiple person entities, and this list allows for efficient management of those associations
-    ///     while keeping the internal state of the user aggregate consistent and encapsulated.
-    /// </summary>
-    private readonly List<Guid> personIds = new();
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="User" /> class with the specified unique identifier. This constructor
     ///     is private to enforce the use of factory methods for creating user instances, ensuring that all necessary
@@ -35,10 +24,15 @@ public sealed class User : Aggregate
     ///     different instances and systems. This parameter is essential for tracking and managing user accounts effectively,
     ///     allowing for efficient retrieval, updates, and associations with other entities in the domain model.
     /// </param>
-    private User(Guid id)
-        : base(id)
+    public User(Guid id)
     {
+        this.Id = id;
     }
+
+    /// <summary>
+    ///     Gets the ID of the user.
+    /// </summary>
+    public Guid Id { get; init; }
 
     /// <summary>
     ///     Gets the authentication credentials associated with the user. The AuthCredentials property encapsulates the
@@ -48,130 +42,29 @@ public sealed class User : Aggregate
     ///     sensitive information and should be protected to prevent unauthorized access, ensuring the security and integrity
     ///     of user accounts within the system.
     /// </summary>
-    public AuthCredentials? AuthCredentials { get; private set; }
+    public required AuthCredentials AuthCredentials { get; init; }
 
     /// <summary>
-    ///     Gets a read-only list of person IDs associated with the user. The PersonIds property provides a way to manage the
-    ///     relationships between the user and the person entities in the domain model. This property exposes a read-only view
-    ///     of the internal list of person IDs, ensuring that external code cannot modify it directly, which helps maintain the
-    ///     integrity of the user aggregate. The user can be associated with multiple person entities, and this list allows for
-    ///     efficient management of those associations while keeping the internal state of the user aggregate consistent and
-    ///     encapsulated. The PersonIds property is essential for tracking and managing the relationships between users and
-    ///     person entities, allowing for efficient retrieval and updates of those associations within the system.
+    ///     Gets or sets the gender the user identifies as.
     /// </summary>
-    public IReadOnlyList<Guid> PersonIds => this.personIds.AsReadOnly();
+    public Gender Gender { get; set; }
 
     /// <summary>
-    ///     Factory method to create a new user with the specified authentication credentials.
-    ///     This method creates a new User aggregate with the provided credentials and raises a UserCreatedEvent
-    ///     to represent the user creation in the domain model.
+    ///     Gets or sets the grammatical gender used when addressing the user in Czech (Hráč/Hráčka,
+    ///     Zákazník/Zákaznice). See <see cref="GrammaticalGenderRules.Resolve" />.
     /// </summary>
-    /// <param name="username">The username for the new user.</param>
-    /// <param name="passwordHash">The securely hashed password for the new user.</param>
-    /// <param name="email">The email address for the new user.</param>
-    /// <returns>A new User aggregate instance with the specified credentials.</returns>
-    public static User Create(string username, string passwordHash, string email)
-    {
-        Guid userId = Guid.CreateVersion7();
-        User user = new(userId);
-        user.RaiseEvent(new UserCreatedEvent(userId, username, passwordHash, email));
-        return user;
-    }
-
-    public void RequestEmailVerification(string tokenHash, DateTimeOffset expiresAtUtc)
-    {
-        this.RaiseEvent(new UserEmailVerificationRequestedEvent(this.Id, tokenHash, expiresAtUtc));
-    }
-
-    public bool CanConfirmEmail(string tokenHash, DateTimeOffset nowUtc)
-    {
-        if (this.AuthCredentials == null || this.AuthCredentials.EmailVerifiedAtUtc.HasValue)
-        {
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(this.AuthCredentials.PendingEmailVerificationTokenHash) ||
-            !this.AuthCredentials.PendingEmailVerificationExpiresAtUtc.HasValue)
-        {
-            return false;
-        }
-
-        return this.AuthCredentials.PendingEmailVerificationTokenHash == tokenHash &&
-               this.AuthCredentials.PendingEmailVerificationExpiresAtUtc.Value >= nowUtc;
-    }
-
-    public void ConfirmEmailOwnership()
-    {
-        this.RaiseEvent(new UserEmailVerifiedEvent(this.Id));
-    }
+    public GrammaticalGender GrammaticalGender { get; set; }
 
     /// <summary>
-    ///     Applies the specified domain event to the user aggregate, updating its state based on the event's data. This method
-    ///     is responsible for handling the logic of how the user aggregate should react to different types of domain events,
-    ///     ensuring that the state of the user is consistent with the events that have occurred. The Apply method should be
-    ///     implemented to handle all relevant domain events related to the user aggregate, such as user creation, updates to
-    ///     authentication credentials, email changes, and associations with person entities. By applying domain events
-    ///     correctly, the user aggregate can maintain its integrity and ensure that all operations on the user account adhere
-    ///     to the business rules defined for user management.
+    ///     Gets or sets a value indicating whether the user is in ghost mode. A ghost is invisible to others (no online
+    ///     status, no activity traces) and can only browse the site as a customer; every action that changes state is
+    ///     denied until ghost mode is turned off.
     /// </summary>
-    /// <param name="domainEvent">
-    ///     The domain event to apply to the user aggregate. This parameter should be an instance of a class that implements
-    ///     the IDomainEvent interface and contains the necessary data to update the state of the user aggregate. The Apply
-    ///     method should handle different types of domain events related to the user aggregate, such as user creation, updates
-    ///     to authentication credentials, email changes, and associations with person entities, ensuring that the state of the
-    ///     user is consistent with the events that have occurred and that all operations on the user account adhere to the
-    ///     business rules defined for user management.
-    /// </param>
-    protected override void Apply(IDomainEvent domainEvent)
-    {
-        switch (domainEvent)
-        {
-            case UserCreatedEvent userCreatedEvent:
-                this.ApplyUserCreated(userCreatedEvent);
-                break;
-            case UserEmailVerificationRequestedEvent verificationRequestedEvent:
-                this.ApplyUserEmailVerificationRequested(verificationRequestedEvent);
-                break;
-            case UserEmailVerifiedEvent emailVerifiedEvent:
-                this.ApplyUserEmailVerified(emailVerifiedEvent);
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown event type: {domainEvent.GetType().Name}");
-        }
-    }
+    public bool IsGhostMode { get; set; }
 
     /// <summary>
-    ///     Applies a UserCreatedEvent to the aggregate state.
+    ///     Gets or sets the profile that is active right after the user signs in. Every user has a customer profile,
+    ///     so <see cref="ProfileType.Customer" /> is the default.
     /// </summary>
-    private void ApplyUserCreated(UserCreatedEvent @event)
-    {
-        this.AuthCredentials = new AuthCredentials(
-            @event.AggregateId,
-            @event.Username,
-            @event.PasswordHash,
-            @event.Email);
-    }
-
-    private void ApplyUserEmailVerificationRequested(UserEmailVerificationRequestedEvent @event)
-    {
-        if (this.AuthCredentials == null)
-        {
-            return;
-        }
-
-        this.AuthCredentials.PendingEmailVerificationTokenHash = @event.TokenHash;
-        this.AuthCredentials.PendingEmailVerificationExpiresAtUtc = @event.ExpiresAtUtc;
-    }
-
-    private void ApplyUserEmailVerified(UserEmailVerifiedEvent @event)
-    {
-        if (this.AuthCredentials == null)
-        {
-            return;
-        }
-
-        this.AuthCredentials.EmailVerifiedAtUtc = @event.OccurredOn;
-        this.AuthCredentials.PendingEmailVerificationTokenHash = null;
-        this.AuthCredentials.PendingEmailVerificationExpiresAtUtc = null;
-    }
+    public ProfileType DefaultProfile { get; set; } = ProfileType.Customer;
 }

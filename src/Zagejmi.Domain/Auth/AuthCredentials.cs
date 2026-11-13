@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-
-using Zagejmi.Domain.Abstractions;
 
 namespace Zagejmi.Domain.Auth;
 
@@ -13,22 +10,17 @@ namespace Zagejmi.Domain.Auth;
 ///     to best practices. The AuthCredentials should be treated as sensitive information and should be protected to
 ///     prevent unauthorized access, ensuring the security and integrity of user accounts within the system.
 /// </summary>
-public record AuthCredentials : ValueObject
+public record AuthCredentials
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="AuthCredentials" /> class with the specified unique identifier,
     ///     username, password hash, and email address. This constructor allows for the creation of a complete authentication
-    ///     record, ensuring that all necessary information is provided to manage user authentication effectively. The Id
+    ///     record, ensuring that all necessary information is provided to manage user authentication effectively. The ID
     ///     parameter serves as the primary key for the authentication record, while the UserName, PasswordHash, and Email
     ///     parameters provide essential details for user identification and communication. It is important to ensure that the
     ///     provided values adhere to validation rules (e.g., unique username and email) to maintain data integrity and
     ///     security within the authentication system.
     /// </summary>
-    /// <param name="id">
-    ///     The unique identifier for the authentication record, typically generated as a GUID to ensure
-    ///     uniqueness across different instances and systems. This parameter serves as the primary key for the Auth entity and
-    ///     is essential for tracking and managing authentication records effectively.
-    /// </param>
     /// <param name="userName">
     ///     The username associated with the authentication record, which serves as a unique identifier for
     ///     the user within the authentication system. This parameter is used for login and identification purposes, and it is
@@ -51,22 +43,37 @@ public record AuthCredentials : ValueObject
     ///     should be treated as a case-insensitive value to provide a better user experience and avoid issues with case
     ///     sensitivity during email-based operations.
     /// </param>
+    /// <param name="emailVerifiedAt">
+    ///     The timestamp indicating when the user's email address was verified. This parameter is used to track the
+    ///     verification status
+    ///     of the user's email address and is typically set when the user successfully verifies their email address through
+    ///     the
+    ///     verification process.
+    /// </param>
+    /// <param name="pendingEmailVerificationTokenHash">
+    ///     The hash of the token used for verifying the user's email address. This parameter is used to track the verification
+    ///     status
+    ///     of the user's email address and is typically set when the user requests an email verification.
+    /// </param>
+    /// <param name="pendingEmailVerificationExpiresAt">
+    ///     The timestamp indicating when the pending email verification token expires. This parameter is used to track the
+    ///     expiration
+    ///     of the verification token and is typically set when the user requests an email verification.
+    /// </param>
     public AuthCredentials(
-        Guid id,
         string userName,
         string passwordHash,
         string email,
-        DateTimeOffset? emailVerifiedAtUtc = null,
+        DateTimeOffset? emailVerifiedAt = null,
         string? pendingEmailVerificationTokenHash = null,
-        DateTimeOffset? pendingEmailVerificationExpiresAtUtc = null)
+        DateTimeOffset? pendingEmailVerificationExpiresAt = null)
     {
-        this.Id = id;
         this.UserName = userName;
         this.PasswordHash = passwordHash;
         this.Email = email;
-        this.EmailVerifiedAtUtc = emailVerifiedAtUtc;
+        this.EmailVerifiedAt = emailVerifiedAt;
         this.PendingEmailVerificationTokenHash = pendingEmailVerificationTokenHash;
-        this.PendingEmailVerificationExpiresAtUtc = pendingEmailVerificationExpiresAtUtc;
+        this.PendingEmailVerificationExpiresAt = pendingEmailVerificationExpiresAt;
     }
 
     /// <summary>
@@ -107,27 +114,32 @@ public record AuthCredentials : ValueObject
     /// </summary>
     public string Email { get; set; }
 
-    public DateTimeOffset? EmailVerifiedAtUtc { get; set; }
-
-    public string? PendingEmailVerificationTokenHash { get; set; }
-
-    public DateTimeOffset? PendingEmailVerificationExpiresAtUtc { get; set; }
+    /// <summary>
+    ///     Gets or sets the timestamp indicating when the user's email address was verified. The EmailVerifiedAt property is
+    ///     used to track the verification status of the user's email address and is typically set when the user successfully
+    ///     verifies their email address through the verification process. If the EmailVerifiedAt property is null, it
+    ///     indicates that the user's email address has not been verified yet. This property is essential for enforcing email
+    ///     verification policies and ensuring that users have confirmed their email addresses before accessing certain
+    ///     features or services within the system.
+    /// </summary>
+    public DateTimeOffset? EmailVerifiedAt { get; set; }
 
     /// <summary>
-    ///     Returns the atomic values that define the equality of this value object. This method is used by the base
-    ///     ValueObject class to implement equality checks and hashing. Each property that contributes to the identity of the
-    ///     value object should be returned in this method. The order of the values returned should be consistent, as it
-    ///     affects the equality comparison and hash code generation.
+    ///     Gets or sets the hash of the token used for verifying the user's email address. The
+    ///     PendingEmailVerificationTokenHash property is used to track the verification status of the user's email address and
+    ///     is typically set when the user requests an email verification. When the user clicks on the verification link in the
+    ///     email, the system compares the hash of the provided token with this stored hash to verify the user's email address.
+    ///     If the PendingEmailVerificationTokenHash property is null, it indicates that there is no pending email verification
+    ///     request for the user. This property is essential for managing the email verification process and ensuring that
+    ///     users can successfully verify their email addresses.
     /// </summary>
-    /// <returns>An enumerable of atomic values that define the equality of this value object.</returns>
-    protected override IEnumerable<object?> GetAtomicValues()
-    {
-        yield return this.Id;
-        yield return this.UserName;
-        yield return this.PasswordHash;
-        yield return this.Email;
-        yield return this.EmailVerifiedAtUtc;
-        yield return this.PendingEmailVerificationTokenHash;
-        yield return this.PendingEmailVerificationExpiresAtUtc;
-    }
+    public string? PendingEmailVerificationTokenHash { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the timestamp indicating when the pending email verification token expires. The
+    ///     PendingEmailVerificationExpiresAt property is used to manage the lifecycle of the email verification token and
+    ///     ensure that it is only valid for a specified period. This property is essential for maintaining the security of the
+    ///     email verification process and preventing the use of expired tokens.
+    /// </summary>
+    public DateTimeOffset? PendingEmailVerificationExpiresAt { get; set; }
 }

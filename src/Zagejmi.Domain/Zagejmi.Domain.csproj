@@ -5,9 +5,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Reference Include="SixLabors.ImageSharp">
-            <HintPath>..\..\..\..\..\..\home\bojacnik\.nuget\packages\sixlabors.imagesharp\3.1.12\lib\net6.0\SixLabors.ImageSharp.dll</HintPath>
-        </Reference>
+        <ProjectReference Include="..\Zagejmi.Shared\Zagejmi.Shared.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Abstractions\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Update="StyleCop.Analyzers" PrivateAssets="all" IncludeAssets="build; analyzers; buildtransitive"/>
     </ItemGroup>
 
 </Project>

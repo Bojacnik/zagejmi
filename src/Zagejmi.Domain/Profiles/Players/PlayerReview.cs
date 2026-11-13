@@ -1,8 +1,8 @@
 using System;
 
-namespace Zagejmi.Domain.Profile;
+namespace Zagejmi.Domain.Profiles.Players;
 
-public record AssociateReview
+public record PlayerReview
 {
     public string? Comment { get; set; }
 

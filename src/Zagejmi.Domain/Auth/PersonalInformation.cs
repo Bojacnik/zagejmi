@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-
-using Zagejmi.Domain.Abstractions;
 
 namespace Zagejmi.Domain.Auth;
 
@@ -9,7 +6,7 @@ namespace Zagejmi.Domain.Auth;
 ///     Represents the personal information of a profile, including contact details, name, birthdate, gender, and
 ///     verification status.
 /// </summary>
-public sealed record PersonalInformation : ValueObject
+public sealed record PersonalInformation
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="PersonalInformation" /> class with the specified mail address, first
@@ -44,7 +41,7 @@ public sealed record PersonalInformation : ValueObject
     public string? LastName { get; }
 
     /// <summary>
-    ///     Gets the username of the profile, which is used for identification and login purposes.
+    ///     Gets the birthdate of the profile, which can be used for personalization and demographic purposes.
     /// </summary>
     public DateOnly? BirthDay { get; }
 
@@ -52,23 +49,4 @@ public sealed record PersonalInformation : ValueObject
     ///     Gets the gender of the profile, which can be used for personalization and demographic purposes.
     /// </summary>
     public Gender Gender { get; }
-
-    /// <summary>
-    ///     Returns an enumeration of the atomic values that define the equality of this value object. In this case, the mail
-    ///     address, first name, last name, birth, and gender properties are used to determine equality, ensuring that two
-    ///     instances of <see cref="PersonalInformation" /> are considered equal if all of these properties have the same
-    ///     values. This allows for value-based equality comparisons, which is a key characteristic of value objects in
-    ///     domain-driven design.
-    /// </summary>
-    /// <returns>
-    ///     An enumeration of the atomic values that define the equality of this value object, which includes the mail
-    ///     address, first name, last name, birth, and gender properties.
-    /// </returns>
-    protected override IEnumerable<object?> GetAtomicValues()
-    {
-        yield return this.FirstName;
-        yield return this.LastName;
-        yield return this.BirthDay;
-        yield return this.Gender;
-    }
 }

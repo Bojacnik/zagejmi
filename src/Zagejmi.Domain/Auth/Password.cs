@@ -1,14 +1,10 @@
-﻿using System.Collections.Generic;
-
-using Zagejmi.Domain.Abstractions;
-
-namespace Zagejmi.Domain.Auth;
+﻿namespace Zagejmi.Domain.Auth;
 
 /// <summary>
 ///     Represents a user's password in the domain model. This value object encapsulates the securely hashed password along
 ///     with its associated salt and pepper values, ensuring that password handling adheres to security best practices.
 /// </summary>
-public record Password : ValueObject
+public record Password
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="Password" /> class with the specified hash and salt values. The pepper
@@ -53,20 +49,4 @@ public record Password : ValueObject
     ///     security by making it more difficult for attackers to crack passwords even if they gain access to the database.
     /// </summary>
     public string Pepper { get; }
-
-    /// <summary>
-    ///     Returns an enumeration of the atomic values that define the equality of this value object. In this case, the hash
-    ///     and salt values are used to determine equality, while the pepper is intentionally excluded to ensure it remains a
-    ///     secret and does not affect equality comparisons.
-    /// </summary>
-    /// <returns>
-    ///     >An enumeration of the atomic values that define the equality of this value object, which includes the hash
-    ///     and salt values but excludes the pepper to ensure it remains a secret and does not affect equality comparisons.
-    /// </returns>
-    protected override IEnumerable<object?> GetAtomicValues()
-    {
-        yield return this.Hash;
-        yield return this.Salt;
-        yield return this.Pepper;
-    }
 }

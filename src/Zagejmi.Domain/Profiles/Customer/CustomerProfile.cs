@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
 
-using SixLabors.ImageSharp;
+using Zagejmi.Domain.Profiles.Abstractions;
 
-using Zagejmi.Domain.Abstractions;
-using Zagejmi.Domain.Goin;
-
-namespace Zagejmi.Domain.Profile;
+namespace Zagejmi.Domain.Profiles.Customer;
 
 /// <summary>
 ///     Represents the profile of a customer, containing information such as the profile picture and subscriptions
@@ -21,10 +18,16 @@ namespace Zagejmi.Domain.Profile;
 ///     adhering to the principles of domain-driven design and ensuring that all business rules and invariants are
 ///     maintained throughout the lifecycle of the profile.
 /// </summary>
-public class CustomerProfile : Abstractions.Profile
+public class CustomerProfile : Profile
 {
-    internal CustomerProfile(Guid id)
-        : base(id)
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="CustomerProfile" /> class.
+    /// </summary>
+    /// <param name="id">The profile identifier.</param>
+    /// <param name="userId">The identifier of the owning user.</param>
+    /// <param name="displayName">The display name for the customer profile.</param>
+    public CustomerProfile(Guid id, Guid userId, string displayName)
+        : base(id, userId, displayName)
     {
     }
 
@@ -35,7 +38,7 @@ public class CustomerProfile : Abstractions.Profile
     ///     as a binary object in the database. The <see cref="ProfilePicture" /> property allows the application to retrieve
     ///     and display the customer's profile picture when needed, such as in user interfaces or profile views.
     /// </summary>
-    public Image? ProfilePicture { get; set; }
+    public Guid? ProfilePicture { get; set; }
 
     /// <summary>
     ///     Gets or sets the collection of subscriptions associated with the customer profile. Each subscription represents a
@@ -46,32 +49,5 @@ public class CustomerProfile : Abstractions.Profile
     ///     subscriptions can be added, removed, or updated as needed, and the aggregate root ensures that all operations on
     ///     the subscriptions are consistent with the business rules and domain logic of the application.
     /// </summary>
-    public Subscription[] Subscriptions { get; set; } = Array.Empty<Subscription>();
-
-    /// <summary>
-    ///     Applies the specified domain event to the customer profile aggregate. This method is responsible for handling
-    ///     the state changes and updates to the aggregate based on the event data. It ensures that all business rules and
-    ///     invariants are maintained during the application of the event. The method is called internally by the aggregate
-    ///     root when a domain event is raised, allowing the aggregate to react to changes in its state and maintain
-    ///     consistency with the domain model. The implementation of this method should include the necessary logic to update
-    ///     the properties of the customer profile based on the specific type of domain event being applied.
-    /// </summary>
-    /// <param name="domainEvent">
-    ///     The domain event to be applied to the customer profile aggregate. This parameter contains the
-    ///     data and context necessary for updating the state of the aggregate based on the event's information.
-    /// </param>
-    protected override void Apply(IDomainEvent domainEvent)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override Abstractions.Profile Create(Guid userId, string displayName, GoinWallet walletId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override Abstractions.Profile? FromHistory(Guid id, IReadOnlyList<IDomainEvent> history)
-    {
-        throw new NotImplementedException();
-    }
+    public List<Guid> Subscriptions { get; set; } = [];
 }

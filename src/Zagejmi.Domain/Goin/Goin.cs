@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-
-using Zagejmi.Domain.Abstractions;
 
 namespace Zagejmi.Domain.Goin;
 
@@ -9,7 +6,7 @@ namespace Zagejmi.Domain.Goin;
 ///     Represents a certain amount of Goin, the in-app currency used for transactions and rewards within the Zagejmi
 ///     ecosystem.
 /// </summary>
-public sealed record Goin : ValueObject
+public sealed record Goin
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="Goin" /> class with the specified amount.
@@ -30,19 +27,4 @@ public sealed record Goin : ValueObject
     ///     Gets the amount of Goin. This value is immutable and must be a non-negative decimal.
     /// </summary>
     public decimal Amount { get; init; }
-
-    /// <summary>
-    ///     Returns an enumerable of the atomic values that define the equality of this value object. In this case, it
-    ///     includes only the <see cref="Amount" /> property, as it is the sole defining characteristic of the Goin value
-    ///     object. This method is used by the base ValueObject class to implement equality and hashing based on the values of
-    ///     the properties that define the value object. By yielding the Amount property, we ensure that two Goin instances
-    ///     with the same amount are considered equal, while instances with different amounts are not. This method is essential
-    ///     for maintaining the integrity of value objects and ensuring that they behave correctly in collections and
-    ///     comparisons based on their defining properties.
-    /// </summary>
-    /// <returns>An enumerable of the atomic values that define the equality of this value object.</returns>
-    protected override IEnumerable<object?> GetAtomicValues()
-    {
-        yield return this.Amount;
-    }
 }

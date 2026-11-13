@@ -1,22 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
 
 namespace Zagejmi.Domain.Auth.Verification;
 
-public sealed record VerificationPersonal(Profile.Abstractions.Profile? Verifier, string Note)
+public sealed record VerificationPersonal(Guid Verifier, string Note)
     : Abstractions.Verification
 {
-    public readonly string? Note = Note;
-    public readonly Profile.Abstractions.Profile? Verifier = Verifier;
+    /// <summary>
+    ///     Gets the note associated with the verification personal record. This note provides additional context or
+    /// </summary>
+    public string? Note { get; } = Note;
 
-    protected override IEnumerable<object?> GetAtomicValues()
-    {
-        yield return this.Type;
-        yield return this.Verifier;
-        yield return this.Note;
-    }
-
-    public override (bool? Result, Failure? Error) Verify(params object?[] args)
-{
-    return (this.Verifier != null, null);
-}
+    /// <summary>
+    ///     Gets the unique identifier for the verifier associated with the verification personal record. This identifier is
+    ///     used to uniquely identify the verifier and is typically generated when the verification personal record is created.
+    /// </summary>
+    public Guid Verifier { get; } = Verifier;
 }
