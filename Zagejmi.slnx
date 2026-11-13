@@ -23,6 +23,8 @@
     <Project Path="src/Zagejmi.Shared/Zagejmi.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Zagejmi.Application.Tests/Zagejmi.Application.Tests.csproj" />
+    <Project Path="tests/Zagejmi.Domain.Tests/Zagejmi.Domain.Tests.csproj" />
     <Project Path="tests/Zagejmi.Infrastructure.Tests/Zagejmi.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>

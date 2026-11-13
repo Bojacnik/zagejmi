@@ -16,7 +16,7 @@ internal static class PlayerServiceRules
     /// <summary>
     ///     The highest allowed price in Goins.
     /// </summary>
-    public const decimal MaxPrice = 1_000_000m;
+    public const long MaxPrice = 1_000_000;
 
     /// <summary>
     ///     Normalizes and validates the editable fields of a service.
@@ -31,7 +31,7 @@ internal static class PlayerServiceRules
         string name,
         string? description,
         string? category,
-        decimal price,
+        long price,
         string? priceUnit)
     {
         string trimmedName = name.Trim();
@@ -59,9 +59,9 @@ internal static class PlayerServiceRules
             return Fail("Service.PriceUnit", $"Jednotka ceny může mít nejvýše {PlayerService.PriceUnitMaxLength} znaků.");
         }
 
-        if (price is < 0 or > MaxPrice || decimal.Round(price, 2) != price)
+        if (price is < 0 or > MaxPrice)
         {
-            return Fail("Service.Price", "Cena musí být mezi 0 a 1 000 000 Goinů (nejvýše na dvě desetinná místa).");
+            return Fail("Service.Price", "Cena musí být celé číslo od 0 do 1 000 000 Goinů.");
         }
 
         return new ServiceFields(trimmedName, trimmedDescription, trimmedCategory, price, trimmedPriceUnit);
@@ -84,6 +84,6 @@ internal static class PlayerServiceRules
 /// <param name="Name">The name.</param>
 /// <param name="Description">The description.</param>
 /// <param name="Category">The category, or <see langword="null" />.</param>
-/// <param name="Price">The price in Goins.</param>
+/// <param name="Price">The price in whole Goins.</param>
 /// <param name="PriceUnit">The price unit, or <see langword="null" />.</param>
-internal sealed record ServiceFields(string Name, string Description, string? Category, decimal Price, string? PriceUnit);
+internal sealed record ServiceFields(string Name, string Description, string? Category, long Price, string? PriceUnit);

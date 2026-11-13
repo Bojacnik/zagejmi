@@ -11,6 +11,8 @@ using Zagejmi.Application.Auth.Users.Abstractions;
 using Zagejmi.Application.Images;
 using Zagejmi.Application.Images.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Wallets;
+using Zagejmi.Application.Wallets.Abstractions;
 using Zagejmi.Infrastructure.Auth.AccessTokens.Repositories;
 using Zagejmi.Infrastructure.Auth.Passwords;
 using Zagejmi.Infrastructure.Auth.Users.Repositories;
@@ -18,6 +20,8 @@ using Zagejmi.Infrastructure.Images.Processing;
 using Zagejmi.Infrastructure.Images.Repositories;
 using Zagejmi.Infrastructure.Images.Storage;
 using Zagejmi.Infrastructure.Profiles.Repositories;
+using Zagejmi.Infrastructure.Wallets;
+using Zagejmi.Infrastructure.Wallets.Repositories;
 
 namespace Zagejmi.Infrastructure.Extensions;
 
@@ -66,6 +70,22 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
         services.AddScoped<ImageUploader>();
         services.AddScoped<IImageBlobRepository, ImageBlobRepository>();
+
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds the Goin ledger, the wallet rules (configuration section <c>Wallets</c>) and the background job that
+    ///     expires bonus Goins.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The application configuration.</param>
+    /// <returns>The updated service collection.</returns>
+    public static IServiceCollection AddZagejmiWallets(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<WalletOptions>(configuration.GetSection(WalletOptions.SectionName));
+        services.AddScoped<IWalletRepository, WalletRepository>();
+        services.AddHostedService<BonusExpiryService>();
 
         return services;
     }

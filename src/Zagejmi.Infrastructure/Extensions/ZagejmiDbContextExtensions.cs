@@ -9,6 +9,7 @@ using Zagejmi.Infrastructure.Auth.AccessTokens.Ctx;
 using Zagejmi.Infrastructure.Auth.Users.Ctx;
 using Zagejmi.Infrastructure.Images.Ctx;
 using Zagejmi.Infrastructure.Profiles.Ctx;
+using Zagejmi.Infrastructure.Wallets.Ctx;
 
 namespace Zagejmi.Infrastructure.Extensions;
 
@@ -20,7 +21,7 @@ namespace Zagejmi.Infrastructure.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    ///     Adds the Zagejmi database contexts (ZagejmiUsersContext, ProfilesContext, AccessTokensContext, and BlobImagesContext) to the service
+    ///     Adds the Zagejmi database contexts (ZagejmiUsersContext, ProfilesContext, AccessTokensContext, BlobImagesContext and WalletsContext) to the service
     ///     collection using the specified configuration to retrieve the connection string. Each context is configured to use
     ///     PostgreSQL with a specific migrations history table for each context. This method ensures that the database
     ///     contexts are properly registered and available for dependency injection throughout the application.
@@ -52,6 +53,10 @@ public static class ServiceCollectionExtensions
             connectionString,
             npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "blob_images")));
 
+        services.AddDbContextFactory<WalletsContext>(options => options.UseNpgsql(
+            connectionString,
+            npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "wallets")));
+
         return services;
     }
 
@@ -69,5 +74,6 @@ public static class ServiceCollectionExtensions
         await provider.GetRequiredService<ProfilesContext>().Database.MigrateAsync();
         await provider.GetRequiredService<AccessTokensContext>().Database.MigrateAsync();
         await provider.GetRequiredService<BlobImagesContext>().Database.MigrateAsync();
+        await provider.GetRequiredService<WalletsContext>().Database.MigrateAsync();
     }
 }

@@ -35,7 +35,7 @@ public record PlayerServiceRecord
     /// <summary>
     ///     Gets or sets the price in Goins.
     /// </summary>
-    public decimal Price { get; set; }
+    public long Price { get; set; }
 
     /// <summary>
     ///     Gets or sets what the price is for, e.g. "/ hodina".

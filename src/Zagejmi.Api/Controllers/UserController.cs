@@ -38,7 +38,7 @@ namespace Zagejmi.Api.Controllers;
 public class UserController : ControllerBase
 {
     private static readonly ErrorDetail InvalidPrice =
-        ErrorDetail.Validation("Service.Price", "Cena musí být číslo, např. 199.50.");
+        ErrorDetail.Validation("Service.Price", "Cena musí být celé číslo Goinů, např. 199.");
 
     private readonly CreateUserHandler createUserHandler;
     private readonly DeleteUserHandler deleteUserHandler;
@@ -335,7 +335,7 @@ public class UserController : ControllerBase
             return denied;
         }
 
-        if (!TryParsePrice(request.Price, out decimal price))
+        if (!TryParsePrice(request.Price, out long price))
         {
             return this.Error(InvalidPrice);
         }
@@ -379,7 +379,7 @@ public class UserController : ControllerBase
             return denied;
         }
 
-        if (!TryParsePrice(request.Price, out decimal price))
+        if (!TryParsePrice(request.Price, out long price))
         {
             return this.Error(InvalidPrice);
         }
@@ -427,13 +427,13 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    ///     Parses a price sent by an API client. The app culture is cs-CZ, but API clients send "199.50".
+    ///     Parses a price sent by an API client: a whole number of Goins (e.g. "199"). An empty value means 0.
     /// </summary>
-    private static bool TryParsePrice(string? value, out decimal price)
+    private static bool TryParsePrice(string? value, out long price)
     {
-        price = 0m;
+        price = 0;
         return string.IsNullOrWhiteSpace(value)
-               || decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out price);
+               || long.TryParse(value.Trim(), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out price);
     }
 
     /// <summary>
@@ -535,7 +535,7 @@ public class UserController : ControllerBase
         public string? Category { get; set; }
 
         /// <summary>
-        ///     Gets or sets the price in Goins, with a dot as decimal separator (e.g. "199.50").
+        ///     Gets or sets the price in whole Goins (e.g. "199").
         /// </summary>
         public string? Price { get; set; }
 
@@ -576,7 +576,7 @@ public class UserController : ControllerBase
         public string? Category { get; set; }
 
         /// <summary>
-        ///     Gets or sets the price in Goins, with a dot as decimal separator (e.g. "199.50").
+        ///     Gets or sets the price in whole Goins (e.g. "199").
         /// </summary>
         public string? Price { get; set; }
 

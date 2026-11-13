@@ -48,9 +48,9 @@ public record PlayerService
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
-    ///     Gets or sets the price in Goins.
+    ///     Gets or sets the price in whole Goins.
     /// </summary>
-    public decimal Price { get; set; }
+    public long Price { get; set; }
 
     /// <summary>
     ///     Gets or sets what the price is for, e.g. "/ hodina". Optional.

@@ -1,9 +1,11 @@
 @page "/login"
 @using Zagejmi.Application.Auth.Users.LoginUser
+@using Zagejmi.Application.Auth.Users.ResendVerificationEmail
 @using Zagejmi.Shared
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
 @inject LoginUserHandler LoginHandler
+@inject ResendVerificationEmailHandler ResendVerificationHandler
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="w-full h-full flex flex-col justify-center items-center p-4">
@@ -39,7 +41,7 @@
         <div class="space-y-4">
             <div>
                 <label for="useridentifier" class="sr-only">Uživatelské jméno nebo e-mail</label>
-                <input @bind="userIdentifier" type="text" id="useridentifier"
+                <input @bind="userIdentifier" @bind:event="oninput" type="text" id="useridentifier"
                        placeholder="Uživatelské jméno nebo e-mail" required
                        class="w-full px-4 py-3 bg-gray-200 border-2 border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all"/>
             </div>
@@ -59,7 +61,7 @@
             </button>
             <button type="button"
                     @onclick="ResendVerificationEmail"
-                    disabled="@isResending || string.IsNullOrWhiteSpace(userIdentifier)"
+                    disabled="@(isResending || string.IsNullOrWhiteSpace(userIdentifier))"
                     class="w-full px-4 py-3 font-semibold text-white bg-primary-700 hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 @if (isResending)
                 {
@@ -116,9 +118,6 @@
             normalizedReturnUrl = ReturnUrl;
         }
 
-        showResendVerification = !string.IsNullOrWhiteSpace(ErrorMessage)
-                                 && ErrorMessage.Contains("not verified", StringComparison.OrdinalIgnoreCase);
-
         if (Registered != 1) return;
 
         registeredMessage = "Účet je vytvořený. Ověřte svůj e-mail a pak se přihlaste.";
@@ -130,7 +129,33 @@
 
     private async Task ResendVerificationEmail()
     {
-        
+        if (isResending || string.IsNullOrWhiteSpace(userIdentifier))
+        {
+            return;
+        }
+
+        isResending = true;
+        ErrorMessage = null;
+        resendMessage = string.Empty;
+
+        try
+        {
+            Result result = await ResendVerificationHandler.Handle(new ResendVerificationEmailCommand(userIdentifier));
+            if (result.IsFailure)
+            {
+                ErrorMessage = result.Error!.Message;
+                showResendVerification = result.Error.Code == LoginUserHandler.EmailNotVerified.Code;
+                return;
+            }
+
+            // Deliberately the same text whether or not the account exists (see ResendVerificationEmailHandler).
+            resendMessage = "Pokud účet existuje a ještě není ověřený, poslali jsme na jeho e-mail nový odkaz. "
+                            + "Nový odkaz lze poslat nejdříve za minutu.";
+        }
+        finally
+        {
+            isResending = false;
+        }
     }
 
     private async Task HandleLoginAsync()
@@ -143,6 +168,7 @@
         ErrorMessage = null;
         resendMessage = string.Empty;
         registeredMessage = null;
+        showResendVerification = false;
         isSubmitting = true;
 
         try

@@ -36,7 +36,7 @@ public sealed record ProfileStatistics
         ulong timeWatching,
         uint chatsSent,
         ulong czkSpent,
-        ulong goingSpent,
+        long goingSpent,
         ulong transactionsAmount,
         ulong giftsSent)
     {
@@ -119,7 +119,7 @@ public sealed record ProfileStatistics
     ///     on their spending patterns. It may also contribute to the user's overall profile statistics, influencing their
     ///     total score, level, and other metrics related to their engagement and performance within the application.
     /// </summary>
-    public decimal GoinSpent { get; set; }
+    public long GoinSpent { get; set; }
 
     /// <summary>
     ///     Gets or sets the total amount of transactions made by the user. This metric reflects the user's overall financial

@@ -41,7 +41,7 @@ public sealed record PlayerServiceItem(
     Guid ServiceId,
     string Name,
     string Description,
-    decimal Price,
+    long Price,
     string? PriceUnit,
     string? Category,
     Guid? ImageId,

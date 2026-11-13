@@ -104,7 +104,7 @@ public sealed class ServiceDto
     /// <summary>
     ///     Gets or sets the service price.
     /// </summary>
-    public decimal Price { get; set; }
+    public long Price { get; set; }
 
     /// <summary>
     ///     Gets or sets the price suffix (for example "/ hour").

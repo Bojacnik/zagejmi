@@ -1,0 +1,264 @@
+@page "/wallet"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Zagejmi.Api.Localization
+@using Zagejmi.Application.Wallets.Abstractions
+@using Zagejmi.Application.Wallets.GetWallet
+@using Zagejmi.Application.Wallets.GetWalletHistory
+@using Zagejmi.Shared
+@rendermode InteractiveServer
+@attribute [Authorize]
+@implements IDisposable
+
+@inject ActiveProfileService ActiveProfiles
+@inject WalletStateService Wallet
+@inject GetWalletHistoryHandler GetWalletHistoryHandler
+
+<PageTitle>Peněženka – Zagejmi</PageTitle>
+
+<div class="space-y-8">
+    <header class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-text-default">Peněženka</h1>
+            <p class="text-text-muted mt-1">
+                Profil @CzechLabels.Role(ActiveProfiles.Active, ActiveProfiles.GrammaticalGender).
+                @if (ActiveProfiles.CanSwitch)
+                {
+                    <span>Peněženku druhého profilu uvidíte po přepnutí profilu nahoře.</span>
+                }
+            </p>
+        </div>
+    </header>
+
+    @if (Wallet.Current is not { } wallet)
+    {
+        <p class="text-text-muted">Načítáme peněženku…</p>
+    }
+    else
+    {
+        <section class="grid gap-4 sm:grid-cols-3">
+            <div class="sm:col-span-1 p-6 rounded-xl bg-primary-900 border border-amber-500/40 shadow-lg shadow-black/30">
+                <p class="text-sm text-text-muted">Zůstatek</p>
+                <p class="mt-2 flex items-center gap-2 text-3xl font-bold text-amber-200">
+                    <GoinIcon Class="w-8 h-8"/>
+                    @CzechLabels.Goins(wallet.Balance)
+                </p>
+            </div>
+
+            @if (wallet.Profile == ProfileType.Customer)
+            {
+                <div class="p-6 rounded-xl bg-primary-900 border border-accent-700/50">
+                    <p class="text-sm text-text-muted">Zaplacené Goiny</p>
+                    <p class="mt-2 text-2xl font-bold text-text-default">@CzechLabels.Goins(wallet.PaidBalance)</p>
+                    <p class="mt-1 text-xs text-text-muted">Nevyprší. Lze je utratit za služby hráčů.</p>
+                </div>
+                <div class="p-6 rounded-xl bg-primary-900 border border-accent-700/50">
+                    <p class="text-sm text-text-muted">Bonusové Goiny</p>
+                    <p class="mt-2 text-2xl font-bold text-text-default">@CzechLabels.Goins(wallet.BonusBalance)</p>
+                    <p class="mt-1 text-xs text-text-muted">Utrácejí se jako první. Každý bonus má vlastní platnost.</p>
+                </div>
+            }
+            else
+            {
+                <div class="sm:col-span-2 p-6 rounded-xl bg-primary-900 border border-accent-700/50">
+                    <p class="text-sm text-text-muted">Výdělky</p>
+                    <p class="mt-2 text-text-default">
+                        Sem přicházejí Goiny za vaše dokončené služby (po odečtení poplatku platformy).
+                        Výběr na účet a převod do vaší zákaznické peněženky připravujeme.
+                    </p>
+                </div>
+            }
+        </section>
+
+        @if (wallet.ActiveBonuses.Count > 0)
+        {
+            <section class="p-6 rounded-xl bg-primary-900 border border-accent-700/50">
+                <h2 class="text-lg font-semibold text-text-default">Platnost bonusů</h2>
+                <ul class="mt-3 divide-y divide-accent-800/40">
+                    @foreach (BonusBatchView bonus in wallet.ActiveBonuses)
+                    {
+                        <li class="flex items-center justify-between gap-4 py-2 text-sm">
+                            <span class="text-text-default">@bonus.Reason</span>
+                            <span class="text-text-muted whitespace-nowrap">
+                                @CzechLabels.Goins(bonus.Remaining), vyprší @CzechLabels.InPragueTime(bonus.ExpiresAt).ToString("d. M. yyyy")
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+
+        <section class="p-6 rounded-xl bg-primary-900 border border-accent-700/50">
+            <h2 class="text-lg font-semibold text-text-default">Historie</h2>
+
+            @if (errorMessage is not null)
+            {
+                <p class="mt-3 text-sm text-red-400">@errorMessage</p>
+            }
+            else if (history.Count == 0 && !isLoadingHistory)
+            {
+                <p class="mt-3 text-sm text-text-muted">Zatím tu nejsou žádné pohyby.</p>
+            }
+            else
+            {
+                <ul class="mt-3 divide-y divide-accent-800/40">
+                    @foreach (WalletHistoryItem item in history)
+                    {
+                        <li class="flex items-start justify-between gap-4 py-3">
+                            <div>
+                                <p class="text-text-default">@item.Description</p>
+                                <p class="text-xs text-text-muted">@CzechLabels.InPragueTime(item.CreatedAt).ToString("d. M. yyyy H:mm")</p>
+                            </div>
+                            <div class="text-right whitespace-nowrap">
+                                <p class="font-semibold @(item.TotalChange >= 0 ? "text-emerald-400" : "text-red-400")">
+                                    @Signed(item.TotalChange)
+                                </p>
+                                @if (wallet.Profile == ProfileType.Customer && item.PaidChange != 0 && item.BonusChange != 0)
+                                {
+                                    <p class="text-xs text-text-muted">
+                                        zaplacené @Signed(item.PaidChange), bonus @Signed(item.BonusChange)
+                                    </p>
+                                }
+                                else if (wallet.Profile == ProfileType.Customer && item.BonusChange != 0)
+                                {
+                                    <p class="text-xs text-text-muted">bonus</p>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+
+            @if (hasMore)
+            {
+                <button type="button" @onclick="LoadMoreAsync" disabled="@isLoadingHistory"
+                        class="mt-4 px-4 py-2 text-sm font-semibold text-text-default bg-primary-800 hover:bg-primary-700 border border-accent-700 rounded-lg transition-colors disabled:opacity-50">
+                    @(isLoadingHistory ? "Načítáme…" : "Načíst starší")
+                </button>
+            }
+        </section>
+    }
+</div>
+
+@code {
+
+    private const int PageSize = 20;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private readonly List<WalletHistoryItem> history = [];
+    private Guid userId;
+    private ProfileType loadedProfile;
+    private int historyVersion;
+    private bool hasMore;
+    private bool isLoadingHistory;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ActiveProfiles.Changed += OnProfilesChanged;
+        Wallet.Changed += OnWalletChanged;
+
+        if (AuthenticationState is null)
+        {
+            return;
+        }
+
+        AuthenticationState state = await AuthenticationState;
+        string? claim = state.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? state.User.FindFirstValue("sub");
+        if (!Guid.TryParse(claim, out userId))
+        {
+            return;
+        }
+
+        await ActiveProfiles.LoadAsync(userId);
+        await Wallet.RefreshAsync();
+        await ReloadHistoryAsync();
+    }
+
+    private async Task ReloadHistoryAsync()
+    {
+        // A new version makes any page still loading for the previous profile discard its result.
+        historyVersion++;
+        history.Clear();
+        hasMore = false;
+        isLoadingHistory = false;
+        loadedProfile = ActiveProfiles.Active;
+        await LoadPageAsync();
+    }
+
+    private Task LoadMoreAsync()
+    {
+        return isLoadingHistory ? Task.CompletedTask : LoadPageAsync();
+    }
+
+    private async Task LoadPageAsync()
+    {
+        if (userId == Guid.Empty)
+        {
+            return;
+        }
+
+        int version = historyVersion;
+        isLoadingHistory = true;
+        errorMessage = null;
+
+        try
+        {
+            Result<WalletHistoryPage> page = await GetWalletHistoryHandler.Handle(
+                new GetWalletHistoryQuery(userId, loadedProfile, history.Count, PageSize));
+
+            if (version != historyVersion)
+            {
+                return;
+            }
+
+            if (page.IsFailure)
+            {
+                errorMessage = page.Error!.Message;
+                return;
+            }
+
+            history.AddRange(page.Value.Items);
+            hasMore = page.Value.HasMore;
+        }
+        finally
+        {
+            if (version == historyVersion)
+            {
+                isLoadingHistory = false;
+            }
+        }
+    }
+
+    private void OnProfilesChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            if (ActiveProfiles.Active != loadedProfile)
+            {
+                await ReloadHistoryAsync();
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private void OnWalletChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private static string Signed(long amount)
+    {
+        return amount > 0 ? $"+{CzechLabels.Goins(amount)}" : CzechLabels.Goins(amount);
+    }
+
+    public void Dispose()
+    {
+        ActiveProfiles.Changed -= OnProfilesChanged;
+        Wallet.Changed -= OnWalletChanged;
+    }
+
+}

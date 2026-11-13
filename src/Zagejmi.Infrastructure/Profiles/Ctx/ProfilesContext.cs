@@ -83,7 +83,6 @@ public class ProfilesContext : DbContext
             entity.Property(e => e.Category).HasMaxLength(PlayerService.CategoryMaxLength);
             entity.Property(e => e.PriceUnit).HasMaxLength(PlayerService.PriceUnitMaxLength);
             entity.Property(e => e.PromoTag).HasMaxLength(50);
-            entity.Property(e => e.Price).HasPrecision(12, 2);
 
             // Services disappear together with the player profile.
             entity.HasOne<PlayerProfileRecord>()
