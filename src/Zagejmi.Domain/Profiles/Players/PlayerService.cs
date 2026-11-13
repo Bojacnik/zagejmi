@@ -1,5 +1,7 @@
 using System;
 
+using Zagejmi.Domain.Games;
+
 namespace Zagejmi.Domain.Profiles.Players;
 
 /// <summary>
@@ -26,6 +28,11 @@ public record PlayerService
     ///     The longest allowed price unit.
     /// </summary>
     public const int PriceUnitMaxLength = 20;
+
+    /// <summary>
+    ///     The longest allowed game or rank key.
+    /// </summary>
+    public const int GameKeyMaxLength = 50;
 
     /// <summary>
     ///     Gets the service ID.
@@ -73,9 +80,26 @@ public record PlayerService
     public bool IsAvailable { get; set; } = true;
 
     /// <summary>
-    ///     Gets or sets an optional category (e.g. a game).
+    ///     Gets or sets an optional category (e.g. "Koučink").
     /// </summary>
     public string? Category { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the game the service is for (a <see cref="GameCatalog" /> key), or <see langword="null" /> when the
+    ///     service is not tied to a game.
+    /// </summary>
+    public string? GameKey { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the player's rank in <see cref="GameKey" /> (a <see cref="GameRank" /> key), if they set one.
+    /// </summary>
+    public string? RankKey { get; set; }
+
+    /// <summary>
+    ///     Gets or sets whether the player offers competitive play, casual play or both. <see cref="PlayStyles.None" />
+    ///     only when <see cref="GameKey" /> is <see langword="null" />.
+    /// </summary>
+    public PlayStyles PlayStyles { get; set; }
 
     /// <summary>
     ///     Gets or sets the average rating.

@@ -222,6 +222,9 @@ public sealed class ProfileRepository : IProfileRepository
             Name = service.Name,
             Description = service.Description,
             Category = service.Category,
+            GameKey = service.GameKey,
+            RankKey = service.RankKey,
+            PlayStyles = service.PlayStyles,
             Price = service.Price,
             PriceUnit = service.PriceUnit,
             PromoTag = service.PromoTag,
@@ -257,6 +260,9 @@ public sealed class ProfileRepository : IProfileRepository
                     .SetProperty(r => r.Name, service.Name)
                     .SetProperty(r => r.Description, service.Description)
                     .SetProperty(r => r.Category, service.Category)
+                    .SetProperty(r => r.GameKey, service.GameKey)
+                    .SetProperty(r => r.RankKey, service.RankKey)
+                    .SetProperty(r => r.PlayStyles, service.PlayStyles)
                     .SetProperty(r => r.Price, service.Price)
                     .SetProperty(r => r.PriceUnit, service.PriceUnit)
                     .SetProperty(r => r.PromoTag, service.PromoTag)
@@ -289,6 +295,9 @@ public sealed class ProfileRepository : IProfileRepository
             Name = record.Name,
             Description = record.Description,
             Category = record.Category,
+            GameKey = record.GameKey,
+            RankKey = record.RankKey,
+            PlayStyles = record.PlayStyles,
             Price = record.Price,
             PriceUnit = record.PriceUnit,
             PromoTag = record.PromoTag,

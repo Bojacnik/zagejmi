@@ -2,6 +2,7 @@ using System;
 using System.IO;
 
 using Zagejmi.Application.Images.Abstractions;
+using Zagejmi.Domain.Games;
 
 namespace Zagejmi.Application.Profiles.UpdatePlayerService;
 
@@ -31,9 +32,25 @@ public sealed class UpdatePlayerServiceCommand
     public string? Description { get; init; }
 
     /// <summary>
-    ///     Gets an optional category (e.g. a game).
+    ///     Gets an optional category (e.g. "Koučink").
     /// </summary>
     public string? Category { get; init; }
+
+    /// <summary>
+    ///     Gets the game the service is for (a <see cref="Zagejmi.Domain.Games.GameCatalog" /> key), or
+    ///     <see langword="null" /> when it is not tied to a game.
+    /// </summary>
+    public string? GameKey { get; init; }
+
+    /// <summary>
+    ///     Gets the player's rank in the game (a rank key), or <see langword="null" />.
+    /// </summary>
+    public string? RankKey { get; init; }
+
+    /// <summary>
+    ///     Gets whether the player offers competitive play, casual play or both. Required when a game is set.
+    /// </summary>
+    public PlayStyles PlayStyles { get; init; }
 
     /// <summary>
     ///     Gets the price in whole Goins.

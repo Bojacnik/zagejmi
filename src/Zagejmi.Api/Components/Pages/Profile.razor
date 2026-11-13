@@ -290,6 +290,10 @@
                                                         <div class="flex-1 min-w-0">
                                                             <div class="font-semibold truncate">@svc.Name</div>
                                                             <div class="text-xs text-text-muted">@(string.IsNullOrWhiteSpace(svc.Category) ? "" : svc.Category + " • ")@CzechLabels.Goins(svc.Price) @svc.PriceSuffix</div>
+                                                            @if (CzechLabels.ServiceGame(svc.GameKey, svc.RankKey, svc.PlayStyles) is { } gameLine)
+                                                            {
+                                                                <div class="text-xs text-accent-300 truncate">@gameLine</div>
+                                                            }
 
                                                             @if (deletingServiceId == svc.ServiceId)
                                                             {
@@ -527,6 +531,46 @@
                            placeholder="Za jednotku (nepovinné, např. / hodina)" maxlength="20"
                            class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default"/>
                 </div>
+
+                @* Game, rank and play style come from the curated GameCatalog so the Služby filters can rely on them. *@
+                <div class="mt-3 grid sm:grid-cols-2 gap-3">
+                    <select @bind="newService.GameKey" @bind:after="OnServiceGameChanged" aria-label="Hra"
+                            class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default">
+                        <option value="">Bez konkrétní hry</option>
+                        @foreach (Game game in GameCatalog.All)
+                        {
+                            <option value="@game.Key">@game.Name</option>
+                        }
+                    </select>
+                    @if (GameCatalog.Find(newService.GameKey) is { HasRanks: true } selectedGame)
+                    {
+                        <select @bind="newService.RankKey" aria-label="Rank"
+                                class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default">
+                            <option value="">Rank (nepovinné)</option>
+                            @foreach (GameRank rank in selectedGame.Ranks)
+                            {
+                                <option value="@rank.Key">@rank.Name</option>
+                            }
+                        </select>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(newService.GameKey))
+                {
+                    <div class="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Styl hraní">
+                        <span class="text-sm text-text-muted">Hraji:</span>
+                        <button type="button" @onclick="() => TogglePlayStyle(PlayStyles.Competitive)"
+                                aria-pressed="@newService.PlayStyles.HasFlag(PlayStyles.Competitive)"
+                                class="@PresetChipClass(newService.PlayStyles.HasFlag(PlayStyles.Competitive))">
+                            Kompetitivně
+                        </button>
+                        <button type="button" @onclick="() => TogglePlayStyle(PlayStyles.Casual)"
+                                aria-pressed="@newService.PlayStyles.HasFlag(PlayStyles.Casual)"
+                                class="@PresetChipClass(newService.PlayStyles.HasFlag(PlayStyles.Casual))">
+                            Pro zábavu
+                        </button>
+                    </div>
+                }
 
                 @* Price unit presets; the text field above stays editable for anything custom. *@
                 <div class="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Předvolby jednotky ceny">
@@ -1085,6 +1129,18 @@ else if (cropTarget is { } target)
                && minutes is >= 1 and <= MaxServiceTimeLimitMinutes;
     }
 
+    private void OnServiceGameChanged()
+    {
+        // Ranks belong to one game, so a new game starts without a rank; offer both play styles by default.
+        newService.RankKey = string.Empty;
+        newService.PlayStyles = string.IsNullOrEmpty(newService.GameKey) ? PlayStyles.None : PlayStyles.Both;
+    }
+
+    private void TogglePlayStyle(PlayStyles style)
+    {
+        newService.PlayStyles ^= style;
+    }
+
     private static string PresetChipClass(bool active) => active
         ? "px-3 py-1 rounded-full text-sm font-semibold bg-accent-600 text-white transition-colors"
         : "px-3 py-1 rounded-full text-sm font-semibold bg-primary-800 hover:bg-primary-700 text-text-default transition-colors";
@@ -1096,6 +1152,12 @@ else if (cropTarget is { } target)
         public string Description { get; set; } = string.Empty;
 
         public string Category { get; set; } = string.Empty;
+
+        public string GameKey { get; set; } = string.Empty;
+
+        public string RankKey { get; set; } = string.Empty;
+
+        public PlayStyles PlayStyles { get; set; }
 
         public string PriceString { get; set; } = string.Empty;
 
@@ -1403,6 +1465,9 @@ else if (cropTarget is { } target)
                     Name = svc.Name,
                     Description = svc.Description,
                     Category = svc.Category,
+                    GameKey = svc.GameKey,
+                    RankKey = svc.RankKey,
+                    PlayStyles = svc.PlayStyles,
                     Price = svc.Price,
                     PriceSuffix = svc.PriceUnit,
                     ImageUrl = ImageUrls.For(svc.ImageId),
@@ -1459,6 +1524,9 @@ else if (cropTarget is { } target)
                     Name = newService.Name,
                     Description = newService.Description,
                     Category = newService.Category,
+                    GameKey = newService.GameKey,
+                    RankKey = newService.RankKey,
+                    PlayStyles = newService.PlayStyles,
                     Price = price,
                     PriceUnit = newService.PriceSuffix,
                     NewImage = image,
@@ -1471,6 +1539,9 @@ else if (cropTarget is { } target)
                     Name = newService.Name,
                     Description = newService.Description,
                     Category = newService.Category,
+                    GameKey = newService.GameKey,
+                    RankKey = newService.RankKey,
+                    PlayStyles = newService.PlayStyles,
                     Price = price,
                     PriceUnit = newService.PriceSuffix,
                     Image = image,
@@ -1507,6 +1578,9 @@ else if (cropTarget is { } target)
         {
             Name = service.Name,
             Category = service.Category ?? string.Empty,
+            GameKey = service.GameKey ?? string.Empty,
+            RankKey = service.RankKey ?? string.Empty,
+            PlayStyles = service.PlayStyles,
             PriceString = service.Price.ToString(CultureInfo.InvariantCulture),
             PriceSuffix = service.PriceSuffix ?? string.Empty,
             Description = service.Description ?? string.Empty,

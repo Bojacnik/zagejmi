@@ -56,7 +56,10 @@ public sealed class AddPlayerServiceHandler : IHandlerRequest<AddPlayerServiceCo
             request.Description,
             request.Category,
             request.Price,
-            request.PriceUnit);
+            request.PriceUnit,
+            request.GameKey,
+            request.RankKey,
+            request.PlayStyles);
 
         if (fields.IsFailure)
         {
@@ -115,6 +118,9 @@ public sealed class AddPlayerServiceHandler : IHandlerRequest<AddPlayerServiceCo
                 Name = fields.Value.Name,
                 Description = fields.Value.Description,
                 Category = fields.Value.Category,
+                GameKey = fields.Value.Game.GameKey,
+                RankKey = fields.Value.Game.RankKey,
+                PlayStyles = fields.Value.Game.PlayStyles,
                 Price = fields.Value.Price,
                 PriceUnit = fields.Value.PriceUnit,
                 ImageId = imageId,

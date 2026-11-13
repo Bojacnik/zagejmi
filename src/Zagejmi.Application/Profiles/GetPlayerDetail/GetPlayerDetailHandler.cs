@@ -66,6 +66,9 @@ public sealed class GetPlayerDetailHandler : IHandlerRequest<Guid, Result<Player
                     s.Price,
                     s.PriceUnit,
                     s.Category,
+                    s.GameKey,
+                    s.RankKey,
+                    s.PlayStyles,
                     s.ImageId,
                     s.IsAvailable))
                 .ToList());

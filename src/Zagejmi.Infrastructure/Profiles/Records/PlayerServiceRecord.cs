@@ -1,5 +1,7 @@
 using System;
 
+using Zagejmi.Domain.Games;
+
 namespace Zagejmi.Infrastructure.Profiles.Records;
 
 /// <summary>
@@ -31,6 +33,21 @@ public record PlayerServiceRecord
     ///     Gets or sets an optional category.
     /// </summary>
     public string? Category { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the game key from <see cref="GameCatalog" />, or <see langword="null" />.
+    /// </summary>
+    public string? GameKey { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the player's rank key in the game, or <see langword="null" />.
+    /// </summary>
+    public string? RankKey { get; set; }
+
+    /// <summary>
+    ///     Gets or sets competitive, casual or both.
+    /// </summary>
+    public PlayStyles PlayStyles { get; set; }
 
     /// <summary>
     ///     Gets or sets the price in Goins.

@@ -51,7 +51,10 @@ public sealed class UpdatePlayerServiceHandler : IHandlerRequest<UpdatePlayerSer
             request.Description,
             request.Category,
             request.Price,
-            request.PriceUnit);
+            request.PriceUnit,
+            request.GameKey,
+            request.RankKey,
+            request.PlayStyles);
 
         if (fields.IsFailure)
         {
@@ -96,6 +99,9 @@ public sealed class UpdatePlayerServiceHandler : IHandlerRequest<UpdatePlayerSer
         service.Name = fields.Value.Name;
         service.Description = fields.Value.Description;
         service.Category = fields.Value.Category;
+        service.GameKey = fields.Value.Game.GameKey;
+        service.RankKey = fields.Value.Game.RankKey;
+        service.PlayStyles = fields.Value.Game.PlayStyles;
         service.Price = fields.Value.Price;
         service.PriceUnit = fields.Value.PriceUnit;
 

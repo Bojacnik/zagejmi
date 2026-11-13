@@ -109,6 +109,10 @@
                                     {
                                         <span class="text-xs font-medium text-accent-300">@service.Category</span>
                                     }
+                                    @if (CzechLabels.ServiceGame(service.GameKey, service.RankKey, service.PlayStyles) is { } gameLine)
+                                    {
+                                        <p class="text-xs text-text-muted">@gameLine</p>
+                                    }
                                     <h4 class="font-bold text-text-default">@service.Name</h4>
                                     <p class="text-sm text-text-muted line-clamp-3 mt-1">@service.Description</p>
                                     <div class="mt-3 flex items-center justify-between">

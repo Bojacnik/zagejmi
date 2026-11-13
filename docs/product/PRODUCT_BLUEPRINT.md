@@ -2,7 +2,7 @@
 
 > **Typ dokumentu:** živý produktový discovery dokument  
 > **Stav:** průběžný brainstorming; nejde o finální technickou specifikaci  
-> **Poslední zachycení:** 2026-11-13  
+> **Poslední zachycení:** 2026-11-13 (doplněn audit kódu a rozhodnutí k MARKET-003)  
 > **Zdroj:** produktové rozhovory s vlastníkem Zagejmi
 
 ## 1. Produktový záměr
@@ -167,6 +167,16 @@ Požadavky používají stavy definované v [README](./README.md).
   - rank pro konkrétní hru,
   - kompetitivní versus nekompetitivní hraní.
 - Filtry se mají dát kombinovat a fungovat v obou režimech zobrazení (rozdělený / společný seznam).
+- **Rozhodnuto (2026-11-13):**
+  - Hry a jejich ranky se vybírají z **předem připraveného seznamu** se známými ranky, nikoliv volným textem.
+  - Kompetitivní / nekompetitivní hraní si **nastavuje Player u každé služby**: může nabízet jen jedno, nebo obojí.
+- **Implementováno (podklad pro filtry):** katalog her a ranků (`GameCatalog`), služba má hru, rank a styl hraní (kompetitivně / pro zábavu / obojí). Samotné filtry a sekce Služby zatím chybí.
+- **Návrh (`PROPOSED`, k potvrzení):**
+  - Rank u služby znamená rank hráče v dané hře. Rozsah ranků pro služby typu boosting zatím není řešen.
+  - Ranky jsou pouze úrovně (tiers) bez divizí (např. „Gold“, ne „Gold 2“).
+  - Rank je nepovinný; hra bez ranků (např. Minecraft) rank nemá.
+  - Služba nemusí být vázaná na hru (např. pokec); pak nemá rank ani styl hraní.
+  - Počáteční seznam her a ranků je potřeba zkontrolovat a doplnit.
 
 ### MARKET-004 – Samostatné služby a jejich atributy
 - **Stav:** `CONFIRMED` (potřeba samostatné sekce Služby), `OPEN` (detail katalogu)
@@ -307,18 +317,35 @@ Požadavky používají stavy definované v [README](./README.md).
 
 ---
 
-## 15. Otevřená rozhodnutí
+## 15. Audit kódu (2026-11-13)
+
+Porovnání tohoto dokumentu s kódem na větvi `master`. Část požadavků je hotová dříve, než je dokument popisoval:
+
+| Požadavek | Stav v kódu |
+|---|---|
+| AUTH-002 Ověření e-mailu | Hotovo: odkaz po registraci, opakované zaslání, login vyžaduje ověřený e-mail. |
+| REWARD-001 Signup bonus | Hotovo: 50 Bonus Goins po ověření e-mailu (konfigurovatelné). |
+| WALLET-002 Paid vs. Bonus | Hotovo: každý zápis v ledgeru je označen Paid/Bonus. |
+| WALLET-003 Bonus CAP | Částečně: systémový účet `PromoBudget`; bonusy expirují po 90 dnech a zbytek se vrací do rozpočtu. |
+| PAY-003 Central Wallet | Částečně: existují systémové účty `Escrow`, `TopUpClearing`, `PayoutClearing`, zatím se nepoužívají. |
+| PRIVACY-001 Ghost Mode | Částečně: přepínač a serverový filtr blokující akce v Ghost Mode. |
+| AUTH-004 / PROFILE-001 | Jeden účet může mít Player i Customer profil a přepínat mezi nimi (odpovídá na otevřenou otázku 1). |
+| MARKET-003 | Částečně: katalog her a ranků, styl hraní u služby (viz MARKET-003). |
+
+Zatím chybí: objednávky, sekce Služby a filtry, rozdělení výsledků podle pohlaví, nákup Goinů (Stripe), cashout.
+
+## 16. Otevřená rozhodnutí
 
 Následující body vyžadují další produktový brainstorming nebo technickou/právní analýzu:
 
-1. Může jeden účet později používat Player i Customer profil?
+1. ~~Může jeden účet později používat Player i Customer profil?~~ Ano, už je implementováno (viz audit).
 2. Které funkce vyžadují pouze login a které také ověřený e-mail?
 3. Jak přesně se Ghost Mode projeví v profilu, presence, chatu, objednávkách a recenzích?
 4. Má být Ghost Mode globální přepínač, nebo jej půjde použít jen pro konkrétní objednávku/platbu?
 5. Jak se zachází s jinou nebo neuvedenou hodnotou pohlaví ve výchozím rozděleném zobrazení?
 6. Jaké faktory a váhy budou určovat relevanci hráčů a služeb?
 7. Podle čeho se počítá leaderboard?
-8. Jaké jsou přesné atributy Service a jaké kategorie budou podporované?
+8. Jaké jsou přesné atributy Service a jaké kategorie budou podporované? (Hra, rank a styl hraní jsou rozhodnuté; kategorie zůstávají otevřené.)
 9. Jaká pravidla platí pro útratu Paid versus Bonus Goins?
 10. Jak se nastaví, čerpá a doplňuje Bonus CAP?
 11. Jak se budou řešit refundy, chargebacky, spory a záporné zůstatky?
@@ -330,7 +357,7 @@ Následující body vyžadují další produktový brainstorming nebo technickou
 17. Jak se budou definovat měsíční průměrné výdělky a reklamovanost v Analytics?
 18. Jak bude vypadat první veřejná a placená release fáze a co do ní nepatří?
 
-## 16. Doporučený další postup
+## 17. Doporučený další postup
 
 1. Pokračovat v brainstormingu a průběžně doplňovat tento dokument.
 2. U každého nového požadavku přidělit ID a stav.
