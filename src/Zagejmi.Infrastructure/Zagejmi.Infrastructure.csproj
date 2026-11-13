@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
         <ProjectReference Include="..\Zagejmi.Shared\Zagejmi.Shared.csproj"/>
@@ -13,24 +13,15 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Hosting"/>
-        <PackageReference Include="Microsoft.Extensions.Options"/>
-        <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens"/>
         <PackageReference Include="Minio"/>
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt"/>
-        <PackageReference Include="Microsoft.IdentityModel.Tokens"/>
         <PackageReference Include="Konscious.Security.Cryptography.Argon2"/>
         <PackageReference Include="SkiaSharp"/>
         <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies"/>
-        <PackageReference Update="StyleCop.Analyzers" PrivateAssets="all" IncludeAssets="build; analyzers; buildtransitive"/>
     </ItemGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="Zagejmi.Infrastructure.Tests"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Migrations\"/>
     </ItemGroup>
 
 </Project>

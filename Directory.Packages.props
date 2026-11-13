@@ -6,31 +6,21 @@
         <!-- ASP.NET Core -->
         <PackageVersion Include="Microsoft.AspNetCore.App.Internal.Assets" Version="11.0.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="11.0.0"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="11.0.0"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="11.0.0"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="11.0.0"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="11.0.0"/>
         <!-- Entity Framework Core -->
         <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="11.0.0"/>
         <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="11.0.0"/>
         <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="11.0.0"/>
-        <!-- Database Providers -->
-        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.0.0"/>
-        <PackageVersion Include="Microsoft.Extensions.Options" Version="11.0.0"/>
-        <PackageVersion Include="Microsoft.NET.ILLink.Tasks" Version="11.0.0"/>
-        <PackageVersion Include="Microsoft.NET.Sdk.WebAssembly.Pack" Version="11.0.0"/>
+        <!-- Storage -->
         <PackageVersion Include="Minio" Version="7.0.0"/>
+        <!-- Database provider. No stable 11.0 build yet; NU1608 (EF version constraint) is expected until it ships. -->
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="11.0.0-rc.3"/>
         <!-- Identity & Security -->
         <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0"/>
         <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0"/>
         <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.23.0"/>
         <PackageVersion Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1"/>
-        <!-- Extensions & Utilities -->
-        <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0"/>
-        <!-- Resilience -->
-        <PackageVersion Include="Polly" Version="8.9.1"/>
+        <!-- Hosting -->
+        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.0.0"/>
         <!-- Image Processing -->
         <!-- Skia parses untrusted uploads in native code: keep these two current and in lockstep. -->
         <PackageVersion Include="SkiaSharp" Version="4.156.0"/>

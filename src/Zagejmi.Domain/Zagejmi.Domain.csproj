@@ -1,19 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <RootNamespace>Zagejmi.Domain</RootNamespace>
-    </PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
         <ProjectReference Include="..\Zagejmi.Shared\Zagejmi.Shared.csproj"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Abstractions\"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Update="StyleCop.Analyzers" PrivateAssets="all" IncludeAssets="build; analyzers; buildtransitive"/>
     </ItemGroup>
 
 </Project>
