@@ -26,7 +26,7 @@ public record ServiceReview
     public DateTimeOffset Date { get; set; }
 
     /// <summary>
-    ///     Gets or sets the rating given by the reviewer for the service. This is represented as a decimal value, allowing for
+    ///     Gets or sets the rating given by the reviewer for the service. This is represented as a decimal value, allowing for fractional ratings.
     /// </summary>
     public decimal Rating { get; set; }
 }

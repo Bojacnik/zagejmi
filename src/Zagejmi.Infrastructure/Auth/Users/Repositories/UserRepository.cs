@@ -7,8 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 using Zagejmi.Application.Auth.Users.Abstractions;
 using Zagejmi.Domain.Auth;
+using Zagejmi.Infrastructure.Auth.Users.Ctx;
+using Zagejmi.Infrastructure.Auth.Users.Records;
 
-namespace Zagejmi.Infrastructure.Auth.Users;
+namespace Zagejmi.Infrastructure.Auth.Users.Repositories;
 
 /// <summary>
 ///     Represents the repository for managing user entities in the application.
@@ -113,9 +115,12 @@ public class UserRepository : IUserRepository
         string normalizedUserName = userName.ToLowerInvariant();
         string normalizedEmail = email.ToLowerInvariant();
 
+        // Runs in PostgreSQL as lower(column); Npgsql cannot translate ToLowerInvariant or StringComparison overloads.
+#pragma warning disable CA1304, CA1311, CA1862
         return await context.Users.AnyAsync(
             x => x.UserName.ToLower() == normalizedUserName || x.Email.ToLower() == normalizedEmail,
             cancellationToken);
+#pragma warning restore CA1304, CA1311, CA1862
     }
 
     /// <inheritdoc />
@@ -127,11 +132,14 @@ public class UserRepository : IUserRepository
 
         string normalized = userNameOrEmail.Trim().ToLowerInvariant();
 
+        // Runs in PostgreSQL as lower(column); Npgsql cannot translate ToLowerInvariant or StringComparison overloads.
+#pragma warning disable CA1304, CA1311, CA1862
         UserRecord? record = await context.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(
                 x => x.UserName.ToLower() == normalized || x.Email.ToLower() == normalized,
                 cancellationToken);
+#pragma warning restore CA1304, CA1311, CA1862
 
         return record is null ? null : ToDomain(record);
     }

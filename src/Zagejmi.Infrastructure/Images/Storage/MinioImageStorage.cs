@@ -8,11 +8,15 @@ using Minio.DataModel.Args;
 
 using Zagejmi.Application.Images.Abstractions;
 
-namespace Zagejmi.Infrastructure.Minio;
+namespace Zagejmi.Infrastructure.Images.Storage;
 
 /// <summary>
 ///     Represents an implementation of the <see cref="IImageStorage" /> interface that uses MinIO for image storage.
 /// </summary>
+/// <remarks>
+///     All images live in a single bucket; the object key encodes the owner and purpose,
+///     e.g. <c>profiles/JohnDoe/public/banner.webp</c>.
+/// </remarks>
 internal sealed class MinioImageStorage : IImageStorage
 {
     private const string BucketName = "images";
@@ -65,14 +69,6 @@ internal sealed class MinioImageStorage : IImageStorage
                 .WithExpiry((int)expiry.TotalSeconds));
     }
 
-    /// <summary>
-    ///     Uploads an image to the MinIO storage with the specified key, content, and content type.
-    /// </summary>
-    /// <param name="key">The key for the image to be uploaded.</param>
-    /// <param name="content">The content of the image to be uploaded.</param>
-    /// <param name="contentType">The content type of the image to be uploaded.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The key of the uploaded image.</returns>
     /// <inheritdoc />
     public async Task<Stream> OpenReadAsync(string key, CancellationToken cancellationToken)
     {

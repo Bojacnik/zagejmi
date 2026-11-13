@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 using Zagejmi.Infrastructure.Auth.AccessTokens.Records;
 
@@ -30,7 +30,6 @@ public class AccessTokensContext : DbContext
     ///     Gets or sets revoked JWT IDs for access-token blacklist checks.
     /// </summary>
     public DbSet<RevokedAccessTokenRecord> RevokedAccessTokens { get; set; }
-
 
     /// <summary>
     ///     Configures the model for the DbContext, including the necessary configurations for the Outbox pattern.

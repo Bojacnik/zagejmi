@@ -8,7 +8,7 @@ using Zagejmi.Application.Auth.Tokens;
 using Zagejmi.Infrastructure.Auth.AccessTokens.Ctx;
 using Zagejmi.Infrastructure.Auth.AccessTokens.Records;
 
-namespace Zagejmi.Infrastructure.Auth.AccessTokens;
+namespace Zagejmi.Infrastructure.Auth.AccessTokens.Repositories;
 
 /// <summary>
 ///     EF Core implementation of <see cref="IRefreshTokenRepository" />.

@@ -1,42 +1,54 @@
 ﻿# Zagejmi
 
+## Struktura řešení
+
+| Projekt | Obsah |
+|---|---|
+| `src/Zagejmi.Shared` | `Result`/`ErrorDetail` a společné abstrakce bez závislostí |
+| `src/Zagejmi.Domain` | Doménový model (uživatelé, profily hráčů a zákazníků, peněženky) |
+| `src/Zagejmi.Application` | Use-casy rozdělené po funkcích (`Auth/Users/CreateUser`, `Profiles/SearchPlayers`, …) a rozhraní, která implementuje infrastruktura (`*/Abstractions`) |
+| `src/Zagejmi.Infrastructure` | EF Core (PostgreSQL), MinIO, SMTP, Argon2, SkiaSharp. Každá funkce má `Ctx/`, `Records/`, `Repositories/`; migrace jsou v `Migrations/<Context>/` |
+| `src/Zagejmi.Api` | ASP.NET Core API (`Controllers/`) a Blazor Server UI (`Components/`) |
+| `tests/` | Testy (xUnit v3 na Microsoft.Testing.Platform) |
+
+Závislosti vedou pouze dovnitř: Api → Infrastructure → Application → Domain → Shared.
+
 ## Build
 
-### Doporučené vývojové prostředí
-JetBrains Rider
+Požadavky: .NET SDK podle `global.json`, Node.js (kvůli TailwindCSS), Docker pro PostgreSQL/MinIO.
+Doporučené prostředí je JetBrains Rider; spouštěcí konfigurace jsou v `.run/`.
 
-### Jak na build
-Při naklonování repozitáře a otevření řešení Zagejmi.sln přes
-vývojové prostředí Rider, se mají automaticky dogenerovat profily pro build,
-debugging a spuštění. Nicméně je třeba pomocí nástroje NPM doinstalovat TailwindCSS, to by měl JetBrains Rider sám navrhnout,
-a pokud se na zařízení nachází nástroj NPM například z NodeJS balíčku (https://nodejs.org/en), tak by měl uspět a nainstalovat do projektu Zagejmi.Server do složky node_modules všechny potřebné moduly.
-Rider by měl by také doinstalovat všechny nutné balíčky z NuGet, které jsou potřeba pro jednotlivé projekty v řešení.
-Rider typicky vybere špatný profil pro spuštění, stačí změnil profil ze Zagejmi.Client na Zagejmi: http který nejdřív spustí server a pak i klienta na debugging.
+```bash
+dotnet tool restore
+(cd src/Zagejmi.Api && npm ci && npm run css:build)   # vygeneruje wwwroot/styles.css
+docker compose up -d postgresdb minio                 # nebo konfigurace "Docker Infra only"
+dotnet build Zagejmi.slnx
+dotnet test --solution Zagejmi.slnx
+```
+
+Při vývoji UI stačí nechat běžet `npm run css:watch`.
+
+### Migrace
+
+Každý DbContext má vlastní migrace:
+
+```bash
+dotnet ef migrations add <Nazev> --context ProfilesContext \
+  -p src/Zagejmi.Infrastructure -s src/Zagejmi.Api -o Migrations/Profiles
+```
+
+## Konvence
+
+- Styl kódu je popsaný v `.editorconfig` a `stylecop.json` a vynucuje se při buildu (StyleCop + .NET analyzéry).
+  Build by měl projít bez varování.
+- Verze NuGet balíčků se spravují centrálně v `Directory.Packages.props`.
+- Namespace odpovídá cestě ke složce. Nové use-casy patří do `Application/<Funkce>/<UseCase>/` jako dvojice
+  `*Command`/`*Query` + `*Handler`.
+- Veřejné typy a členy mají XML dokumentaci.
 
 ## Využité technologie
 
-### Framework
-ASP.NET
-
-### Frontendové knihovny
-TailwindCSS
-
-### Backendové knihovny
-.NET
-
-Serilog
-
-AnyMapper
-
-MassTransit.Mediatr
-
-
-
-### Další využité technologie
-LINQ
-
-### Plánované do budoucna
-Po ujasnění hlavní struktury projektu, otestování core logiky pomocí NUnit nebo lépe xUnit
+ASP.NET Core, Blazor Server, Entity Framework Core + PostgreSQL, MinIO, SkiaSharp, TailwindCSS, xUnit v3.
 
 ## SMTP relay (produkce)
 
@@ -49,16 +61,8 @@ cp .env.example .env
 docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d --build
 ```
 
-Debug stack s Mailpit (read/write/infrastructure jsou v base compose, debug přidává Mailpit a debug SMTP override):
+Debug stack s Mailpit (databáze, MinIO a API jsou v base compose, debug přidává Mailpit a debug SMTP override):
 
 ```bash
 docker compose -f docker-compose.yaml -f docker-compose.debug.yaml up -d --build
 ```
-
-
-
-
-
-
-
-

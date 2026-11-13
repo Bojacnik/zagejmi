@@ -8,12 +8,20 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
+# Tailwind output (wwwroot/styles.css) is gitignored, so build it here instead of relying on a local copy.
+FROM node:22-alpine AS css
+WORKDIR /css
+COPY ["src/Zagejmi.Api/package.json", "src/Zagejmi.Api/package-lock.json", "./"]
+RUN npm ci
+COPY src/Zagejmi.Api/ ./
+RUN npm run css:build
+
 FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /repo
 
 # Restore first (cached layer): repo-wide build props + every project file.
-COPY ["global.json", "Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props", "stylecop.json", "./"]
+COPY ["global.json", ".editorconfig", "Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props", "stylecop.json", "./"]
 COPY ["src/Zagejmi.Shared/Zagejmi.Shared.csproj", "src/Zagejmi.Shared/"]
 COPY ["src/Zagejmi.Domain/Zagejmi.Domain.csproj", "src/Zagejmi.Domain/"]
 COPY ["src/Zagejmi.Application/Zagejmi.Application.csproj", "src/Zagejmi.Application/"]
@@ -22,6 +30,7 @@ COPY ["src/Zagejmi.Api/Zagejmi.Api.csproj", "src/Zagejmi.Api/"]
 RUN dotnet restore "src/Zagejmi.Api/Zagejmi.Api.csproj"
 
 COPY src/ src/
+COPY --from=css /css/wwwroot/styles.css src/Zagejmi.Api/wwwroot/styles.css
 RUN dotnet build "src/Zagejmi.Api/Zagejmi.Api.csproj" -c $BUILD_CONFIGURATION --no-restore
 
 FROM build AS publish

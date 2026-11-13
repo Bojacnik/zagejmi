@@ -11,12 +11,12 @@ using Zagejmi.Application.Auth.Users.Abstractions;
 using Zagejmi.Application.Images;
 using Zagejmi.Application.Images.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
-using Zagejmi.Infrastructure.Auth.AccessTokens;
+using Zagejmi.Infrastructure.Auth.AccessTokens.Repositories;
 using Zagejmi.Infrastructure.Auth.Passwords;
-using Zagejmi.Infrastructure.Auth.Users;
+using Zagejmi.Infrastructure.Auth.Users.Repositories;
 using Zagejmi.Infrastructure.Images.Processing;
 using Zagejmi.Infrastructure.Images.Repositories;
-using Zagejmi.Infrastructure.Minio;
+using Zagejmi.Infrastructure.Images.Storage;
 using Zagejmi.Infrastructure.Profiles.Repositories;
 
 namespace Zagejmi.Infrastructure.Extensions;

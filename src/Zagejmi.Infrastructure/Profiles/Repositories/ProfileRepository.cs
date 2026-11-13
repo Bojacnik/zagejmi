@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 using Zagejmi.Application.Profiles.Abstractions;
-using Zagejmi.Domain.Profiles.Customer;
+using Zagejmi.Domain.Profiles.Customers;
 using Zagejmi.Domain.Profiles.Players;
 using Zagejmi.Infrastructure.Profiles.Ctx;
 using Zagejmi.Infrastructure.Profiles.Records;
@@ -61,7 +61,6 @@ public sealed class ProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc />
-    /// <inheritdoc />
     public async Task<PlayerProfile?> GetPlayerByIdAsync(Guid profileId, CancellationToken cancellationToken = default)
     {
         await using ProfilesContext context = await this.contextFactory.CreateDbContextAsync(cancellationToken);
@@ -100,6 +99,7 @@ public sealed class ProfileRepository : IProfileRepository
         return records.Select(ToDomain).ToList();
     }
 
+    /// <inheritdoc />
     public async Task<bool> IsDisplayNameTakenAsync(string displayName, CancellationToken cancellationToken = default)
     {
         await using ProfilesContext context = await this.contextFactory.CreateDbContextAsync(cancellationToken);

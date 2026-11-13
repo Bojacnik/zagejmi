@@ -27,14 +27,9 @@ public sealed class ImageBlobRepository : IImageBlobRepository
     private readonly IDbContextFactory<BlobImagesContext> contextFactory;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ImageBlobRepository" /> class with the specified database context.
+    ///     Initializes a new instance of the <see cref="ImageBlobRepository" /> class with the specified context factory.
     /// </summary>
-    /// <param name="context">
-    ///     The <see cref="BlobImagesContext" /> instance used for database operations related to image
-    ///     blobs. This context provides access to the underlying database and is responsible for managing the entity sets and
-    ///     tracking changes to the image blob records. It is essential for performing CRUD operations on the image blob data
-    ///     in a consistent and efficient manner.
-    /// </param>
+    /// <param name="contextFactory">Factory for <see cref="BlobImagesContext" /> instances.</param>
     public ImageBlobRepository(IDbContextFactory<BlobImagesContext> contextFactory)
     {
         this.contextFactory = contextFactory;

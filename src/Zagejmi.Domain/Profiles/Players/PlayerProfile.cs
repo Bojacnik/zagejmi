@@ -42,9 +42,8 @@ public sealed class PlayerProfile : Profile
     public Guid? BannerPicture { get; set; }
 
     /// <summary>
-    ///     Gets or sets the background picture associated with the player's services, represented as an
-    ///     <see cref="Image" />
-    ///     object. This property holds the visual representation of the player's background picture for their services,
+    ///     Gets or sets the background picture associated with the player's services, referenced by the id of
+    ///     its stored image. This property holds the visual representation of the player's background picture for their services,
     ///     which can be used for display purposes in the application. The background picture is typically a larger image that
     ///     serves as a backdrop for the player's services, providing additional visual context and branding. The
     ///     <see cref="BackgroundServicesPicture" /> property allows the application to retrieve and display the player's

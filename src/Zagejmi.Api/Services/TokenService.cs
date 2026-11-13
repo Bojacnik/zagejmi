@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -36,12 +36,14 @@ public class TokenService : ITokenService
         this.configuration = configuration;
     }
 
+    /// <inheritdoc />
     public string GenerateRefreshToken()
     {
         byte[] randomBytes = RandomNumberGenerator.GetBytes(64);
         return Convert.ToBase64String(randomBytes);
     }
 
+    /// <inheritdoc />
     public string HashRefreshToken(string refreshToken)
     {
         byte[] input = Encoding.UTF8.GetBytes(refreshToken);
@@ -49,6 +51,7 @@ public class TokenService : ITokenService
         return Convert.ToHexString(hash);
     }
 
+    /// <inheritdoc />
     public bool TryGetUserId(string jwtToken, out Guid userId)
     {
         userId = Guid.Empty;
@@ -97,33 +100,6 @@ public class TokenService : ITokenService
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    public bool TryGetJwtId(string jwtToken, out string jwtId)
-    {
-        jwtId = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(jwtToken))
-        {
-            return false;
-        }
-
-        try
-        {
-            JwtSecurityToken token = new JwtSecurityTokenHandler().ReadJwtToken(jwtToken);
-            string? jti = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
-            if (string.IsNullOrWhiteSpace(jti))
-            {
-                return false;
-            }
-
-            jwtId = jti;
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
     }
 
     /// <inheritdoc />

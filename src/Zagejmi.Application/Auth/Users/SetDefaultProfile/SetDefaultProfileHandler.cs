@@ -54,11 +54,10 @@ public sealed class SetDefaultProfileHandler : IHandlerRequest<SetDefaultProfile
         if (request.Profile == ProfileType.Player
             && await this.profileRepository.GetPlayerByUserIdAsync(user.Id, cancellationToken) is null)
         {
-            return Result.Failure(ErrorDetail.Validation(
-                "User.DefaultProfileMissing",
-                user.GrammaticalGender == GrammaticalGender.Feminine
-                    ? "Nejdříve si vytvořte profil hráčky."
-                    : "Nejdříve si vytvořte profil hráče."));
+            string message = user.GrammaticalGender == GrammaticalGender.Feminine
+                ? "Nejdříve si vytvořte profil hráčky."
+                : "Nejdříve si vytvořte profil hráče.";
+            return Result.Failure(ErrorDetail.Validation("User.DefaultProfileMissing", message));
         }
 
         if (user.DefaultProfile != request.Profile)

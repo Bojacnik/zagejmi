@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Zagejmi.Infrastructure.Auth.AccessTokens.Ctx;
-using Zagejmi.Infrastructure.Auth.Users;
+using Zagejmi.Infrastructure.Auth.Users.Ctx;
 using Zagejmi.Infrastructure.Images.Ctx;
 using Zagejmi.Infrastructure.Profiles.Ctx;
 
@@ -36,7 +36,6 @@ public static class ServiceCollectionExtensions
         // components (top bar, page, popup) query at the same time. Repositories create a short-lived context per
         // operation from these factories. AddDbContextFactory also registers each context as scoped for the
         // migrations and the JWT revocation check.
-
         services.AddDbContextFactory<ZagejmiUsersContext>(options => options.UseNpgsql(
             connectionString,
             npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "users")));

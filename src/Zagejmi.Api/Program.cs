@@ -45,6 +45,7 @@ public static class Program
     ///     The main method that configures and runs the web application.
     /// </summary>
     /// <param name="args">The command-line arguments passed to the application.</param>
+    /// <returns>A task that completes when the application shuts down.</returns>
     public static async Task Main(string[] args)
     {
         const string myAllowSpecificOrigins = "_myAllowSpecificOrigins";
@@ -193,6 +194,7 @@ public static class Program
 
         // Map static assets and the Blazor UI
         app.MapStaticAssets();
+
         // The JWT lives in browser storage, so the server cannot see it on a full page load. [Authorize] on a page
         // would otherwise turn every reload/forceLoad of e.g. /profile into an empty 401. Pages are protected by
         // AuthorizeRouteView + RedirectToLogin once the interactive circuit can read the token; API controllers keep

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using Zagejmi.Infrastructure.Auth.Users;
+using Zagejmi.Infrastructure.Auth.Users.Ctx;
 
 #nullable disable
 
@@ -28,7 +28,7 @@ partial class ZagejmiUsersContextModelSnapshot : ModelSnapshot
 
         NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-        modelBuilder.Entity("Zagejmi.Infrastructure.Auth.Users.UserRecord", b =>
+        modelBuilder.Entity("Zagejmi.Infrastructure.Auth.Users.Records.UserRecord", b =>
             {
                 b.Property<Guid>("Id")
                     .HasColumnType("uuid");

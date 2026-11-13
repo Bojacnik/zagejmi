@@ -1,4 +1,6 @@
-﻿namespace Zagejmi.Shared;
+using System;
+
+namespace Zagejmi.Shared;
 
 /// <summary>
 ///     Represents the result of an operation, which can either be successful or failed.
@@ -112,6 +114,10 @@ public sealed class Result<T> : Result
             ? field!
             : throw new InvalidOperationException("Cannot access value of a failed result.");
 
+    /// <summary>
+    ///     Wraps a value in a successful <see cref="Result{T}" />.
+    /// </summary>
+    /// <param name="value">The value to wrap.</param>
     public static implicit operator Result<T>(T value)
     {
         return Success(value);
@@ -132,7 +138,7 @@ public sealed class Result<T> : Result
     /// </summary>
     /// <param name="errorDetail">The error details.</param>
     /// <returns>A failed <see cref="Result{T}" /> instance.</returns>
-    public new static Result<T> Failure(ErrorDetail errorDetail)
+    public static new Result<T> Failure(ErrorDetail errorDetail)
     {
         return new Result<T>(default, false, errorDetail);
     }

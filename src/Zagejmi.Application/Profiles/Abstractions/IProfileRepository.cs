@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Zagejmi.Domain.Profiles.Customer;
+using Zagejmi.Domain.Profiles.Customers;
 using Zagejmi.Domain.Profiles.Players;
 
 namespace Zagejmi.Application.Profiles.Abstractions;
