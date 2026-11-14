@@ -3,8 +3,9 @@ using System;
 namespace Zagejmi.Domain.Profiles.Players;
 
 /// <summary>
-///     A customer's review of a player: 1–5 whole stars and an optional text. A customer profile reviews each player at
-///     most once and can change or remove the review later.
+///     A customer's recommendation of a player (doporučení): 1–5 whole stars and an optional text. A customer profile
+///     can recommend each player once, after at least one completed order with them, and can change or remove it later.
+///     Reviews of single orders are <see cref="ServiceReview" />s.
 /// </summary>
 public sealed record PlayerReview
 {

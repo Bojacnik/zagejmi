@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using Zagejmi.Application.Abstractions;
 using Zagejmi.Application.Auth.Users.Abstractions;
+using Zagejmi.Application.Orders.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
 using Zagejmi.Application.Profiles.Reviews.Abstractions;
 using Zagejmi.Domain.Auth;
@@ -22,6 +23,7 @@ public sealed class GetPlayerReviewsHandler : IHandlerRequest<GetPlayerReviewsQu
     private readonly IUserRepository userRepository;
     private readonly IProfileRepository profileRepository;
     private readonly IPlayerReviewRepository reviewRepository;
+    private readonly IOrderRepository orderRepository;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="GetPlayerReviewsHandler" /> class.
@@ -29,14 +31,17 @@ public sealed class GetPlayerReviewsHandler : IHandlerRequest<GetPlayerReviewsQu
     /// <param name="userRepository">The user repository.</param>
     /// <param name="profileRepository">The profile repository.</param>
     /// <param name="reviewRepository">The review repository.</param>
+    /// <param name="orderRepository">The order repository (a recommendation needs a completed order).</param>
     public GetPlayerReviewsHandler(
         IUserRepository userRepository,
         IProfileRepository profileRepository,
-        IPlayerReviewRepository reviewRepository)
+        IPlayerReviewRepository reviewRepository,
+        IOrderRepository orderRepository)
     {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
         this.reviewRepository = reviewRepository;
+        this.orderRepository = orderRepository;
     }
 
     /// <inheritdoc />
@@ -97,14 +102,23 @@ public sealed class GetPlayerReviewsHandler : IHandlerRequest<GetPlayerReviewsQu
             return (ReviewEligibility.OwnProfile, null);
         }
 
-        // A ghost may still have written a review before turning ghost mode on; show it, but read-only.
-        PlayerReviewItem? mine = null;
-        if (await this.profileRepository.GetCustomerByUserIdAsync(user.Id, cancellationToken) is { } customer
-            && await this.reviewRepository.GetAsync(player.Id, customer.Id, cancellationToken) is { } review)
+        CustomerProfile? customer = await this.profileRepository.GetCustomerByUserIdAsync(user.Id, cancellationToken);
+        if (customer is null)
         {
-            mine = ToItem(review, customer);
+            return (ReviewEligibility.NoCompletedOrder, null);
         }
 
-        return (user.IsGhostMode ? ReviewEligibility.GhostMode : ReviewEligibility.CanReview, mine);
+        // A ghost may still have written a recommendation before turning ghost mode on; show it, but read-only.
+        PlayerReviewItem? mine = await this.reviewRepository.GetAsync(player.Id, customer.Id, cancellationToken) is { } review
+            ? ToItem(review, customer)
+            : null;
+        if (user.IsGhostMode)
+        {
+            return (ReviewEligibility.GhostMode, mine);
+        }
+
+        return await this.orderRepository.HasReviewableOrderAsync(customer.Id, player.Id, cancellationToken)
+            ? (ReviewEligibility.CanReview, mine)
+            : (ReviewEligibility.NoCompletedOrder, mine);
     }
 }

@@ -4,8 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Options;
+
 using Zagejmi.Application.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Profiles.Reviews;
+using Zagejmi.Application.Profiles.Reviews.Abstractions;
 using Zagejmi.Domain.Games;
 using Zagejmi.Shared;
 
@@ -17,14 +21,23 @@ namespace Zagejmi.Application.Profiles.SearchServices;
 public sealed class SearchServicesHandler : IHandlerRequest<SearchServicesQuery, Result<PagedResult<ServiceListItem>>>
 {
     private readonly IProfileRepository profileRepository;
+    private readonly IServiceReviewRepository reviewRepository;
+    private readonly ReviewOptions reviewOptions;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SearchServicesHandler" /> class.
     /// </summary>
     /// <param name="profileRepository">The profile repository.</param>
-    public SearchServicesHandler(IProfileRepository profileRepository)
+    /// <param name="reviewRepository">The service review repository (averages on the cards).</param>
+    /// <param name="reviewOptions">When an average is shown.</param>
+    public SearchServicesHandler(
+        IProfileRepository profileRepository,
+        IServiceReviewRepository reviewRepository,
+        IOptions<ReviewOptions> reviewOptions)
     {
         this.profileRepository = profileRepository;
+        this.reviewRepository = reviewRepository;
+        this.reviewOptions = reviewOptions.Value;
     }
 
     /// <summary>
@@ -46,11 +59,18 @@ public sealed class SearchServicesHandler : IHandlerRequest<SearchServicesQuery,
         int page = Math.Max(1, request.Page);
         int pageSize = Math.Clamp(request.PageSize, 1, SearchServicesQuery.MaxPageSize);
 
-        return Result<PagedResult<ServiceListItem>>.Success(await this.profileRepository.SearchServicesAsync(
+        PagedResult<ServiceListItem> services = await this.profileRepository.SearchServicesAsync(
             filter.Value,
             (page - 1) * pageSize,
             pageSize,
-            cancellationToken));
+            cancellationToken);
+        IReadOnlyDictionary<Guid, RatingSummary> ratings = services.Items.Count == 0
+            ? new Dictionary<Guid, RatingSummary>()
+            : await this.reviewRepository.GetSummariesAsync([.. services.Items.Select(s => s.ServiceId)], cancellationToken);
+
+        return Result<PagedResult<ServiceListItem>>.Success(new PagedResult<ServiceListItem>(
+            [.. services.Items.Select(s => s with { Rating = this.reviewOptions.Visible(ratings.GetValueOrDefault(s.ServiceId)) })],
+            services.TotalCount));
     }
 
     /// <summary>

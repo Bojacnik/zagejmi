@@ -25,6 +25,13 @@ internal static class ReviewAccess
         ErrorType.Forbidden);
 
     /// <summary>
+    ///     The customer has no completed order with the player yet.
+    /// </summary>
+    public static readonly ErrorDetail NoCompletedOrder = ErrorDetail.Validation(
+        "Review.NoCompletedOrder",
+        "Doporučení můžete napsat po první dokončené objednávce u tohoto profilu.");
+
+    /// <summary>
     ///     Loads the author's customer profile and the reviewed player, and checks the user may review them.
     /// </summary>
     /// <param name="users">The user repository.</param>

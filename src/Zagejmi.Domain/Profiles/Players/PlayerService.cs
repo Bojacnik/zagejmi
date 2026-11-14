@@ -107,11 +107,6 @@ public record PlayerService
     public decimal Rating { get; set; }
 
     /// <summary>
-    ///     Gets or sets the reviews of the service.
-    /// </summary>
-    public ServiceReview[] Reviews { get; set; } = [];
-
-    /// <summary>
     ///     Gets when the service was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;

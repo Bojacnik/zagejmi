@@ -307,7 +307,7 @@ public sealed class OrderHandlerTests
             this.DisputedHandler = new GetDisputedOrdersHandler(this.World.Users, this.World.Profiles, this.Orders, admins);
             this.Timeouts = new ProcessOrderTimeoutsHandler(
                 this.Orders, this.Money, this.World.Clock, NullLogger<ProcessOrderTimeoutsHandler>.Instance);
-            this.ListHandler = new GetOrdersHandler(this.World.Profiles, this.Orders, this.World.Clock);
+            this.ListHandler = new GetOrdersHandler(this.World.Profiles, this.Orders, this.World.ServiceReviews, this.World.Clock);
         }
 
         public TestWorld World { get; }

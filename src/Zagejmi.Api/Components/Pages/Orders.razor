@@ -70,7 +70,8 @@
             @foreach (OrderView view in orders)
             {
                 <OrderCard View="view" Role="Role" Busy="busyOrderId == view.Order.Id"
-                           Error="@(errorOrderId == view.Order.Id ? actionError : null)" OnAction="ActAsync"/>
+                           Error="@(errorOrderId == view.Order.Id ? actionError : null)" OnAction="ActAsync"
+                           OnReview="v => reviewing = v"/>
             }
         </div>
 
@@ -83,6 +84,12 @@
         }
     }
 </div>
+
+@if (reviewing is { } r)
+{
+    <ServiceReviewDialog UserId="userId" OrderId="r.Order.Id" ServiceName="@r.Order.ServiceName"
+                         OnChanged="ReloadAsync" OnClose="() => reviewing = null"/>
+}
 
 @code {
     private const int PageSize = 20;
@@ -98,6 +105,7 @@
     private Guid? errorOrderId;
     private string? actionError;
     private OrderRole? loadedRole;
+    private OrderView? reviewing;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }

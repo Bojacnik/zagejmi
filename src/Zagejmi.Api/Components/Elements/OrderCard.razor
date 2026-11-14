@@ -60,6 +60,20 @@
 
     <p class="mt-2 text-xs text-text-muted">Objednáno @When(o.CreatedAt)</p>
 
+    @if (Role == OrderRole.Customer && o.UnlocksReview && OnReview.HasDelegate)
+    {
+        <div class="mt-4">
+            @if (View.HasReview)
+            {
+                <Secondary OnClick="() => OnReview.InvokeAsync(View)">Upravit recenzi</Secondary>
+            }
+            else
+            {
+                <Primary OnClick="() => OnReview.InvokeAsync(View)">Ohodnotit službu</Primary>
+            }
+        </div>
+    }
+
     @if (View.Actions.Count > 0 || AdminActions is not null)
     {
         <div class="mt-4 flex flex-wrap items-center gap-2">
@@ -151,6 +165,10 @@
     /// <summary>Gets or sets the callback that performs an action.</summary>
     [Parameter]
     public EventCallback<OrderActionRequest> OnAction { get; set; }
+
+    /// <summary>Gets or sets the callback that opens the review of a completed order (customer only).</summary>
+    [Parameter]
+    public EventCallback<OrderView> OnReview { get; set; }
 
     /// <summary>Gets or sets extra buttons (admin decisions).</summary>
     [Parameter]

@@ -152,6 +152,21 @@ public sealed class OrderRepository : IOrderRepository
         return [.. records.Select(ToDomain)];
     }
 
+    /// <inheritdoc />
+    public async Task<bool> HasReviewableOrderAsync(
+        Guid customerProfileId,
+        Guid playerProfileId,
+        CancellationToken cancellationToken = default)
+    {
+        await using WalletsContext context = await this.contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Orders.AnyAsync(
+            o => o.CustomerProfileId == customerProfileId
+                 && o.PlayerProfileId == playerProfileId
+                 && o.Status == OrderStatus.Completed
+                 && o.Outcome == OrderOutcome.Delivered,
+            cancellationToken);
+    }
+
     private static OrderRecord ToRecord(Order order)
     {
         OrderSnapshot s = order.ToSnapshot();

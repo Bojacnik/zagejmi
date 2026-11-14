@@ -24,4 +24,9 @@ public enum ReviewEligibility
     ///     The player profile is the viewer's own.
     /// </summary>
     OwnProfile,
+
+    /// <summary>
+    ///     The viewer has no completed order with the player yet.
+    /// </summary>
+    NoCompletedOrder,
 }

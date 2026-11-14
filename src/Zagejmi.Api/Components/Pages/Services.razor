@@ -165,6 +165,13 @@
                                         {
                                             <span class="text-sm text-text-muted">@service.PriceUnit</span>
                                         }
+                                        @if (service.Rating is { } rating)
+                                        {
+                                            <span class="ml-auto text-sm font-semibold text-amber-300 whitespace-nowrap">
+                                                ★ @CzechLabels.Rating(rating.Average)
+                                                <span class="font-normal text-text-muted">· @CzechLabels.Reviews(rating.Count)</span>
+                                            </span>
+                                        }
                                     </p>
                                 </div>
                             </NavLink>
