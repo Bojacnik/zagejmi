@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
@@ -171,14 +172,22 @@ public static class Program
         // Balance of the active profile's wallet, shown in the top bar and refreshed on profile switches.
         builder.Services.AddScoped<WalletStateService>();
 
+        // Liveness probe at /healthz; the deploy workflow waits for it before reporting success.
+        builder.Services.AddHealthChecks();
+
         // Builds the WebApplication instance, which represents the configured web application and its services.
         WebApplication app = builder.Build();
 
-        // Enable Swagger middleware and auto-apply migrations only in development environment
-        if (app.Environment.IsDevelopment())
+        // Apply pending migrations on startup in Development, and in production when Database:MigrateOnStartup is set
+        // (the Hetzner deployment does, see deploy/compose.yaml), so a deploy brings the schema up to date by itself.
+        if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
         {
             await app.Services.MigrateZagejmiDatabasesAsync();
+        }
 
+        // Swagger only in development
+        if (app.Environment.IsDevelopment())
+        {
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
@@ -212,6 +221,8 @@ public static class Program
 
         // Map controller routes to handle incoming HTTP requests
         app.MapControllers();
+
+        app.MapHealthChecks("/healthz").AllowAnonymous();
 
         // Map static assets and the Blazor UI
         app.MapStaticAssets();

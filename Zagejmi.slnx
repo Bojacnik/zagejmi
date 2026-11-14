@@ -2,18 +2,25 @@
   <Folder Name="/Solution Items/">
     <File Path=".dockerignore" />
     <File Path=".editorconfig" />
-    <File Path=".env.example" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
     <File Path="Directory.Packages.props" />
     <File Path="docker-compose.debug.yaml" />
-    <File Path="docker-compose.prod.yaml" />
     <File Path="docker-compose.yaml" />
     <File Path="dotnet-tools.json" />
     <File Path="global.json" />
     <File Path="LICENSE" />
     <File Path="README.md" />
     <File Path="stylecop.json" />
+  </Folder>
+  <Folder Name="/deploy/">
+    <File Path="deploy/.env.example" />
+    <File Path="deploy/Caddyfile" />
+    <File Path="deploy/compose.yaml" />
+    <File Path="deploy/README.md" />
+    <File Path="deploy/setup-server.sh" />
+    <File Path=".github/workflows/deploy.yml" />
+    <File Path=".github/workflows/tests.yml" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Zagejmi.Api/Zagejmi.Api.csproj" />
