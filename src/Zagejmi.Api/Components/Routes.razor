@@ -1,4 +1,7 @@
 ﻿@using Zagejmi.Api.Components.Layout
+@* Default title for screens without their own <PageTitle> (redirect to login, unknown routes); a page's own
+   PageTitle renders later and takes precedence. *@
+<PageTitle>Zagejmi</PageTitle>
 <CascadingAuthenticationState>
     <Router AppAssembly="typeof(Program).Assembly">
         <Found Context="routeData">
