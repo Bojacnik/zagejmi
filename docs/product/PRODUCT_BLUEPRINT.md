@@ -394,7 +394,7 @@ Požadavky používají stavy definované v [README](./README.md).
   - Pod 768 px není hlavní navigace dostupná jinak než přes postranní panel; je potřeba ověřit, že se dá na mobilu dostat na všechny stránky.
   - Ostatní stránky (Profil, Peněženka, formuláře, popupy) zatím nebyly systematicky zkontrolovány.
 - **Opraveno (2026-11-13), ověřeno screenshoty v Chrome v šířkách 360–1536 px:**
-  - Horní lišta: hlavní navigace je v liště od 1024 px, pod tím v panelu „Menu“; jméno uživatele od 1536 px; „Odhlásit se“ je mezi 1024 a 1280 px jen ikona; pod 640 px je přepínač profilu v panelu Menu. Lišta je flex, takže pravá část už nepřetéká přes navigaci.
+  - Horní lišta: hlavní navigace je v liště od 1024 px, pod tím v panelu „Menu“; jméno uživatele od 1536 px; „Odhlásit se“ je od 1024 px ikona s popiskem (2026-11-14; pod 1024 px je jako text v panelu Menu); pod 640 px je přepínač profilu v panelu Menu. Lišta je flex, takže pravá část už nepřetéká přes navigaci.
   - Postranní panel: od 1024 px sloupec vedle obsahu jako dřív; pod 1024 px je ve výchozím stavu zavřený a vysouvá se přes obsah, po navigaci se zavře.
   - Odsazení obsahu se zmenšuje podle šířky obrazovky.
 - **Zbývá (`PROPOSED`):**
