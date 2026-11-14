@@ -184,30 +184,6 @@ public sealed class ServiceSearchTests : IAsyncLifetime
         return (await repository.SearchPlayersAsync(null, group, 0, 50, Ct)).Items.Select(p => p.DisplayName).ToList();
     }
 
-    private async Task<PlayerProfile> AddPlayerWithGenderAsync(ProfileRepository repository, string name, Gender gender)
-    {
-        Guid userId = Guid.CreateVersion7();
-        await using (ZagejmiUsersContext users = new(this.usersOptions!))
-        {
-            users.Users.Add(new UserRecord
-            {
-                Id = userId,
-                UserName = name,
-                Email = $"{name}@example.test",
-                PendingEmailVerificationTokenHash = null,
-                PasswordHash = "x",
-                Gender = gender,
-            });
-            await users.SaveChangesAsync(Ct);
-        }
-
-        // Created in order, so "newest first" lists the later players first.
-        PlayerProfile player = new(Guid.CreateVersion7(), userId, name);
-        await repository.AddPlayerAsync(player, Ct);
-        await Task.Delay(5, Ct);
-        return player;
-    }
-
     private static async Task<IReadOnlyList<string>> NamesAsync(ProfileRepository repository, ServiceSearchFilter filter)
     {
         return (await repository.SearchServicesAsync(filter, 0, 50, Ct)).Items.Select(s => s.Name).ToList();
@@ -256,6 +232,30 @@ public sealed class ServiceSearchTests : IAsyncLifetime
                 CreatedAt = new DateTimeOffset(2026, 11, 13, 12, minutesAfter, 0, TimeSpan.Zero),
             },
             Ct);
+    }
+
+    private async Task<PlayerProfile> AddPlayerWithGenderAsync(ProfileRepository repository, string name, Gender gender)
+    {
+        Guid userId = Guid.CreateVersion7();
+        await using (ZagejmiUsersContext users = new(this.usersOptions!))
+        {
+            users.Users.Add(new UserRecord
+            {
+                Id = userId,
+                UserName = name,
+                Email = $"{name}@example.test",
+                PendingEmailVerificationTokenHash = null,
+                PasswordHash = "x",
+                Gender = gender,
+            });
+            await users.SaveChangesAsync(Ct);
+        }
+
+        // Created in order, so "newest first" lists the later players first.
+        PlayerProfile player = new(Guid.CreateVersion7(), userId, name);
+        await repository.AddPlayerAsync(player, Ct);
+        await Task.Delay(5, Ct);
+        return player;
     }
 
     private ProfileRepository CreateRepository()
