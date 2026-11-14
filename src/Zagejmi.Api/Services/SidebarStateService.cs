@@ -194,6 +194,11 @@ public class SidebarStateService
         {
             newPage = "Services";
         }
+        else if (relativePath.StartsWith("orders", StringComparison.Ordinal)
+                 || relativePath.StartsWith("admin/orders", StringComparison.Ordinal))
+        {
+            newPage = "Orders";
+        }
         else if (relativePath.StartsWith("wallet", StringComparison.Ordinal))
         {
             newPage = "Wallets";

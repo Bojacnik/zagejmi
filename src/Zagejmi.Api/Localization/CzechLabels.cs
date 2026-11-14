@@ -5,6 +5,7 @@ using Zagejmi.Api.Models;
 using Zagejmi.Application.Profiles;
 using Zagejmi.Domain.Auth;
 using Zagejmi.Domain.Games;
+using Zagejmi.Domain.Orders;
 using Zagejmi.Domain.Profiles;
 
 namespace Zagejmi.Api.Localization;
@@ -92,6 +93,48 @@ public static class CzechLabels
         long abs = Math.Abs(amount);
         return abs == 1 ? "Goin" : abs is >= 2 and <= 4 ? "Goiny" : "Goinů";
     }
+
+    /// <summary>
+    ///     Gets the Czech name of an order state.
+    /// </summary>
+    /// <param name="status">The state.</param>
+    /// <returns>For example „Čeká na přijetí“.</returns>
+    public static string OrderStatus(OrderStatus status) => status switch
+    {
+        Domain.Orders.OrderStatus.Pending => "Čeká na přijetí",
+        Domain.Orders.OrderStatus.Active => "Probíhá",
+        Domain.Orders.OrderStatus.Finished => "Čeká na potvrzení",
+        Domain.Orders.OrderStatus.Disputed => "Řeší se problém",
+        Domain.Orders.OrderStatus.Completed => "Dokončeno",
+        Domain.Orders.OrderStatus.Cancelled => "Zrušeno",
+        _ => status.ToString(),
+    };
+
+    /// <summary>
+    ///     Gets the Czech description of how a player ended an order.
+    /// </summary>
+    /// <param name="outcome">The outcome.</param>
+    /// <returns>The description.</returns>
+    public static string OrderOutcome(OrderOutcome outcome) => outcome switch
+    {
+        Domain.Orders.OrderOutcome.Delivered => "Služba proběhla",
+        Domain.Orders.OrderOutcome.CustomerNoShow => "Bez účasti zákazníka",
+        _ => outcome.ToString(),
+    };
+
+    /// <summary>
+    ///     Gets the Czech reason of a cancelled order.
+    /// </summary>
+    /// <param name="cancellation">The reason.</param>
+    /// <returns>The description.</returns>
+    public static string OrderCancellation(OrderCancellation cancellation) => cancellation switch
+    {
+        Domain.Orders.OrderCancellation.CustomerCancelled => "Zrušeno před přijetím",
+        Domain.Orders.OrderCancellation.PlayerDeclined => "Odmítnuto",
+        Domain.Orders.OrderCancellation.AcceptTimeout => "Nepřijato včas",
+        Domain.Orders.OrderCancellation.AdminRefunded => "Vráceno po kontrole problému",
+        _ => cancellation.ToString(),
+    };
 
     /// <summary>
     ///     Converts a time to Czech local time (Europe/Prague), independent of the server's time zone.

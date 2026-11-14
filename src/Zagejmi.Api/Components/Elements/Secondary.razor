@@ -1,0 +1,19 @@
+@* A small outlined action button. *@
+<button type="button" disabled="@Disabled" @onclick="OnClick"
+        class="px-3 py-1.5 rounded-lg border border-accent-700/60 text-sm font-semibold text-text-default hover:bg-accent-800/40 disabled:opacity-50 disabled:cursor-not-allowed">
+    @ChildContent
+</button>
+
+@code {
+    /// <summary>Gets or sets a value indicating whether the button is disabled.</summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>Gets or sets the click handler.</summary>
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    /// <summary>Gets or sets the label.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

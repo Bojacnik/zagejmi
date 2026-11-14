@@ -1,0 +1,206 @@
+@page "/orders"
+@page "/orders/incoming"
+@using System.Security.Claims
+@using System.Threading
+@using Microsoft.AspNetCore.Authorization
+@using Zagejmi.Api.Models
+@using Zagejmi.Application.Abstractions
+@using Zagejmi.Application.Orders
+@using Zagejmi.Application.Orders.ChangeOrder
+@using Zagejmi.Application.Orders.GetOrders
+@using Zagejmi.Shared
+@rendermode InteractiveServer
+@attribute [Authorize]
+@implements IDisposable
+
+@inject GetOrdersHandler GetOrdersHandler
+@inject ChangeOrderHandler ChangeOrderHandler
+@inject ActiveProfileService ActiveProfiles
+@inject WalletStateService Wallet
+@inject NavigationManager NavigationManager
+
+@*
+    Orders (ORDER-002): /orders lists what the user ordered (Zákazník), /orders/incoming the orders of their services
+    (Hráč/Hráčka). Each card offers exactly the actions the user may take now.
+*@
+
+<PageTitle>Objednávky – Zagejmi</PageTitle>
+
+<div class="space-y-6">
+    <header>
+        <h1 class="text-3xl font-bold text-text-default">Objednávky</h1>
+        <nav class="mt-4 flex gap-2" aria-label="Druh objednávek">
+            <a href="/orders" class="@TabClass(OrderRole.Customer)" aria-current="@(Role == OrderRole.Customer ? "page" : null)">Moje objednávky</a>
+            <a href="/orders/incoming" class="@TabClass(OrderRole.Player)" aria-current="@(Role == OrderRole.Player ? "page" : null)">Objednávky mých služeb</a>
+        </nav>
+    </header>
+
+    @if (errorMessage is not null)
+    {
+        <p class="rounded-lg bg-red-900/20 border border-red-500/40 text-red-300 p-4" role="alert">@errorMessage</p>
+    }
+    else if (orders is null)
+    {
+        <p class="text-text-muted">Načítáme objednávky…</p>
+    }
+    else if (Role == OrderRole.Player && ActiveProfiles.View is { Player: null })
+    {
+        <div class="rounded-lg border border-dashed border-accent-700/50 bg-primary-950/40 p-10 text-center">
+            <p class="text-text-muted">Zatím nenabízíte žádné služby. Profil, kde je přidáte, najdete v <a href="/profile" class="text-accent-300 hover:underline">Profilu</a>.</p>
+        </div>
+    }
+    else if (orders.Count == 0)
+    {
+        <div class="rounded-lg border border-dashed border-accent-700/50 bg-primary-950/40 p-10 text-center">
+            <p class="text-text-muted">
+                @if (Role == OrderRole.Customer)
+                {
+                    <span>Zatím jste nic neobjednali. Vyberte si na stránce <a href="/services" class="text-accent-300 hover:underline">Služby</a>.</span>
+                }
+                else
+                {
+                    <span>Vaše služby si zatím nikdo neobjednal.</span>
+                }
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="space-y-4">
+            @foreach (OrderView view in orders)
+            {
+                <OrderCard View="view" Role="Role" Busy="busyOrderId == view.Order.Id"
+                           Error="@(errorOrderId == view.Order.Id ? actionError : null)" OnAction="ActAsync"/>
+            }
+        </div>
+
+        @if (orders.Count < totalCount)
+        {
+            <button type="button" @onclick="LoadMoreAsync" disabled="@isLoadingMore"
+                    class="text-sm font-semibold text-accent-300 hover:underline disabled:opacity-50">
+                @(isLoadingMore ? "Načítáme…" : "Načíst starší")
+            </button>
+        }
+    }
+</div>
+
+@code {
+    private const int PageSize = 20;
+
+    private readonly CancellationTokenSource disposed = new();
+    private Guid userId;
+    private List<OrderView>? orders;
+    private int totalCount;
+    private int page = 1;
+    private bool isLoadingMore;
+    private string? errorMessage;
+    private Guid? busyOrderId;
+    private Guid? errorOrderId;
+    private string? actionError;
+    private OrderRole? loadedRole;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private OrderRole Role => NavigationManager.ToBaseRelativePath(NavigationManager.Uri).StartsWith("orders/incoming", StringComparison.Ordinal)
+        ? OrderRole.Player
+        : OrderRole.Customer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationState is null)
+        {
+            return;
+        }
+
+        ClaimsPrincipal user = (await AuthenticationState).User;
+        string? claim = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
+        if (!Guid.TryParse(claim, out userId))
+        {
+            errorMessage = "Nepodařilo se zjistit, kdo jste. Přihlaste se prosím znovu.";
+            return;
+        }
+
+        await ActiveProfiles.LoadAsync(userId);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (userId == Guid.Empty || loadedRole == Role)
+        {
+            return;
+        }
+
+        loadedRole = Role;
+        orders = null;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        try
+        {
+            Result<PagedResult<OrderView>> result = await GetOrdersHandler.Handle(
+                new GetOrdersQuery(userId, Role, 1, page * PageSize),
+                disposed.Token);
+            if (result.IsFailure)
+            {
+                errorMessage = result.Error!.Message;
+                return;
+            }
+
+            orders = [.. result.Value.Items];
+            totalCount = result.Value.TotalCount;
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was left while loading.
+        }
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        isLoadingMore = true;
+        page++;
+        await ReloadAsync();
+        isLoadingMore = false;
+    }
+
+    private async Task ActAsync(OrderActionRequest request)
+    {
+        busyOrderId = request.OrderId;
+        errorOrderId = null;
+        try
+        {
+            Result result = await ChangeOrderHandler.Handle(
+                new ChangeOrderCommand(userId, request.OrderId, request.Action, request.Outcome, request.Reason),
+                disposed.Token);
+            if (result.IsFailure)
+            {
+                errorOrderId = request.OrderId;
+                actionError = result.Error!.Message;
+            }
+
+            await ReloadAsync();
+            await Wallet.RefreshAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was left while saving.
+        }
+        finally
+        {
+            busyOrderId = null;
+        }
+    }
+
+    private string TabClass(OrderRole role) => role == Role
+        ? "px-4 py-2 rounded-lg bg-accent-700/50 text-text-default font-semibold"
+        : "px-4 py-2 rounded-lg text-text-muted hover:bg-accent-800/40 hover:text-text-default";
+
+    public void Dispose()
+    {
+        disposed.Cancel();
+        disposed.Dispose();
+    }
+}
