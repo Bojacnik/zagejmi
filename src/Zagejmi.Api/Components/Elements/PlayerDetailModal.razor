@@ -8,7 +8,7 @@
 @inject GetPlayerDetailHandler GetPlayerDetailHandler
 @inject ActiveProfileService ActiveProfiles
 
-@* Player popup: banner, logo, description and services. Closes on ✕, backdrop click or Esc. *@
+@* Player popup: banner, logo, description, services and reviews. Closes on ✕, backdrop click or Esc. *@
 
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8" role="dialog" aria-modal="true"
      aria-labelledby="player-modal-title" @onkeydown="OnKeyDown" tabindex="-1" @ref="dialog">
@@ -145,6 +145,8 @@
                     </div>
                 }
             </section>
+
+            <PlayerReviews ProfileId="player.ProfileId"/>
         }
     </div>
 </div>

@@ -43,6 +43,11 @@ public class ProfilesContext : DbContext
     public DbSet<PlayerServiceRecord> PlayerServices { get; set; }
 
     /// <summary>
+    ///     Gets or sets customers' reviews of players.
+    /// </summary>
+    public DbSet<PlayerReviewRecord> PlayerReviews { get; set; }
+
+    /// <summary>
     ///     Gets or sets the users who own the profiles (read-only; the table belongs to the users context).
     /// </summary>
     public DbSet<ProfileOwnerRecord> ProfileOwners { get; set; }
@@ -101,6 +106,32 @@ public class ProfilesContext : DbContext
 
             // The Služby page filters by game.
             entity.HasIndex(e => e.GameKey);
+        });
+
+        modelBuilder.Entity<PlayerReviewRecord>(entity =>
+        {
+            entity.ToTable("PlayerReviews", table => table.HasCheckConstraint(
+                "CK_PlayerReviews_Rating",
+                $"\"Rating\" BETWEEN {PlayerReview.MinRating} AND {PlayerReview.MaxRating}"));
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Comment).HasMaxLength(PlayerReview.CommentMaxLength);
+
+            // Reviews disappear with the reviewed player and with the author's customer profile.
+            entity.HasOne<PlayerProfileRecord>()
+                .WithMany()
+                .HasForeignKey(e => e.PlayerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<CustomerProfileRecord>()
+                .WithMany()
+                .HasForeignKey(e => e.AuthorProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One review per customer and player; the upsert in PlayerReviewRepository relies on this index.
+            entity.HasIndex(e => new { e.PlayerProfileId, e.AuthorProfileId }).IsUnique();
+
+            // The player's reviews are listed newest first.
+            entity.HasIndex(e => new { e.PlayerProfileId, e.CreatedAt });
         });
 
         modelBuilder.Entity<ProfileOwnerRecord>(entity =>
