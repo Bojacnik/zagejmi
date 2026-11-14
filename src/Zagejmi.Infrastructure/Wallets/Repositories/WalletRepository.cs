@@ -210,7 +210,7 @@ public sealed class WalletRepository : IWalletRepository
         return [.. rows.Select(r => new WalletHistoryItem(r.Id, r.Type, r.Description, r.CreatedAt, r.Paid, r.Bonus))];
     }
 
-    private static async Task<bool> ApplyBalancesAsync(
+    internal static async Task<bool> ApplyBalancesAsync(
         WalletsContext context,
         LedgerTransaction transaction,
         CancellationToken cancellationToken)
@@ -239,7 +239,7 @@ public sealed class WalletRepository : IWalletRepository
         return true;
     }
 
-    private static async Task<bool> ApplyGrantsAsync(
+    internal static async Task<bool> ApplyGrantsAsync(
         WalletsContext context,
         LedgerTransaction transaction,
         CancellationToken cancellationToken)
@@ -268,18 +268,7 @@ public sealed class WalletRepository : IWalletRepository
         return true;
     }
 
-    private static Task<AccountRecord?> FindAccountAsync(
-        WalletsContext context,
-        Guid profileId,
-        AccountKind kind,
-        CancellationToken cancellationToken)
-    {
-        return context.Accounts
-            .AsNoTracking()
-            .FirstOrDefaultAsync(a => a.OwnerProfileId == profileId && a.Kind == kind, cancellationToken);
-    }
-
-    private static LedgerTransactionRecord ToRecord(LedgerTransaction transaction)
+    internal static LedgerTransactionRecord ToRecord(LedgerTransaction transaction)
     {
         return new LedgerTransactionRecord
         {
@@ -301,6 +290,17 @@ public sealed class WalletRepository : IWalletRepository
                 }),
             ],
         };
+    }
+
+    private static Task<AccountRecord?> FindAccountAsync(
+        WalletsContext context,
+        Guid profileId,
+        AccountKind kind,
+        CancellationToken cancellationToken)
+    {
+        return context.Accounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.OwnerProfileId == profileId && a.Kind == kind, cancellationToken);
     }
 
     private static Account ToDomain(AccountRecord record)

@@ -160,4 +160,14 @@ public interface IProfileRepository
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task that completes when the service is deleted.</returns>
     Task DeletePlayerServiceAsync(Guid serviceId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Gets the names and pictures of customer or player profiles. Unknown IDs are left out.
+    /// </summary>
+    /// <param name="profileIds">Customer and/or player profile IDs.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The cards keyed by profile ID.</returns>
+    Task<IReadOnlyDictionary<Guid, ProfileCard>> GetProfileCardsAsync(
+        IReadOnlyCollection<Guid> profileIds,
+        CancellationToken cancellationToken = default);
 }

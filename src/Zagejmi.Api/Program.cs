@@ -25,6 +25,13 @@ using Zagejmi.Application.Auth.Users.ResendVerificationEmail;
 using Zagejmi.Application.Auth.Users.SetDefaultProfile;
 using Zagejmi.Application.Auth.Users.SetGhostMode;
 using Zagejmi.Application.Auth.Users.VerifyEmail;
+using Zagejmi.Application.Orders;
+using Zagejmi.Application.Orders.ChangeOrder;
+using Zagejmi.Application.Orders.GetDisputedOrders;
+using Zagejmi.Application.Orders.GetOrders;
+using Zagejmi.Application.Orders.PlaceOrder;
+using Zagejmi.Application.Orders.ProcessOrderTimeouts;
+using Zagejmi.Application.Orders.ResolveDispute;
 using Zagejmi.Application.Profiles.AddPlayerService;
 using Zagejmi.Application.Profiles.CreatePlayerProfile;
 using Zagejmi.Application.Profiles.DeletePlayerService;
@@ -150,6 +157,13 @@ public static class Program
         builder.Services.AddScoped<ExpireBonusesHandler>();
         builder.Services.AddScoped<GetWalletHandler>();
         builder.Services.AddScoped<GetWalletHistoryHandler>();
+        builder.Services.AddScoped<OrderMoney>();
+        builder.Services.AddScoped<PlaceOrderHandler>();
+        builder.Services.AddScoped<ChangeOrderHandler>();
+        builder.Services.AddScoped<ResolveDisputeHandler>();
+        builder.Services.AddScoped<ProcessOrderTimeoutsHandler>();
+        builder.Services.AddScoped<GetOrdersHandler>();
+        builder.Services.AddScoped<GetDisputedOrdersHandler>();
 
         // Blazor (interactive server) UI
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();

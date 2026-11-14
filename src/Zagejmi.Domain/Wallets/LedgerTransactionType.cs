@@ -15,4 +15,19 @@ public enum LedgerTransactionType
     ///     The unspent rest of a bonus grant returned to the promo budget after it expired.
     /// </summary>
     BonusExpiry,
+
+    /// <summary>
+    ///     A customer pays for an order into escrow.
+    /// </summary>
+    OrderPayment,
+
+    /// <summary>
+    ///     A completed order's escrow is paid out to the player, minus the platform fee.
+    /// </summary>
+    OrderPayout,
+
+    /// <summary>
+    ///     A cancelled order's escrow is returned to the customer.
+    /// </summary>
+    OrderRefund,
 }

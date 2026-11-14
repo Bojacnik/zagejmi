@@ -136,6 +136,163 @@ public sealed class LedgerTransaction
         return new LedgerTransaction(LedgerTransactionType.BonusExpiry, now, description, idempotencyKey, entries);
     }
 
+    /// <summary>
+    ///     Pays for an order into escrow, bonus Goins first.
+    /// </summary>
+    /// <param name="orderId">The order.</param>
+    /// <param name="serviceName">The ordered service (for the history).</param>
+    /// <param name="funding">How the price is split into bonus and paid Goins.</param>
+    /// <param name="customerPaid">The customer's <see cref="AccountKind.CustomerPaid" /> account.</param>
+    /// <param name="customerBonus">The customer's <see cref="AccountKind.CustomerBonus" /> account.</param>
+    /// <param name="now">The current time.</param>
+    /// <returns>The transaction.</returns>
+    public static LedgerTransaction OrderPayment(
+        Guid orderId,
+        string serviceName,
+        EscrowFunding funding,
+        Account customerPaid,
+        Account customerBonus,
+        DateTimeOffset now)
+    {
+        EnsureCustomerWallet(customerPaid, customerBonus);
+        List<LedgerEntry> entries = [];
+        if (funding.Paid > 0)
+        {
+            entries.Add(new(customerPaid.Id, AccountKind.CustomerPaid, -funding.Paid, Funding.Paid, null));
+            entries.Add(new(SystemAccounts.EscrowId, AccountKind.Escrow, funding.Paid, Funding.Paid, null));
+        }
+
+        foreach (BonusPart part in funding.Bonus)
+        {
+            entries.Add(new(customerBonus.Id, AccountKind.CustomerBonus, -part.Amount, Funding.Bonus, part.GrantId));
+            entries.Add(new(SystemAccounts.EscrowId, AccountKind.Escrow, part.Amount, Funding.Bonus, part.GrantId));
+        }
+
+        return new LedgerTransaction(
+            LedgerTransactionType.OrderPayment,
+            now,
+            Truncate($"Objednávka: {serviceName}", DescriptionMaxLength),
+            OrderKey(orderId),
+            entries);
+    }
+
+    /// <summary>
+    ///     Pays a completed order out to the player: the player receives the escrow minus the fee. The fee comes out of
+    ///     the paid Goins; bonus Goins go back to the promo budget, which pays the player the rest of their share in paid
+    ///     Goins (bonus Goins are never cashable, so the player must not receive them).
+    /// </summary>
+    /// <param name="orderId">The order.</param>
+    /// <param name="serviceName">The ordered service (for the history).</param>
+    /// <param name="funding">What the order's escrow holds.</param>
+    /// <param name="fee">The platform fee (at most the escrow total).</param>
+    /// <param name="playerEarnings">The player's <see cref="AccountKind.PlayerEarnings" /> account.</param>
+    /// <param name="now">The current time.</param>
+    /// <returns>The transaction.</returns>
+    public static LedgerTransaction OrderPayout(
+        Guid orderId,
+        string serviceName,
+        EscrowFunding funding,
+        long fee,
+        Account playerEarnings,
+        DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(funding);
+        ArgumentNullException.ThrowIfNull(playerEarnings);
+        if (playerEarnings.Kind != AccountKind.PlayerEarnings)
+        {
+            throw new ArgumentException("The account is not a player earnings account.", nameof(playerEarnings));
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(fee);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(fee, funding.Total);
+
+        long share = funding.Total - fee;
+        long shareFromPaid = Math.Min(funding.Paid, share);
+        long revenue = funding.Paid - shareFromPaid;
+        long shareFromPromo = share - shareFromPaid;
+
+        List<LedgerEntry> entries = [];
+        AddIfNotZero(entries, new(SystemAccounts.EscrowId, AccountKind.Escrow, -funding.Paid, Funding.Paid, null));
+        AddIfNotZero(entries, new(playerEarnings.Id, AccountKind.PlayerEarnings, shareFromPaid, Funding.Paid, null));
+        AddIfNotZero(entries, new(SystemAccounts.PlatformRevenueId, AccountKind.PlatformRevenue, revenue, Funding.Paid, null));
+        AddIfNotZero(entries, new(SystemAccounts.PromoBudgetId, AccountKind.PromoBudget, -shareFromPromo, Funding.Paid, null));
+        AddIfNotZero(entries, new(playerEarnings.Id, AccountKind.PlayerEarnings, shareFromPromo, Funding.Paid, null));
+        foreach (BonusPart part in funding.Bonus)
+        {
+            entries.Add(new(SystemAccounts.EscrowId, AccountKind.Escrow, -part.Amount, Funding.Bonus, part.GrantId));
+            entries.Add(new(SystemAccounts.PromoBudgetId, AccountKind.PromoBudget, part.Amount, Funding.Bonus, part.GrantId));
+        }
+
+        return new LedgerTransaction(
+            LedgerTransactionType.OrderPayout,
+            now,
+            Truncate($"Výplata objednávky: {serviceName}", DescriptionMaxLength),
+            OrderKey(orderId),
+            entries);
+    }
+
+    /// <summary>
+    ///     Returns a cancelled order's escrow to the customer, each part where it came from (bonus Goins to their grant).
+    /// </summary>
+    /// <param name="orderId">The order.</param>
+    /// <param name="serviceName">The ordered service (for the history).</param>
+    /// <param name="funding">What the order's escrow holds.</param>
+    /// <param name="customerPaid">The customer's <see cref="AccountKind.CustomerPaid" /> account.</param>
+    /// <param name="customerBonus">The customer's <see cref="AccountKind.CustomerBonus" /> account.</param>
+    /// <param name="now">The current time.</param>
+    /// <returns>The transaction.</returns>
+    public static LedgerTransaction OrderRefund(
+        Guid orderId,
+        string serviceName,
+        EscrowFunding funding,
+        Account customerPaid,
+        Account customerBonus,
+        DateTimeOffset now)
+    {
+        EnsureCustomerWallet(customerPaid, customerBonus);
+        List<LedgerEntry> entries = [];
+        if (funding.Paid > 0)
+        {
+            entries.Add(new(SystemAccounts.EscrowId, AccountKind.Escrow, -funding.Paid, Funding.Paid, null));
+            entries.Add(new(customerPaid.Id, AccountKind.CustomerPaid, funding.Paid, Funding.Paid, null));
+        }
+
+        foreach (BonusPart part in funding.Bonus)
+        {
+            entries.Add(new(SystemAccounts.EscrowId, AccountKind.Escrow, -part.Amount, Funding.Bonus, part.GrantId));
+            entries.Add(new(customerBonus.Id, AccountKind.CustomerBonus, part.Amount, Funding.Bonus, part.GrantId));
+        }
+
+        return new LedgerTransaction(
+            LedgerTransactionType.OrderRefund,
+            now,
+            Truncate($"Vrácení za objednávku: {serviceName}", DescriptionMaxLength),
+            OrderKey(orderId),
+            entries);
+    }
+
+    private static string OrderKey(Guid orderId) => $"order:{orderId}";
+
+    private static void AddIfNotZero(List<LedgerEntry> entries, LedgerEntry entry)
+    {
+        if (entry.Amount != 0)
+        {
+            entries.Add(entry);
+        }
+    }
+
+    private static void EnsureCustomerWallet(Account customerPaid, Account customerBonus)
+    {
+        ArgumentNullException.ThrowIfNull(customerPaid);
+        ArgumentNullException.ThrowIfNull(customerBonus);
+        if (customerPaid.Kind != AccountKind.CustomerPaid
+            || customerBonus.Kind != AccountKind.CustomerBonus
+            || customerPaid.OwnerProfileId != customerBonus.OwnerProfileId)
+        {
+            throw new ArgumentException("The accounts are not one customer's paid and bonus accounts.", nameof(customerPaid));
+        }
+    }
+
     private static void EnsureCustomerBonusOf(Account customerBonus, BonusGrant grant)
     {
         ArgumentNullException.ThrowIfNull(customerBonus);
