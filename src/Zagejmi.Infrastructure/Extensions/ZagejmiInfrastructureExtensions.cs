@@ -11,6 +11,7 @@ using Zagejmi.Application.Auth.Users.Abstractions;
 using Zagejmi.Application.Images;
 using Zagejmi.Application.Images.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Profiles.Reviews.Abstractions;
 using Zagejmi.Application.Wallets;
 using Zagejmi.Application.Wallets.Abstractions;
 using Zagejmi.Infrastructure.Auth.AccessTokens.Repositories;
@@ -39,6 +40,7 @@ public static class InfrastructureServiceCollectionExtensions
     {
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
+        services.AddScoped<IPlayerReviewRepository, PlayerReviewRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddSingleton<IPasswordHasher, Argon2PasswordHasher>();
 

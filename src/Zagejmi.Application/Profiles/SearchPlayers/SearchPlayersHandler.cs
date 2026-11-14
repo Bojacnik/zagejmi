@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 using Zagejmi.Application.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Profiles.Reviews;
+using Zagejmi.Application.Profiles.Reviews.Abstractions;
 using Zagejmi.Domain.Profiles.Players;
 using Zagejmi.Shared;
 
@@ -17,14 +19,17 @@ namespace Zagejmi.Application.Profiles.SearchPlayers;
 public sealed class SearchPlayersHandler : IHandlerRequest<SearchPlayersQuery, Result<PagedResult<PlayerListItem>>>
 {
     private readonly IProfileRepository profileRepository;
+    private readonly IPlayerReviewRepository reviewRepository;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SearchPlayersHandler" /> class.
     /// </summary>
     /// <param name="profileRepository">The profile repository.</param>
-    public SearchPlayersHandler(IProfileRepository profileRepository)
+    /// <param name="reviewRepository">The review repository (average ratings on the cards).</param>
+    public SearchPlayersHandler(IProfileRepository profileRepository, IPlayerReviewRepository reviewRepository)
     {
         this.profileRepository = profileRepository;
+        this.reviewRepository = reviewRepository;
     }
 
     /// <summary>
@@ -54,9 +59,19 @@ public sealed class SearchPlayersHandler : IHandlerRequest<SearchPlayersQuery, R
             pageSize,
             cancellationToken);
 
+        IReadOnlyDictionary<Guid, RatingSummary> ratings = players.Items.Count == 0
+            ? new Dictionary<Guid, RatingSummary>()
+            : await this.reviewRepository.GetSummariesAsync(players.Items.Select(p => p.Id).ToList(), cancellationToken);
+
         return new PagedResult<PlayerListItem>(
             players.Items
-                .Select(p => new PlayerListItem(p.Id, p.DisplayName, p.Description, p.CreatedAt, p.CardProfilePicture))
+                .Select(p => new PlayerListItem(
+                    p.Id,
+                    p.DisplayName,
+                    p.Description,
+                    p.CreatedAt,
+                    p.CardProfilePicture,
+                    ratings.GetValueOrDefault(p.Id)))
                 .ToList(),
             players.TotalCount);
     }

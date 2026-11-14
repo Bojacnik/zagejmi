@@ -1,6 +1,7 @@
 @page "/people"
 @page "/players/{ProfileId:guid}"
 @using System.Threading
+@using Zagejmi.Api.Localization
 @using Zagejmi.Application.Abstractions
 @using Zagejmi.Application.Profiles
 @using Zagejmi.Application.Profiles.SearchPlayers
@@ -96,6 +97,13 @@
                                     </div>
                                 }
                                 <div class="absolute inset-0 bg-linear-to-t from-black/80 to-transparent"></div>
+                                @if (player.Rating is { } rating)
+                                {
+                                    <div class="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-xs px-2 py-0.5 text-sm font-semibold text-amber-300"
+                                         title="@CzechLabels.Reviews(rating.Count)">
+                                        ★ @CzechLabels.Rating(rating.Average)
+                                    </div>
+                                }
                                 <div class="absolute left-0 bottom-0 z-10 p-4 flex flex-col items-start w-full text-text-default">
                                     <p class="font-bold text-lg">@player.DisplayName</p>
                                     @if (!string.IsNullOrWhiteSpace(player.Description))

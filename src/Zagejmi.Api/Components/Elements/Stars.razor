@@ -1,0 +1,24 @@
+@* Five read-only stars for a rating (rounded to whole stars); decorative, so give the parent an aria-label. *@
+<span class="inline-flex items-center gap-0.5" aria-hidden="true">
+    @for (int i = 1; i <= 5; i++)
+    {
+        <svg class="@Size @(i <= Math.Round(Value, MidpointRounding.AwayFromZero) ? "text-amber-400" : "text-primary-700")"
+             viewBox="0 0 24 24" fill="currentColor">
+            <path d="@PlayerReviews.StarPath"/>
+        </svg>
+    }
+</span>
+
+@code {
+    /// <summary>
+    ///     Gets or sets the rating, 0–5 (an average is rounded to whole stars).
+    /// </summary>
+    [Parameter]
+    public double Value { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the Tailwind size classes of one star.
+    /// </summary>
+    [Parameter]
+    public string Size { get; set; } = "w-5 h-5";
+}

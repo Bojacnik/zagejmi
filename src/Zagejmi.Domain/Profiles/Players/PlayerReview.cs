@@ -3,27 +3,58 @@ using System;
 namespace Zagejmi.Domain.Profiles.Players;
 
 /// <summary>
-///     A review left on a player's profile.
+///     A customer's review of a player: 1–5 whole stars and an optional text. A customer profile reviews each player at
+///     most once and can change or remove the review later.
 /// </summary>
-public record PlayerReview
+public sealed record PlayerReview
 {
     /// <summary>
-    ///     Gets or sets the optional review text.
+    ///     The lowest rating.
     /// </summary>
-    public string? Comment { get; set; }
+    public const int MinRating = 1;
 
     /// <summary>
-    ///     Gets or sets the identifier of the profile that wrote the review.
+    ///     The highest rating.
     /// </summary>
-    public Guid? ProfileId { get; set; }
+    public const int MaxRating = 5;
 
     /// <summary>
-    ///     Gets or sets when the review was written.
+    ///     The longest allowed review text.
     /// </summary>
-    public DateTimeOffset Date { get; set; }
+    public const int CommentMaxLength = 1000;
 
     /// <summary>
-    ///     Gets or sets the rating given.
+    ///     Gets the review ID.
     /// </summary>
-    public decimal Rating { get; set; }
+    public required Guid Id { get; init; }
+
+    /// <summary>
+    ///     Gets the reviewed player profile.
+    /// </summary>
+    public required Guid PlayerProfileId { get; init; }
+
+    /// <summary>
+    ///     Gets the customer profile that wrote the review.
+    /// </summary>
+    public required Guid AuthorProfileId { get; init; }
+
+    /// <summary>
+    ///     Gets the rating, <see cref="MinRating" /> to <see cref="MaxRating" /> stars.
+    /// </summary>
+    public required int Rating { get; init; }
+
+    /// <summary>
+    ///     Gets the optional review text.
+    /// </summary>
+    public string? Comment { get; init; }
+
+    /// <summary>
+    ///     Gets when the review was first written.
+    /// </summary>
+    public required DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>
+    ///     Gets when the review was last changed (equal to <see cref="CreatedAt" /> until it is edited).
+    /// </summary>
+    public required DateTimeOffset UpdatedAt { get; init; }
 }

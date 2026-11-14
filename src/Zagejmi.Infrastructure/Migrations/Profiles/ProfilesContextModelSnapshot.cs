@@ -16,7 +16,7 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261113123507_AddProfileOwnersView";
+    public override string LastMigrationId => "20261114020406_AddPlayerReviews";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -93,6 +93,45 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
                     .IsUnique();
 
                 b.ToTable("Players", "profiles");
+            });
+
+        modelBuilder.Entity("Zagejmi.Infrastructure.Profiles.Records.PlayerReviewRecord", b =>
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid>("AuthorProfileId")
+                    .HasColumnType("uuid");
+
+                b.Property<string>("Comment")
+                    .HasMaxLength(1000)
+                    .HasColumnType("character varying(1000)");
+
+                b.Property<DateTimeOffset>("CreatedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<Guid>("PlayerProfileId")
+                    .HasColumnType("uuid");
+
+                b.Property<int>("Rating")
+                    .HasColumnType("integer");
+
+                b.Property<DateTimeOffset>("UpdatedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.HasKey("Id");
+
+                b.HasIndex("AuthorProfileId");
+
+                b.HasIndex("PlayerProfileId", "AuthorProfileId")
+                    .IsUnique();
+
+                b.HasIndex("PlayerProfileId", "CreatedAt");
+
+                b.ToTable("PlayerReviews", "profiles", t =>
+                    {
+                        t.HasCheckConstraint("CK_PlayerReviews_Rating", "\"Rating\" BETWEEN 1 AND 5");
+                    });
             });
 
         modelBuilder.Entity("Zagejmi.Infrastructure.Profiles.Records.PlayerServiceRecord", b =>
@@ -197,6 +236,21 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
                 b.HasIndex("SubscriberId");
 
                 b.ToTable("Subscriptions", "profiles");
+            });
+
+        modelBuilder.Entity("Zagejmi.Infrastructure.Profiles.Records.PlayerReviewRecord", b =>
+            {
+                b.HasOne("Zagejmi.Infrastructure.Profiles.Records.CustomerProfileRecord", null)
+                    .WithMany()
+                    .HasForeignKey("AuthorProfileId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+
+                b.HasOne("Zagejmi.Infrastructure.Profiles.Records.PlayerProfileRecord", null)
+                    .WithMany()
+                    .HasForeignKey("PlayerProfileId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
             });
 
         modelBuilder.Entity("Zagejmi.Infrastructure.Profiles.Records.PlayerServiceRecord", b =>
