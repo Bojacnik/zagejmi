@@ -6,12 +6,16 @@
 #   - Whole repo:   set the repository variable SKIP_TESTS=true
 #                   (Settings → Secrets and variables → Actions → Variables). Delete it to turn tests back on.
 #   - Manual run:   Actions → Tests → Run workflow ignores both opt-outs.
+# Skipped tests also block a deploy to production (see deploy.yml).
 name: Tests
 
 on:
   push:
+    # production runs these tests itself, as the first step of the deploy (deploy.yml).
+    branches-ignore: [ production ]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: tests-${{ github.ref }}

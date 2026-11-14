@@ -64,16 +64,18 @@ dotnet ef migrations add <Nazev> --context ProfilesContext \
 
 ASP.NET Core, Blazor Server, Entity Framework Core + PostgreSQL, MinIO, SkiaSharp, TailwindCSS, xUnit v3.
 
-## SMTP relay (produkce)
+## Produkce (Hetzner)
 
-1. Vytvořte produkční env soubor z šablony `.env.example` jako `.env` a vyplňte relay údaje.
-2. Ujistěte se, že DNS domény `zagejmi.cz` obsahuje SPF/DKIM/DMARC podle zvoleného providera.
-3. Spusťte produkční stack přes base + prod compose.
+Nasazuje se pushem do větve `production`: GitHub Actions pustí testy, sestaví Docker image a nasadí ho na server
+(Caddy s HTTPS, aplikace, PostgreSQL, MinIO). Návod k prvnímu nastavení serveru, tajné hodnoty a vracení verzí je
+v [deploy/README.md](deploy/README.md).
 
 ```bash
-cp .env.example .env
-docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d --build
+git push origin master:production
 ```
+
+Pro odesílání e-mailů doplňte SMTP relay do `/opt/zagejmi/.env` na serveru a v DNS domény `zagejmi.cz` nastavte
+SPF/DKIM/DMARC podle zvoleného providera.
 
 Debug stack s Mailpit (databáze, MinIO a API jsou v base compose, debug přidává Mailpit a debug SMTP override):
 

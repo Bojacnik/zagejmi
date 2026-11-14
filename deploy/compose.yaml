@@ -1,0 +1,99 @@
+# Production stack on the Hetzner server (lives in /opt/zagejmi next to .env).
+# The deploy workflow (.github/workflows/deploy.yml) copies this file over and runs
+#   IMAGE_TAG=<commit sha> docker compose up -d
+# HTTPS is done by the Caddy installed on the server itself (systemd, /etc/caddy/Caddyfile), which also serves other
+# sites; it proxies zagejmi.cz to 127.0.0.1:3000. Nothing here is reachable from outside: the app listens on loopback
+# only, PostgreSQL and MinIO only on the internal network.
+# Secrets come from .env on the server (template: deploy/.env.example), never from the repository.
+name: zagejmi
+
+services:
+  api:
+    image: ghcr.io/bojacnik/zagejmi:${IMAGE_TAG:-production}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:8080" # host Caddy → app; loopback only
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      # Trust X-Forwarded-For/-Proto from the host Caddy, so the app sees https and the real client IP.
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      Database__MigrateOnStartup: "true"
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=zagejmi;Username=zagejmi;Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      Minio__Endpoint: minio:9000
+      Minio__AccessKey: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      Minio__SecretKey: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+      Minio__UseSsl: "false"
+      Jwt__Key: ${JWT_KEY:?set JWT_KEY in .env}
+      Auth__Secrets__Zagejmi__Pepper: ${PASSWORD_PEPPER:?set PASSWORD_PEPPER in .env}
+      Api__BaseUrl: http://localhost:8080/
+      Cors__AllowedOrigins__0: https://${DOMAIN}
+      EmailVerification__PublicBaseUrl: https://${DOMAIN}
+      Smtp__Host: ${SMTP_HOST:-}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__EnableSsl: ${SMTP_ENABLE_SSL:-true}
+      Smtp__UseAuthentication: ${SMTP_USE_AUTHENTICATION:-true}
+      Smtp__Username: ${SMTP_USERNAME:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__FromEmail: ${SMTP_FROM_EMAIL:-no-reply@zagejmi.cz}
+      Smtp__FromName: ${SMTP_FROM_NAME:-Zagejmi}
+    volumes:
+      - dataprotection_keys:/home/app/.aspnet/DataProtection-Keys # keeps users signed in across deploys
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - zagejmi
+
+  postgres:
+    image: postgres:18.4-alpine3.24
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zagejmi
+      POSTGRES_USER: zagejmi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U zagejmi -d zagejmi" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *logging
+    networks:
+      - zagejmi
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    restart: unless-stopped
+    command: [ "server", "/data" ]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging: *logging
+    networks:
+      - zagejmi
+
+volumes:
+  dataprotection_keys:
+  postgres_data:
+  minio_data:
+
+networks:
+  zagejmi:
