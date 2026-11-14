@@ -72,7 +72,9 @@ services:
       - zagejmi
 
   minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    # Official minio/minio images are no longer published (Docker Hub repo removed); pgsty/minio is the maintained
+    # community build of the same server, multi-arch (the Hetzner server is ARM64).
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
     restart: unless-stopped
     command: [ "server", "/data" ]
     environment:
