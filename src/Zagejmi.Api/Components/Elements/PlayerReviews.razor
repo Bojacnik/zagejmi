@@ -1,0 +1,392 @@
+@using System.Security.Claims
+@using System.Threading
+@using Zagejmi.Api.Localization
+@using Zagejmi.Application.Profiles.Reviews
+@using Zagejmi.Application.Profiles.Reviews.DeletePlayerReview
+@using Zagejmi.Application.Profiles.Reviews.GetPlayerReviews
+@using Zagejmi.Application.Profiles.Reviews.WritePlayerReview
+@using Zagejmi.Domain.Profiles
+@using Zagejmi.Domain.Profiles.Players
+@using Zagejmi.Shared
+@implements IDisposable
+@inject GetPlayerReviewsHandler GetPlayerReviewsHandler
+@inject WritePlayerReviewHandler WritePlayerReviewHandler
+@inject DeletePlayerReviewHandler DeletePlayerReviewHandler
+@inject ActiveProfileService ActiveProfiles
+
+@*
+    Reviews of a player (REVIEW-001): average, the viewer's own review as an editable form, and the list newest first.
+    Any customer may review any player except their own; ghosts read only. Written as the customer profile, so a user
+    acting as Hráč/Hráčka is asked to switch first.
+*@
+
+<section class="px-6 sm:px-8 py-6 border-t border-accent-800/40" aria-labelledby="reviews-title">
+    <div class="flex flex-wrap items-baseline justify-between gap-3">
+        <h3 id="reviews-title" class="text-xl font-bold text-text-default">Recenze</h3>
+        @if (view is { Summary.Count: > 0 } summaryView)
+        {
+            <div class="flex items-center gap-2" aria-label="@($"Průměrné hodnocení {CzechLabels.Rating(summaryView.Summary.Average)} z 5")">
+                <Stars Value="summaryView.Summary.Average"/>
+                <span class="font-bold text-text-default">@CzechLabels.Rating(summaryView.Summary.Average)</span>
+                <span class="text-sm text-text-muted">(@CzechLabels.Reviews(summaryView.Summary.Count))</span>
+            </div>
+        }
+    </div>
+
+    @if (view is null && errorMessage is null)
+    {
+        <p class="text-text-muted mt-4">Načítáme recenze…</p>
+    }
+    else if (view is null)
+    {
+        <p class="text-red-300 mt-4" role="alert">@errorMessage</p>
+    }
+    else
+    {
+        @* Write / edit *@
+        @switch (view.Eligibility)
+        {
+            case ReviewEligibility.SignedOut:
+                <p class="mt-4 text-sm text-text-muted">
+                    Recenzi můžete napsat po <a href="/login" class="text-accent-300 hover:underline">přihlášení</a>.
+                </p>
+                break;
+            case ReviewEligibility.GhostMode:
+                <p class="mt-4 text-sm text-text-muted">V režimu ducha recenze jen čtete. Pro napsání recenze režim ducha vypněte.</p>
+                break;
+            case ReviewEligibility.CanReview when ActiveProfiles.Active != ProfileType.Customer:
+                <p class="mt-4 text-sm text-text-muted">
+                    Recenze se píší za profil @CzechLabels.Role(ProfileType.Customer, ActiveProfiles.GrammaticalGender).
+                    Přepněte se na něj v horní liště.
+                </p>
+                break;
+            case ReviewEligibility.CanReview:
+                <form class="mt-4 rounded-xl border border-accent-800/40 bg-primary-900/60 p-4 space-y-3"
+                      @onsubmit="SaveAsync" @onsubmit:preventDefault>
+                    <p class="text-sm font-medium text-text-default">@(view.Mine is null ? "Vaše hodnocení" : "Vaše recenze")</p>
+
+                    <div class="flex items-center gap-1" role="radiogroup" aria-label="Počet hvězdiček">
+                        @for (int i = PlayerReview.MinRating; i <= PlayerReview.MaxRating; i++)
+                        {
+                            int stars = i;
+                            bool filled = stars <= (hoverRating ?? rating);
+                            <button type="button" role="radio" aria-checked="@(stars == rating ? "true" : "false")"
+                                    aria-label="@StarLabel(stars)" title="@StarLabel(stars)"
+                                    @onclick="() => rating = stars"
+                                    @onmouseenter="() => hoverRating = stars" @onmouseleave="() => hoverRating = null"
+                                    class="p-0.5 rounded focus-visible:outline-2 focus-visible:outline-accent-400">
+                                <svg class="w-8 h-8 transition-colors @(filled ? "text-amber-400" : "text-primary-700")"
+                                     viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="@StarPath"/>
+                                </svg>
+                            </button>
+                        }
+                    </div>
+
+                    <div>
+                        <label for="review-comment" class="sr-only">Text recenze</label>
+                        <textarea id="review-comment" @bind="comment" @bind:event="oninput" rows="3"
+                                  maxlength="@PlayerReview.CommentMaxLength"
+                                  placeholder="Jak se vám s ním nebo s ní hrálo? (nepovinné)"
+                                  class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default placeholder:text-text-muted/60"></textarea>
+                        <p class="text-xs text-text-muted text-right">@(comment?.Length ?? 0) / @PlayerReview.CommentMaxLength</p>
+                    </div>
+
+                    @if (formError is not null)
+                    {
+                        <p class="text-sm text-red-300" role="alert">@formError</p>
+                    }
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button type="submit" disabled="@(isSaving || rating == 0)"
+                                class="px-4 py-2 rounded-lg bg-accent-600 text-white font-semibold hover:bg-accent-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            @(isSaving ? "Ukládáme…" : view.Mine is null ? "Odeslat recenzi" : "Uložit změny")
+                        </button>
+                        @if (view.Mine is not null)
+                        {
+                            @if (confirmDelete)
+                            {
+                                <span class="text-sm text-text-muted">Opravdu smazat?</span>
+                                <button type="button" @onclick="DeleteAsync" disabled="@isSaving"
+                                        class="text-sm font-semibold text-red-300 hover:underline">Ano, smazat</button>
+                                <button type="button" @onclick="() => confirmDelete = false"
+                                        class="text-sm text-text-muted hover:underline">Ne</button>
+                            }
+                            else
+                            {
+                                <button type="button" @onclick="() => confirmDelete = true"
+                                        class="text-sm text-text-muted hover:text-red-300 hover:underline">Smazat recenzi</button>
+                            }
+                        }
+                        @if (savedMessage is not null)
+                        {
+                            <span class="text-sm text-emerald-300" role="status">@savedMessage</span>
+                        }
+                    </div>
+                </form>
+                break;
+        }
+
+        @* List *@
+        @if (reviews.Count == 0)
+        {
+            <p class="mt-4 text-text-muted">Zatím tu není žádná recenze.</p>
+        }
+        else
+        {
+            <ul class="mt-4 space-y-4">
+                @foreach (PlayerReviewItem review in reviews)
+                {
+                    <li class="flex gap-3">
+                        @if (review.AuthorImageId is not null)
+                        {
+                            <img src="@ImageUrls.For(review.AuthorImageId)" alt="" loading="lazy"
+                                 class="w-10 h-10 rounded-full object-cover shrink-0"/>
+                        }
+                        else
+                        {
+                            <div class="w-10 h-10 rounded-full bg-accent-800/60 text-accent-200 text-sm font-bold flex items-center justify-center shrink-0">
+                                @Initials(review.AuthorName)
+                            </div>
+                        }
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                <span class="font-semibold text-text-default">@review.AuthorName</span>
+                                <span aria-label="@StarLabel(review.Rating)"><Stars Value="review.Rating" Size="w-4 h-4"/></span>
+                                <span class="text-xs text-text-muted">
+                                    @CzechLabels.InPragueTime(review.CreatedAt).ToString("d. M. yyyy")@(review.IsEdited ? " · upraveno" : "")
+                                </span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(review.Comment))
+                            {
+                                <p class="mt-1 text-text-default/90 whitespace-pre-line break-words">@review.Comment</p>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+
+            @if (reviews.Count < view.TotalCount)
+            {
+                <button type="button" @onclick="LoadMoreAsync" disabled="@isLoadingMore"
+                        class="mt-4 text-sm font-semibold text-accent-300 hover:underline disabled:opacity-50">
+                    @(isLoadingMore ? "Načítáme…" : "Načíst další recenze")
+                </button>
+            }
+        }
+    }
+</section>
+
+@code {
+    private const int PageSize = 10;
+
+    /// <summary>
+    ///     A five-pointed star in a 24×24 box.
+    /// </summary>
+    internal const string StarPath =
+        "M12 2.5l2.94 5.96 6.56.95-4.75 4.63 1.12 6.54L12 17.5l-5.87 3.08 1.12-6.54L2.5 9.41l6.56-.95z";
+
+    private readonly CancellationTokenSource disposed = new();
+    private readonly List<PlayerReviewItem> reviews = [];
+
+    private Guid? loadedProfileId;
+    private Guid? userId;
+    private PlayerReviewsView? view;
+    private string? errorMessage;
+    private int page = 1;
+    private bool isLoadingMore;
+
+    private int rating;
+    private int? hoverRating;
+    private string? comment;
+    private bool isSaving;
+    private bool confirmDelete;
+    private string? formError;
+    private string? savedMessage;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the reviewed player.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public Guid ProfileId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ActiveProfiles.Changed += OnProfilesChanged;
+        if (AuthenticationState is not null)
+        {
+            ClaimsPrincipal user = (await AuthenticationState).User;
+            string? claim = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
+            if (Guid.TryParse(claim, out Guid id))
+            {
+                userId = id;
+                await ActiveProfiles.LoadAsync(id);
+            }
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedProfileId == ProfileId)
+        {
+            return;
+        }
+
+        loadedProfileId = ProfileId;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        page = 1;
+        errorMessage = null;
+        try
+        {
+            Result<PlayerReviewsView> result = await GetPlayerReviewsHandler.Handle(
+                new GetPlayerReviewsQuery(ProfileId, userId, page, PageSize),
+                disposed.Token);
+            if (result.IsFailure)
+            {
+                view = null;
+                errorMessage = result.Error!.Message;
+                return;
+            }
+
+            view = result.Value;
+            reviews.Clear();
+            reviews.AddRange(view.Items);
+            rating = view.Mine?.Rating ?? 0;
+            comment = view.Mine?.Comment;
+            confirmDelete = false;
+        }
+        catch (OperationCanceledException)
+        {
+            // The popup was closed while loading.
+        }
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        isLoadingMore = true;
+        try
+        {
+            Result<PlayerReviewsView> result = await GetPlayerReviewsHandler.Handle(
+                new GetPlayerReviewsQuery(ProfileId, userId, page + 1, PageSize),
+                disposed.Token);
+            if (result.IsSuccess)
+            {
+                page++;
+                reviews.AddRange(result.Value.Items);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The popup was closed while loading.
+        }
+        finally
+        {
+            isLoadingMore = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (userId is not { } id || rating == 0)
+        {
+            return;
+        }
+
+        isSaving = true;
+        formError = null;
+        savedMessage = null;
+        try
+        {
+            bool isNew = view?.Mine is null;
+            Result result = await WritePlayerReviewHandler.Handle(
+                new WritePlayerReviewCommand(id, ProfileId, rating, comment),
+                disposed.Token);
+            if (result.IsFailure)
+            {
+                formError = result.Error!.Message;
+                return;
+            }
+
+            await ReloadAsync();
+            savedMessage = isNew ? "Děkujeme za recenzi!" : "Změny jsou uložené.";
+        }
+        catch (OperationCanceledException)
+        {
+            // The popup was closed while saving.
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (userId is not { } id)
+        {
+            return;
+        }
+
+        isSaving = true;
+        formError = null;
+        savedMessage = null;
+        try
+        {
+            Result result = await DeletePlayerReviewHandler.Handle(new DeletePlayerReviewCommand(id, ProfileId), disposed.Token);
+            if (result.IsFailure)
+            {
+                formError = result.Error!.Message;
+                return;
+            }
+
+            await ReloadAsync();
+            savedMessage = "Recenze je smazaná.";
+        }
+        catch (OperationCanceledException)
+        {
+            // The popup was closed while deleting.
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void OnProfilesChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private static string StarLabel(int stars) => stars switch
+    {
+        1 => "1 hvězdička",
+        >= 2 and <= 4 => $"{stars} hvězdičky",
+        _ => $"{stars} hvězdiček",
+    };
+
+    private static string Initials(string name)
+    {
+        string[] parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch
+        {
+            0 => "?",
+            1 => parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant(),
+            _ => string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant(),
+        };
+    }
+
+    public void Dispose()
+    {
+        ActiveProfiles.Changed -= OnProfilesChanged;
+        disposed.Cancel();
+        disposed.Dispose();
+    }
+}

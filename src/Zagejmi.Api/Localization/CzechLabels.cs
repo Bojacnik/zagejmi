@@ -94,6 +94,26 @@ public static class CzechLabels
     }
 
     /// <summary>
+    ///     Formats a number of reviews with the correct Czech plural: 1 recenze, 3 recenze, 5 recenzí.
+    /// </summary>
+    /// <param name="count">How many reviews.</param>
+    /// <returns>For example „12 recenzí“.</returns>
+    public static string Reviews(int count)
+    {
+        return $"{count:N0} {(count is >= 1 and <= 4 ? "recenze" : "recenzí")}";
+    }
+
+    /// <summary>
+    ///     Formats an average rating with one decimal, the Czech way: „4,5“.
+    /// </summary>
+    /// <param name="average">The average number of stars.</param>
+    /// <returns>The formatted rating.</returns>
+    public static string Rating(double average)
+    {
+        return average.ToString("0.0", System.Globalization.CultureInfo.GetCultureInfo("cs-CZ"));
+    }
+
+    /// <summary>
     ///     Converts a time to Czech local time (Europe/Prague), independent of the server's time zone.
     /// </summary>
     /// <param name="value">The time.</param>

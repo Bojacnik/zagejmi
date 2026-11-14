@@ -15,6 +15,8 @@ using Zagejmi.Application.Auth.Users.EmailVerification;
 using Zagejmi.Application.Mail.Abstractions;
 using Zagejmi.Application.Profiles;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Profiles.Reviews;
+using Zagejmi.Application.Profiles.Reviews.Abstractions;
 using Zagejmi.Application.Profiles.SearchServices;
 using Zagejmi.Application.Wallets;
 using Zagejmi.Application.Wallets.Abstractions;
@@ -50,6 +52,8 @@ internal sealed class TestWorld
     public FakeUserRepository Users { get; } = new();
 
     public FakeProfileRepository Profiles { get; } = new();
+
+    public FakePlayerReviewRepository Reviews { get; } = new();
 
     public FakeWalletRepository Wallets { get; }
 
@@ -171,7 +175,7 @@ internal sealed class FakeProfileRepository : IProfileRepository
     }
 
     public Task<PlayerProfile?> GetPlayerByIdAsync(Guid profileId, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
+        Task.FromResult(this.Players.FirstOrDefault(p => p.Id == profileId));
 
     public Task<bool> IsDisplayNameTakenAsync(string displayName, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
@@ -443,5 +447,71 @@ internal sealed class FakeAccessTokens : ITokenService, IRefreshTokenRepository
     public Task AddAsync(Guid userId, string tokenHash, DateTimeOffset expiresAt, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
+    }
+}
+
+/// <summary>
+///     In-memory reviews with the same upsert semantics as the database (one per author and player; an update keeps
+///     the original ID and creation time).
+/// </summary>
+internal sealed class FakePlayerReviewRepository : IPlayerReviewRepository
+{
+    public List<PlayerReview> Items { get; } = [];
+
+    public Func<Guid, (string Name, Guid? ImageId)> Authors { get; set; } = _ => ("Autor", null);
+
+    public Task<PlayerReview?> GetAsync(Guid playerProfileId, Guid authorProfileId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(this.Items.FirstOrDefault(r => r.PlayerProfileId == playerProfileId && r.AuthorProfileId == authorProfileId));
+
+    public Task UpsertAsync(PlayerReview review, CancellationToken cancellationToken = default)
+    {
+        int index = this.Items.FindIndex(r => r.PlayerProfileId == review.PlayerProfileId && r.AuthorProfileId == review.AuthorProfileId);
+        if (index < 0)
+        {
+            this.Items.Add(review);
+        }
+        else
+        {
+            this.Items[index] = this.Items[index] with
+            {
+                Rating = review.Rating,
+                Comment = review.Comment,
+                UpdatedAt = review.UpdatedAt,
+            };
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> DeleteAsync(Guid playerProfileId, Guid authorProfileId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(this.Items.RemoveAll(r => r.PlayerProfileId == playerProfileId && r.AuthorProfileId == authorProfileId) > 0);
+
+    public Task<PagedResult<PlayerReviewItem>> GetForPlayerAsync(
+        Guid playerProfileId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        List<PlayerReview> all = this.Items
+            .Where(r => r.PlayerProfileId == playerProfileId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToList();
+        List<PlayerReviewItem> page = all.Skip(skip).Take(take).Select(r =>
+        {
+            (string name, Guid? image) = this.Authors(r.AuthorProfileId);
+            return new PlayerReviewItem(r.AuthorProfileId, name, image, r.Rating, r.Comment, r.CreatedAt, r.UpdatedAt);
+        }).ToList();
+        return Task.FromResult(new PagedResult<PlayerReviewItem>(page, all.Count));
+    }
+
+    public Task<IReadOnlyDictionary<Guid, RatingSummary>> GetSummariesAsync(
+        IReadOnlyCollection<Guid> playerProfileIds,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyDictionary<Guid, RatingSummary> result = this.Items
+            .Where(r => playerProfileIds.Contains(r.PlayerProfileId))
+            .GroupBy(r => r.PlayerProfileId)
+            .ToDictionary(g => g.Key, g => new RatingSummary(g.Average(r => (double)r.Rating), g.Count()));
+        return Task.FromResult(result);
     }
 }
