@@ -4,9 +4,9 @@ using Zagejmi.Shared;
 namespace Zagejmi.Application.Profiles.Reviews;
 
 /// <summary>
-///     Validates what a customer enters into a review.
+///     Validates what a customer enters into a recommendation or a service review.
 /// </summary>
-public static class PlayerReviewRules
+public static class ReviewRules
 {
     /// <summary>
     ///     Checks the rating and normalizes the text (trimmed; empty means no text).

@@ -5,6 +5,7 @@ using Zagejmi.Api.Models;
 using Zagejmi.Application.Profiles;
 using Zagejmi.Domain.Auth;
 using Zagejmi.Domain.Games;
+using Zagejmi.Domain.Orders;
 using Zagejmi.Domain.Profiles;
 
 namespace Zagejmi.Api.Localization;
@@ -94,6 +95,48 @@ public static class CzechLabels
     }
 
     /// <summary>
+    ///     Gets the Czech name of an order state.
+    /// </summary>
+    /// <param name="status">The state.</param>
+    /// <returns>For example „Čeká na přijetí“.</returns>
+    public static string OrderStatus(OrderStatus status) => status switch
+    {
+        Domain.Orders.OrderStatus.Pending => "Čeká na přijetí",
+        Domain.Orders.OrderStatus.Active => "Probíhá",
+        Domain.Orders.OrderStatus.Finished => "Čeká na potvrzení",
+        Domain.Orders.OrderStatus.Disputed => "Řeší se problém",
+        Domain.Orders.OrderStatus.Completed => "Dokončeno",
+        Domain.Orders.OrderStatus.Cancelled => "Zrušeno",
+        _ => status.ToString(),
+    };
+
+    /// <summary>
+    ///     Gets the Czech description of how a player ended an order.
+    /// </summary>
+    /// <param name="outcome">The outcome.</param>
+    /// <returns>The description.</returns>
+    public static string OrderOutcome(OrderOutcome outcome) => outcome switch
+    {
+        Domain.Orders.OrderOutcome.Delivered => "Služba proběhla",
+        Domain.Orders.OrderOutcome.CustomerNoShow => "Bez účasti zákazníka",
+        _ => outcome.ToString(),
+    };
+
+    /// <summary>
+    ///     Gets the Czech reason of a cancelled order.
+    /// </summary>
+    /// <param name="cancellation">The reason.</param>
+    /// <returns>The description.</returns>
+    public static string OrderCancellation(OrderCancellation cancellation) => cancellation switch
+    {
+        Domain.Orders.OrderCancellation.CustomerCancelled => "Zrušeno před přijetím",
+        Domain.Orders.OrderCancellation.PlayerDeclined => "Odmítnuto",
+        Domain.Orders.OrderCancellation.AcceptTimeout => "Nepřijato včas",
+        Domain.Orders.OrderCancellation.AdminRefunded => "Vráceno po kontrole problému",
+        _ => cancellation.ToString(),
+    };
+
+    /// <summary>
     ///     Formats a number of reviews with the correct Czech plural: 1 recenze, 3 recenze, 5 recenzí.
     /// </summary>
     /// <param name="count">How many reviews.</param>
@@ -102,6 +145,13 @@ public static class CzechLabels
     {
         return $"{count:N0} {(count is >= 1 and <= 4 ? "recenze" : "recenzí")}";
     }
+
+    /// <summary>
+    ///     Formats a number of recommendations; „doporučení“ has the same form for every count.
+    /// </summary>
+    /// <param name="count">How many recommendations.</param>
+    /// <returns>For example „12 doporučení“.</returns>
+    public static string Recommendations(int count) => $"{count:N0} doporučení";
 
     /// <summary>
     ///     Formats an average rating with one decimal, the Czech way: „4,5“.

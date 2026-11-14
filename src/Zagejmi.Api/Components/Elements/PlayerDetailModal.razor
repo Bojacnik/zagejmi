@@ -1,3 +1,4 @@
+@using System.Security.Claims
 @using System.Threading
 @using Zagejmi.Api.Localization
 @using Zagejmi.Application.Profiles.GetPlayerDetail
@@ -5,6 +6,7 @@
 @using Zagejmi.Shared
 @implements IDisposable
 @inject GetPlayerDetailHandler GetPlayerDetailHandler
+@inject ActiveProfileService ActiveProfiles
 
 @* Player popup: banner, logo, description, services and reviews. Closes on ✕, backdrop click or Esc. *@
 
@@ -115,11 +117,32 @@
                                     }
                                     <h4 class="font-bold text-text-default">@service.Name</h4>
                                     <p class="text-sm text-text-muted line-clamp-3 mt-1">@service.Description</p>
-                                    <div class="mt-3 flex items-center justify-between">
+                                    <div class="mt-3 flex items-center justify-between gap-2">
                                         <span class="font-bold text-accent-300">@CzechLabels.Goins(service.Price) @service.PriceUnit</span>
+                                        @if (service.Rating is { } serviceRating)
+                                        {
+                                            <span class="text-sm font-semibold text-amber-300" title="@CzechLabels.Reviews(serviceRating.Count)">
+                                                ★ @CzechLabels.Rating(serviceRating.Average)
+                                            </span>
+                                        }
                                         @if (!service.IsAvailable)
                                         {
                                             <span class="text-xs text-text-muted">Nedostupné</span>
+                                        }
+                                        else if (isOwnProfile)
+                                        {
+                                            <span class="text-xs text-text-muted">Vaše služba</span>
+                                        }
+                                        else if (!isSignedIn)
+                                        {
+                                            <a href="/login" class="text-sm font-semibold text-accent-300 hover:underline">Přihlásit a objednat</a>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" @onclick="() => orderService = service"
+                                                    class="px-3 py-1.5 rounded-lg bg-accent-600 text-sm font-semibold text-white hover:bg-accent-500">
+                                                Objednat
+                                            </button>
                                         }
                                     </div>
                                 </div>
@@ -129,10 +152,17 @@
                 }
             </section>
 
+            <ServiceReviewsList ProfileId="player.ProfileId"/>
             <PlayerReviews ProfileId="player.ProfileId"/>
         }
     </div>
 </div>
+
+@if (orderService is { } ordering)
+{
+    <OrderDialog ServiceId="ordering.ServiceId" ServiceName="@ordering.Name" UnitPrice="ordering.Price"
+                 PriceUnit="@ordering.PriceUnit" OnClose="() => orderService = null"/>
+}
 
 @code {
     private readonly CancellationTokenSource disposed = new();
@@ -142,6 +172,12 @@
     private PlayerDetail? player;
     private bool isLoading = true;
     private string? errorMessage;
+    private bool isSignedIn;
+    private bool isOwnProfile;
+    private PlayerServiceItem? orderService;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
 
     /// <summary>
     ///     Gets or sets the player profile to show.
@@ -180,6 +216,7 @@
             }
 
             player = result.Value;
+            await LoadViewerAsync();
         }
         catch (OperationCanceledException)
         {
@@ -188,6 +225,23 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task LoadViewerAsync()
+    {
+        if (AuthenticationState is null)
+        {
+            return;
+        }
+
+        ClaimsPrincipal user = (await AuthenticationState).User;
+        string? claim = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
+        isSignedIn = Guid.TryParse(claim, out Guid userId);
+        if (isSignedIn)
+        {
+            await ActiveProfiles.LoadAsync(userId);
+            isOwnProfile = ActiveProfiles.View?.Player?.ProfileId == player?.ProfileId;
         }
     }
 

@@ -1,0 +1,44 @@
+@using Zagejmi.Domain.Profiles.Players
+
+@* 1–5 star picker (radio group); hovering previews the rating. *@
+<div class="flex items-center gap-1" role="radiogroup" aria-label="Počet hvězdiček">
+    @for (int i = PlayerReview.MinRating; i <= PlayerReview.MaxRating; i++)
+    {
+        int stars = i;
+        bool filled = stars <= (hover ?? Value);
+        <button type="button" role="radio" aria-checked="@(stars == Value ? "true" : "false")"
+                aria-label="@Label(stars)" title="@Label(stars)"
+                @onclick="() => ValueChanged.InvokeAsync(stars)"
+                @onmouseenter="() => hover = stars" @onmouseleave="() => hover = null"
+                class="p-0.5 rounded focus-visible:outline-2 focus-visible:outline-accent-400">
+            <svg class="w-8 h-8 transition-colors @(filled ? "text-amber-400" : "text-primary-700")"
+                 viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="@PlayerReviews.StarPath"/>
+            </svg>
+        </button>
+    }
+</div>
+
+@code {
+    private int? hover;
+
+    /// <summary>Gets or sets the chosen rating (0 = none yet).</summary>
+    [Parameter]
+    public int Value { get; set; }
+
+    /// <summary>Gets or sets the callback when a star is clicked.</summary>
+    [Parameter]
+    public EventCallback<int> ValueChanged { get; set; }
+
+    /// <summary>
+    ///     Gets the Czech label of a number of stars.
+    /// </summary>
+    /// <param name="stars">1–5.</param>
+    /// <returns>For example „3 hvězdičky“.</returns>
+    public static string Label(int stars) => stars switch
+    {
+        1 => "1 hvězdička",
+        >= 2 and <= 4 => $"{stars} hvězdičky",
+        _ => $"{stars} hvězdiček",
+    };
+}

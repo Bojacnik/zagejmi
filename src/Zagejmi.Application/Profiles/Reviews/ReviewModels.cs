@@ -39,3 +39,34 @@ public sealed record PlayerReviewItem(
     /// </summary>
     public bool IsEdited => this.UpdatedAt > this.CreatedAt;
 }
+
+/// <summary>
+///     A review of one completed order, as shown on the player's profile.
+/// </summary>
+/// <param name="OrderId">The reviewed order.</param>
+/// <param name="ServiceId">The service.</param>
+/// <param name="ServiceName">The service name at order time.</param>
+/// <param name="AuthorProfileId">The customer profile that wrote it.</param>
+/// <param name="AuthorName">The author's display name.</param>
+/// <param name="AuthorImageId">The author's profile picture, if any.</param>
+/// <param name="Rating">1–5 stars.</param>
+/// <param name="Comment">The optional text.</param>
+/// <param name="CreatedAt">When it was first written.</param>
+/// <param name="UpdatedAt">When it was last changed.</param>
+public sealed record ServiceReviewItem(
+    Guid OrderId,
+    Guid ServiceId,
+    string ServiceName,
+    Guid AuthorProfileId,
+    string AuthorName,
+    Guid? AuthorImageId,
+    int Rating,
+    string? Comment,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt)
+{
+    /// <summary>
+    ///     Gets a value indicating whether the review was changed after it was written.
+    /// </summary>
+    public bool IsEdited => this.UpdatedAt > this.CreatedAt;
+}

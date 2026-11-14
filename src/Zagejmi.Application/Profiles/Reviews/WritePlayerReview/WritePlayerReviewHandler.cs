@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 using Zagejmi.Application.Abstractions;
 using Zagejmi.Application.Auth.Users.Abstractions;
+using Zagejmi.Application.Orders.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
 using Zagejmi.Application.Profiles.Reviews.Abstractions;
 using Zagejmi.Domain.Auth;
@@ -14,14 +15,15 @@ using Zagejmi.Shared;
 namespace Zagejmi.Application.Profiles.Reviews.WritePlayerReview;
 
 /// <summary>
-///     Writes or replaces the customer's review of a player. Any customer may review any player (there are no orders
-///     yet to prove they played together), except their own player profile; ghosts may not review at all.
+///     Writes or replaces the customer's recommendation (doporučení) of a player. Allowed after at least one completed
+///     order with the player where the service was provided; not for the user's own player profile, not for ghosts.
 /// </summary>
 public sealed class WritePlayerReviewHandler : IHandlerRequest<WritePlayerReviewCommand, Result>
 {
     private readonly IUserRepository userRepository;
     private readonly IProfileRepository profileRepository;
     private readonly IPlayerReviewRepository reviewRepository;
+    private readonly IOrderRepository orderRepository;
     private readonly TimeProvider clock;
 
     /// <summary>
@@ -30,23 +32,26 @@ public sealed class WritePlayerReviewHandler : IHandlerRequest<WritePlayerReview
     /// <param name="userRepository">The user repository.</param>
     /// <param name="profileRepository">The profile repository.</param>
     /// <param name="reviewRepository">The review repository.</param>
+    /// <param name="orderRepository">The order repository (a recommendation needs a completed order).</param>
     /// <param name="clock">The clock.</param>
     public WritePlayerReviewHandler(
         IUserRepository userRepository,
         IProfileRepository profileRepository,
         IPlayerReviewRepository reviewRepository,
+        IOrderRepository orderRepository,
         TimeProvider clock)
     {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
         this.reviewRepository = reviewRepository;
+        this.orderRepository = orderRepository;
         this.clock = clock;
     }
 
     /// <inheritdoc />
     public async Task<Result> Handle(WritePlayerReviewCommand request, CancellationToken cancellationToken = default)
     {
-        Result<string?> comment = PlayerReviewRules.Validate(request.Rating, request.Comment);
+        Result<string?> comment = ReviewRules.Validate(request.Rating, request.Comment);
         if (comment.IsFailure)
         {
             return Result.Failure(comment.Error!);
@@ -61,6 +66,14 @@ public sealed class WritePlayerReviewHandler : IHandlerRequest<WritePlayerReview
         if (parties.IsFailure)
         {
             return Result.Failure(parties.Error!);
+        }
+
+        if (!await this.orderRepository.HasReviewableOrderAsync(
+                parties.Value.Author.Id,
+                parties.Value.Player.Id,
+                cancellationToken))
+        {
+            return Result.Failure(ReviewAccess.NoCompletedOrder);
         }
 
         DateTimeOffset now = this.clock.GetUtcNow();

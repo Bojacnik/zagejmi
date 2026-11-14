@@ -1,0 +1,227 @@
+@using Zagejmi.Api.Localization
+@using Zagejmi.Api.Models
+@using Zagejmi.Application.Orders
+@using Zagejmi.Application.Orders.GetOrders
+@using Zagejmi.Application.Profiles
+@using Zagejmi.Domain.Orders
+
+@*
+    One order as the customer, the player or an admin sees it: what, who, how much, the state with what happens next,
+    and the buttons the viewer may use (ORDER-002). Destructive actions ask once more; a report needs a description.
+*@
+
+@{
+    Order o = View.Order;
+    ProfileCard other = Role == OrderRole.Player ? View.Customer : View.Player;
+}
+
+<article class="rounded-xl border border-accent-800/40 bg-primary-900/60 p-4 sm:p-5">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+            <h3 class="font-bold text-text-default break-words">@o.ServiceName</h3>
+            <p class="text-sm text-text-muted">
+                @o.Quantity × @CzechLabels.Goins(o.UnitPrice) @o.PriceUnit · celkem <span class="text-text-default font-semibold">@CzechLabels.Goins(o.Total)</span>
+            </p>
+        </div>
+        <span class="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold @StatusClass(o.Status)">
+            @CzechLabels.OrderStatus(o.Status)
+        </span>
+    </div>
+
+    <div class="mt-3 flex items-center gap-2 text-sm">
+        @if (other.ImageId is not null)
+        {
+            <img src="@ImageUrls.For(other.ImageId)" alt="" class="w-6 h-6 rounded-full object-cover"/>
+        }
+        <span class="text-text-muted">@(Role == OrderRole.Player ? "Objednávka od" : "Služba od")</span>
+        @if (Role == OrderRole.Customer)
+        {
+            <a href="@($"/players/{View.Player.ProfileId}")" class="text-accent-300 hover:underline">@other.DisplayName</a>
+        }
+        else
+        {
+            <span class="text-text-default">@other.DisplayName</span>
+        }
+        @if (ShowBothParties)
+        {
+            <span class="text-text-muted">· objednávka od</span>
+            <span class="text-text-default">@View.Customer.DisplayName</span>
+        }
+    </div>
+
+    <p class="mt-3 text-sm text-text-default/90">@NextStep(o)</p>
+
+    @if (o.DisputeReason is not null)
+    {
+        <blockquote class="mt-3 border-l-2 border-amber-500/60 pl-3 text-sm text-text-default/90 whitespace-pre-line break-words">
+            @o.DisputeReason
+        </blockquote>
+    }
+
+    <p class="mt-2 text-xs text-text-muted">Objednáno @When(o.CreatedAt)</p>
+
+    @if (Role == OrderRole.Customer && o.UnlocksReview && OnReview.HasDelegate)
+    {
+        <div class="mt-4">
+            @if (View.HasReview)
+            {
+                <Secondary OnClick="() => OnReview.InvokeAsync(View)">Upravit recenzi</Secondary>
+            }
+            else
+            {
+                <Primary OnClick="() => OnReview.InvokeAsync(View)">Ohodnotit službu</Primary>
+            }
+        </div>
+    }
+
+    @if (View.Actions.Count > 0 || AdminActions is not null)
+    {
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+            @if (confirming is { } pending)
+            {
+                <span class="text-sm text-text-default">@ConfirmText(pending)</span>
+                <button type="button" disabled="@Busy" @onclick="() => RunAsync(pending)"
+                        class="px-3 py-1.5 rounded-lg bg-red-600/80 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-50">Ano</button>
+                <button type="button" @onclick="() => confirming = null" class="px-3 py-1.5 text-sm text-text-muted hover:underline">Ne</button>
+            }
+            else if (reporting)
+            {
+                <div class="w-full space-y-2">
+                    <label for="@($"report-{o.Id}")" class="text-sm text-text-default">Co se stalo? Administrátor rozhodne, komu Goiny patří.</label>
+                    <textarea id="@($"report-{o.Id}")" @bind="reportText" @bind:event="oninput" rows="3" maxlength="@Order.DisputeReasonMaxLength"
+                              class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default"></textarea>
+                    <div class="flex gap-2">
+                        <button type="button" disabled="@(Busy || string.IsNullOrWhiteSpace(reportText))"
+                                @onclick="() => RunAsync(OrderAction.Report, reason: reportText)"
+                                class="px-3 py-1.5 rounded-lg bg-amber-600 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-50">Odeslat</button>
+                        <button type="button" @onclick="() => reporting = false" class="px-3 py-1.5 text-sm text-text-muted hover:underline">Zpět</button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @foreach (OrderAction action in View.Actions)
+                {
+                    switch (action)
+                    {
+                        case OrderAction.Accept:
+                            <Primary Disabled="Busy" OnClick="() => RunAsync(OrderAction.Accept)">Přijmout</Primary>
+                            break;
+                        case OrderAction.Decline:
+                            <Secondary Disabled="Busy" OnClick="() => confirming = OrderAction.Decline">Odmítnout</Secondary>
+                            break;
+                        case OrderAction.Cancel:
+                            <Secondary Disabled="Busy" OnClick="() => confirming = OrderAction.Cancel">Zrušit objednávku</Secondary>
+                            break;
+                        case OrderAction.Finish:
+                            <Primary Disabled="Busy" OnClick="() => RunAsync(OrderAction.Finish, OrderOutcome.Delivered)">Služba proběhla</Primary>
+                            <Secondary Disabled="Busy" OnClick="() => RunAsync(OrderAction.Finish, OrderOutcome.CustomerNoShow)">Zákazník se nedostavil</Secondary>
+                            break;
+                        case OrderAction.Confirm:
+                            <Primary Disabled="Busy" OnClick="() => RunAsync(OrderAction.Confirm)">Potvrdit, vše proběhlo</Primary>
+                            break;
+                        case OrderAction.Report:
+                            <Secondary Disabled="Busy" OnClick="() => reporting = true">Nahlásit problém</Secondary>
+                            break;
+                    }
+                }
+
+                @AdminActions
+            }
+        </div>
+    }
+
+    @if (Error is not null)
+    {
+        <p class="mt-3 text-sm text-red-300" role="alert">@Error</p>
+    }
+</article>
+
+@code {
+    private OrderAction? confirming;
+    private bool reporting;
+    private string? reportText;
+
+    /// <summary>Gets or sets the order.</summary>
+    [Parameter, EditorRequired]
+    public OrderView View { get; set; } = null!;
+
+    /// <summary>Gets or sets the viewer's side (an admin sees it as the customer side).</summary>
+    [Parameter]
+    public OrderRole Role { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether to name both parties (admin view).</summary>
+    [Parameter]
+    public bool ShowBothParties { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether an action is running.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>Gets or sets the error of the last action on this order.</summary>
+    [Parameter]
+    public string? Error { get; set; }
+
+    /// <summary>Gets or sets the callback that performs an action.</summary>
+    [Parameter]
+    public EventCallback<OrderActionRequest> OnAction { get; set; }
+
+    /// <summary>Gets or sets the callback that opens the review of a completed order (customer only).</summary>
+    [Parameter]
+    public EventCallback<OrderView> OnReview { get; set; }
+
+    /// <summary>Gets or sets extra buttons (admin decisions).</summary>
+    [Parameter]
+    public RenderFragment? AdminActions { get; set; }
+
+    private async Task RunAsync(OrderAction action, OrderOutcome? outcome = null, string? reason = null)
+    {
+        confirming = null;
+        await OnAction.InvokeAsync(new OrderActionRequest(View.Order.Id, action, outcome, reason));
+        reporting = false;
+    }
+
+    private string NextStep(Order o)
+    {
+        bool player = Role == OrderRole.Player;
+        return o.Status switch
+        {
+            OrderStatus.Pending => player
+                ? $"Přijměte nebo odmítněte do {When(o.AcceptDeadline)}, jinak se objednávka zruší."
+                : $"Hráč má čas přijmout do {When(o.AcceptDeadline)}. Do té doby můžete objednávku zrušit.",
+            OrderStatus.Active => player
+                ? "Po skončení označte, jak služba dopadla."
+                : $"Probíhá od {When(o.AcceptedAt!.Value)}.",
+            OrderStatus.Finished => player
+                ? $"{CzechLabels.OrderOutcome(o.Outcome!.Value)}. Výplata {CzechLabels.Goins(o.PlayerShare)} přijde po potvrzení, nejpozději {When(o.ConfirmDeadline!.Value)}."
+                : $"{CzechLabels.OrderOutcome(o.Outcome!.Value)}. Potvrďte to, nebo nahlaste problém do {When(o.ConfirmDeadline!.Value)}; pak se objednávka dokončí sama.",
+            OrderStatus.Disputed => "Goiny jsou pozastavené, dokud administrátor nerozhodne.",
+            OrderStatus.Completed => player
+                ? $"Vyplaceno {CzechLabels.Goins(o.PlayerShare)} (poplatek platformy {CzechLabels.Goins(o.Fee)}) · {When(o.ClosedAt!.Value)}"
+                : $"Dokončeno {When(o.ClosedAt!.Value)}.",
+            OrderStatus.Cancelled => player
+                ? $"{CzechLabels.OrderCancellation(o.Cancellation!.Value)} · {When(o.ClosedAt!.Value)}"
+                : $"{CzechLabels.OrderCancellation(o.Cancellation!.Value)}. {CzechLabels.Goins(o.Total)} vráceno do peněženky.",
+            _ => string.Empty,
+        };
+    }
+
+    private static string ConfirmText(OrderAction action) => action switch
+    {
+        OrderAction.Cancel => "Opravdu zrušit? Goiny se vám vrátí.",
+        OrderAction.Decline => "Opravdu odmítnout? Zákazník dostane Goiny zpět.",
+        _ => "Opravdu?",
+    };
+
+    private static string When(DateTimeOffset value) => CzechLabels.InPragueTime(value).ToString("d. M. yyyy H:mm");
+
+    private static string StatusClass(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending => "bg-sky-500/20 text-sky-300 border border-sky-500/40",
+        OrderStatus.Active => "bg-accent-600/20 text-accent-300 border border-accent-600/40",
+        OrderStatus.Finished => "bg-amber-500/20 text-amber-300 border border-amber-500/40",
+        OrderStatus.Disputed => "bg-red-500/20 text-red-300 border border-red-500/40",
+        OrderStatus.Completed => "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40",
+        _ => "bg-primary-800 text-text-muted border border-primary-700",
+    };
+}

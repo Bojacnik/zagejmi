@@ -5,12 +5,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Minio;
 
+using Zagejmi.Application.Admin;
 using Zagejmi.Application.Auth.Passwords;
 using Zagejmi.Application.Auth.Tokens;
 using Zagejmi.Application.Auth.Users.Abstractions;
 using Zagejmi.Application.Images;
 using Zagejmi.Application.Images.Abstractions;
+using Zagejmi.Application.Orders;
+using Zagejmi.Application.Orders.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Profiles.Reviews;
 using Zagejmi.Application.Profiles.Reviews.Abstractions;
 using Zagejmi.Application.Wallets;
 using Zagejmi.Application.Wallets.Abstractions;
@@ -41,6 +45,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IPlayerReviewRepository, PlayerReviewRepository>();
+        services.AddScoped<IServiceReviewRepository, ServiceReviewRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddSingleton<IPasswordHasher, Argon2PasswordHasher>();
 
@@ -77,8 +82,8 @@ public static class InfrastructureServiceCollectionExtensions
     }
 
     /// <summary>
-    ///     Adds the Goin ledger, the wallet rules (configuration section <c>Wallets</c>) and the background job that
-    ///     expires bonus Goins.
+    ///     Adds the Goin ledger, the wallet rules (configuration section <c>Wallets</c>), orders (<c>Orders</c>, admins in
+    ///     <c>Admin</c>) and the background jobs that expire bonus Goins and time out orders.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The application configuration.</param>
@@ -88,6 +93,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<WalletOptions>(configuration.GetSection(WalletOptions.SectionName));
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddHostedService<BonusExpiryService>();
+
+        // Orders live next to the ledger (their money moves in the same database transaction).
+        services.Configure<OrderOptions>(configuration.GetSection(OrderOptions.SectionName));
+        services.Configure<AdminOptions>(configuration.GetSection(AdminOptions.SectionName));
+        services.Configure<ReviewOptions>(configuration.GetSection(ReviewOptions.SectionName));
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddHostedService<OrderTimeoutService>();
 
         return services;
     }

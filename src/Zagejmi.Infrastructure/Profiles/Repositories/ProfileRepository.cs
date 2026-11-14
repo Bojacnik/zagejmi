@@ -383,6 +383,31 @@ public sealed class ProfileRepository : IProfileRepository
             .ExecuteDeleteAsync(cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyDictionary<Guid, ProfileCard>> GetProfileCardsAsync(
+        IReadOnlyCollection<Guid> profileIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (profileIds.Count == 0)
+        {
+            return new Dictionary<Guid, ProfileCard>();
+        }
+
+        await using ProfilesContext context = await this.contextFactory.CreateDbContextAsync(cancellationToken);
+        List<ProfileCard> customers = await context.Customers
+            .AsNoTracking()
+            .Where(c => profileIds.Contains(c.Id))
+            .Select(c => new ProfileCard(c.Id, c.DisplayName, c.ProfilePictureId))
+            .ToListAsync(cancellationToken);
+        List<ProfileCard> players = await context.Players
+            .AsNoTracking()
+            .Where(p => profileIds.Contains(p.Id))
+            .Select(p => new ProfileCard(p.Id, p.DisplayName, p.CardProfilePictureId))
+            .ToListAsync(cancellationToken);
+
+        return customers.Concat(players).ToDictionary(c => c.ProfileId);
+    }
+
     private static PlayerService ToDomain(PlayerServiceRecord record)
     {
         return new PlayerService

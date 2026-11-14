@@ -16,7 +16,7 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261114020406_AddPlayerReviews";
+    public override string LastMigrationId => "20261114025813_AddServiceReviews";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -215,6 +215,58 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
                     });
             });
 
+        modelBuilder.Entity("Zagejmi.Infrastructure.Profiles.Records.ServiceReviewRecord", b =>
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid>("AuthorProfileId")
+                    .HasColumnType("uuid");
+
+                b.Property<string>("Comment")
+                    .HasMaxLength(1000)
+                    .HasColumnType("character varying(1000)");
+
+                b.Property<DateTimeOffset>("CreatedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<Guid>("OrderId")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid>("PlayerProfileId")
+                    .HasColumnType("uuid");
+
+                b.Property<int>("Rating")
+                    .HasColumnType("integer");
+
+                b.Property<Guid>("ServiceId")
+                    .HasColumnType("uuid");
+
+                b.Property<string>("ServiceName")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
+
+                b.Property<DateTimeOffset>("UpdatedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.HasKey("Id");
+
+                b.HasIndex("AuthorProfileId");
+
+                b.HasIndex("OrderId")
+                    .IsUnique();
+
+                b.HasIndex("ServiceId");
+
+                b.HasIndex("PlayerProfileId", "CreatedAt");
+
+                b.ToTable("ServiceReviews", "profiles", t =>
+                    {
+                        t.HasCheckConstraint("CK_ServiceReviews_Rating", "\"Rating\" BETWEEN 1 AND 5");
+                    });
+            });
+
         modelBuilder.Entity("Zagejmi.Infrastructure.Profiles.Records.SubscriptionRecord", b =>
             {
                 b.Property<Guid>("Id")
@@ -255,6 +307,21 @@ partial class ProfilesContextModelSnapshot : ModelSnapshot
 
         modelBuilder.Entity("Zagejmi.Infrastructure.Profiles.Records.PlayerServiceRecord", b =>
             {
+                b.HasOne("Zagejmi.Infrastructure.Profiles.Records.PlayerProfileRecord", null)
+                    .WithMany()
+                    .HasForeignKey("PlayerProfileId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+            });
+
+        modelBuilder.Entity("Zagejmi.Infrastructure.Profiles.Records.ServiceReviewRecord", b =>
+            {
+                b.HasOne("Zagejmi.Infrastructure.Profiles.Records.CustomerProfileRecord", null)
+                    .WithMany()
+                    .HasForeignKey("AuthorProfileId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+
                 b.HasOne("Zagejmi.Infrastructure.Profiles.Records.PlayerProfileRecord", null)
                     .WithMany()
                     .HasForeignKey("PlayerProfileId")

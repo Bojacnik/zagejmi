@@ -1,0 +1,148 @@
+@using System.Threading
+@using Zagejmi.Api.Localization
+@using Zagejmi.Application.Abstractions
+@using Zagejmi.Application.Profiles.Reviews
+@using Zagejmi.Application.Profiles.Reviews.GetServiceReviews
+@implements IDisposable
+@inject GetServiceReviewsHandler GetServiceReviewsHandler
+
+@*
+    Reviews of a player's completed orders (REVIEW-002), newest first, each with the service it was for. Written from
+    the customer's order list; one per completed order.
+*@
+
+<section class="px-6 sm:px-8 py-6 border-t border-accent-800/40" aria-labelledby="service-reviews-title">
+    <div class="flex flex-wrap items-baseline justify-between gap-3">
+        <h3 id="service-reviews-title" class="text-xl font-bold text-text-default">Recenze služeb</h3>
+        @if (total > 0)
+        {
+            <span class="text-sm text-text-muted">@CzechLabels.Reviews(total)</span>
+        }
+    </div>
+
+    @if (reviews is null)
+    {
+        <p class="text-text-muted mt-4">Načítáme recenze…</p>
+    }
+    else if (reviews.Count == 0)
+    {
+        <p class="mt-4 text-text-muted">Zatím žádné recenze. Recenzi napíše zákazník po dokončené objednávce.</p>
+    }
+    else
+    {
+        <ul class="mt-4 space-y-4">
+            @foreach (ServiceReviewItem review in reviews)
+            {
+                <li class="flex gap-3">
+                    @if (review.AuthorImageId is not null)
+                    {
+                        <img src="@ImageUrls.For(review.AuthorImageId)" alt="" loading="lazy" class="w-10 h-10 rounded-full object-cover shrink-0"/>
+                    }
+                    else
+                    {
+                        <div class="w-10 h-10 rounded-full bg-accent-800/60 text-accent-200 text-sm font-bold flex items-center justify-center shrink-0">
+                            @Initials(review.AuthorName)
+                        </div>
+                    }
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <span class="font-semibold text-text-default">@review.AuthorName</span>
+                            <span aria-label="@StarInput.Label(review.Rating)"><Stars Value="review.Rating" Size="w-4 h-4"/></span>
+                            <span class="text-xs text-text-muted">
+                                @CzechLabels.InPragueTime(review.CreatedAt).ToString("d. M. yyyy")@(review.IsEdited ? " · upraveno" : "")
+                            </span>
+                        </div>
+                        <p class="text-xs font-medium text-accent-300">@review.ServiceName</p>
+                        @if (!string.IsNullOrWhiteSpace(review.Comment))
+                        {
+                            <p class="mt-1 text-text-default/90 whitespace-pre-line break-words">@review.Comment</p>
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+
+        @if (reviews.Count < total)
+        {
+            <button type="button" @onclick="LoadMoreAsync" disabled="@isLoadingMore"
+                    class="mt-4 text-sm font-semibold text-accent-300 hover:underline disabled:opacity-50">
+                @(isLoadingMore ? "Načítáme…" : "Načíst další recenze")
+            </button>
+        }
+    }
+</section>
+
+@code {
+    private const int PageSize = 10;
+
+    private readonly CancellationTokenSource disposed = new();
+    private List<ServiceReviewItem>? reviews;
+    private int total;
+    private int page = 1;
+    private bool isLoadingMore;
+    private Guid? loadedProfileId;
+
+    /// <summary>Gets or sets the player.</summary>
+    [Parameter, EditorRequired]
+    public Guid ProfileId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedProfileId == ProfileId)
+        {
+            return;
+        }
+
+        loadedProfileId = ProfileId;
+        page = 1;
+        reviews = null;
+        try
+        {
+            PagedResult<ServiceReviewItem> result =
+                await GetServiceReviewsHandler.Handle(new GetServiceReviewsQuery(ProfileId, 1, PageSize), disposed.Token);
+            reviews = [.. result.Items];
+            total = result.TotalCount;
+        }
+        catch (OperationCanceledException)
+        {
+            // The popup was closed while loading.
+        }
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        isLoadingMore = true;
+        try
+        {
+            PagedResult<ServiceReviewItem> result =
+                await GetServiceReviewsHandler.Handle(new GetServiceReviewsQuery(ProfileId, page + 1, PageSize), disposed.Token);
+            page++;
+            reviews!.AddRange(result.Items);
+        }
+        catch (OperationCanceledException)
+        {
+            // The popup was closed while loading.
+        }
+        finally
+        {
+            isLoadingMore = false;
+        }
+    }
+
+    private static string Initials(string name)
+    {
+        string[] parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch
+        {
+            0 => "?",
+            1 => parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant(),
+            _ => string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant(),
+        };
+    }
+
+    public void Dispose()
+    {
+        disposed.Cancel();
+        disposed.Dispose();
+    }
+}

@@ -16,7 +16,7 @@ partial class WalletsContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261113083420_InitialCreate";
+    public override string LastMigrationId => "20261114023134_AddOrders";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -218,6 +218,106 @@ partial class WalletsContextModelSnapshot : ModelSnapshot
                     .IsUnique();
 
                 b.ToTable("LedgerTransactions", "wallets");
+            });
+
+        modelBuilder.Entity("Zagejmi.Infrastructure.Wallets.Records.OrderRecord", b =>
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
+
+                b.Property<DateTimeOffset>("AcceptDeadline")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<DateTimeOffset?>("AcceptedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<string>("Cancellation")
+                    .HasMaxLength(20)
+                    .HasColumnType("character varying(20)");
+
+                b.Property<DateTimeOffset?>("ClosedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<DateTimeOffset?>("ConfirmDeadline")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<DateTimeOffset>("CreatedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<Guid>("CustomerProfileId")
+                    .HasColumnType("uuid");
+
+                b.Property<string>("DisputeReason")
+                    .HasMaxLength(1000)
+                    .HasColumnType("character varying(1000)");
+
+                b.Property<DateTimeOffset?>("DisputedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<long>("Fee")
+                    .HasColumnType("bigint");
+
+                b.Property<DateTimeOffset?>("FinishedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<string>("Outcome")
+                    .HasMaxLength(20)
+                    .HasColumnType("character varying(20)");
+
+                b.Property<Guid>("PlayerProfileId")
+                    .HasColumnType("uuid");
+
+                b.Property<string>("PriceUnit")
+                    .HasMaxLength(20)
+                    .HasColumnType("character varying(20)");
+
+                b.Property<int>("Quantity")
+                    .HasColumnType("integer");
+
+                b.Property<Guid?>("ResolvedByUserId")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid>("ServiceId")
+                    .HasColumnType("uuid");
+
+                b.Property<string>("ServiceName")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
+
+                b.Property<string>("Status")
+                    .IsConcurrencyToken()
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasColumnType("character varying(20)");
+
+                b.Property<long>("Total")
+                    .HasColumnType("bigint");
+
+                b.Property<long>("UnitPrice")
+                    .HasColumnType("bigint");
+
+                b.HasKey("Id");
+
+                b.HasIndex("AcceptDeadline")
+                    .HasFilter("\"Status\" = 'Pending'");
+
+                b.HasIndex("ConfirmDeadline")
+                    .HasFilter("\"Status\" = 'Finished'");
+
+                b.HasIndex("DisputedAt")
+                    .HasFilter("\"Status\" = 'Disputed'");
+
+                b.HasIndex("CustomerProfileId", "CreatedAt");
+
+                b.HasIndex("PlayerProfileId", "CreatedAt");
+
+                b.ToTable("Orders", "wallets", t =>
+                    {
+                        t.HasCheckConstraint("CK_Orders_Amounts", "\"Total\" >= 0 AND \"Fee\" >= 0 AND \"Fee\" <= \"Total\"");
+
+                        t.HasCheckConstraint("CK_Orders_Quantity", "\"Quantity\" BETWEEN 1 AND 10");
+                    });
             });
 
         modelBuilder.Entity("Zagejmi.Infrastructure.Wallets.Records.LedgerEntryRecord", b =>

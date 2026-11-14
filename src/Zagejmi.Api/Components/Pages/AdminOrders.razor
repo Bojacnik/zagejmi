@@ -1,0 +1,150 @@
+@page "/admin/orders"
+@using System.Security.Claims
+@using System.Threading
+@using Microsoft.AspNetCore.Authorization
+@using Zagejmi.Application.Orders
+@using Zagejmi.Application.Orders.GetDisputedOrders
+@using Zagejmi.Application.Orders.GetOrders
+@using Zagejmi.Application.Orders.ResolveDispute
+@using Zagejmi.Shared
+@rendermode InteractiveServer
+@attribute [Authorize]
+@implements IDisposable
+
+@inject GetDisputedOrdersHandler GetDisputedOrdersHandler
+@inject ResolveDisputeHandler ResolveDisputeHandler
+
+@*
+    Admin: reported orders (ORDER-003). Each one is frozen until an admin refunds the customer or pays the player.
+    Admins are the users whose verified e-mail is in the Admin:Emails setting.
+*@
+
+<PageTitle>Nahlášené objednávky – Zagejmi</PageTitle>
+
+<div class="space-y-6">
+    <h1 class="text-3xl font-bold text-text-default">Nahlášené objednávky</h1>
+
+    @if (errorMessage is not null)
+    {
+        <p class="rounded-lg bg-red-900/20 border border-red-500/40 text-red-300 p-4" role="alert">@errorMessage</p>
+    }
+    else if (orders is null)
+    {
+        <p class="text-text-muted">Načítáme…</p>
+    }
+    else if (orders.Count == 0)
+    {
+        <p class="text-text-muted">Žádná objednávka teď nečeká na rozhodnutí.</p>
+    }
+    else
+    {
+        <div class="space-y-4">
+            @foreach (OrderView view in orders)
+            {
+                <OrderCard View="view" Role="OrderRole.Customer" ShowBothParties="true" Busy="busyOrderId == view.Order.Id"
+                           Error="@(errorOrderId == view.Order.Id ? actionError : null)">
+                    <AdminActions>
+                        @if (confirming is { } c && c.OrderId == view.Order.Id)
+                        {
+                            <span class="text-sm text-text-default">
+                                @(c.ForCustomer ? $"Vrátit zákazníkovi {view.Customer.DisplayName}?" : $"Vyplatit hráči {view.Player.DisplayName}?")
+                            </span>
+                            <Primary Disabled="busyOrderId is not null" OnClick="() => ResolveAsync(c.OrderId, c.ForCustomer)">Ano</Primary>
+                            <Secondary OnClick="() => confirming = null">Ne</Secondary>
+                        }
+                        else
+                        {
+                            <Secondary OnClick="() => confirming = (view.Order.Id, true)">Vrátit Goiny zákazníkovi</Secondary>
+                            <Secondary OnClick="() => confirming = (view.Order.Id, false)">Vyplatit hráči</Secondary>
+                        }
+                    </AdminActions>
+                </OrderCard>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private readonly CancellationTokenSource disposed = new();
+    private Guid userId;
+    private List<OrderView>? orders;
+    private string? errorMessage;
+    private (Guid OrderId, bool ForCustomer)? confirming;
+    private Guid? busyOrderId;
+    private Guid? errorOrderId;
+    private string? actionError;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationState is null)
+        {
+            return;
+        }
+
+        ClaimsPrincipal user = (await AuthenticationState).User;
+        string? claim = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
+        if (!Guid.TryParse(claim, out userId))
+        {
+            errorMessage = "Přihlaste se prosím znovu.";
+            return;
+        }
+
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        try
+        {
+            Result<IReadOnlyList<OrderView>> result = await GetDisputedOrdersHandler.Handle(userId, disposed.Token);
+            if (result.IsFailure)
+            {
+                errorMessage = result.Error!.Type == ErrorType.Forbidden
+                    ? "Tahle stránka je jen pro administrátory."
+                    : result.Error.Message;
+                return;
+            }
+
+            orders = [.. result.Value];
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was left while loading.
+        }
+    }
+
+    private async Task ResolveAsync(Guid orderId, bool forCustomer)
+    {
+        busyOrderId = orderId;
+        errorOrderId = null;
+        confirming = null;
+        try
+        {
+            Result result = await ResolveDisputeHandler.Handle(new ResolveDisputeCommand(userId, orderId, forCustomer), disposed.Token);
+            if (result.IsFailure)
+            {
+                errorOrderId = orderId;
+                actionError = result.Error!.Message;
+            }
+
+            await ReloadAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was left while saving.
+        }
+        finally
+        {
+            busyOrderId = null;
+        }
+    }
+
+    public void Dispose()
+    {
+        disposed.Cancel();
+        disposed.Dispose();
+    }
+}

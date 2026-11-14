@@ -2,6 +2,8 @@ using System;
 
 using Microsoft.EntityFrameworkCore;
 
+using Zagejmi.Domain.Orders;
+using Zagejmi.Domain.Profiles.Players;
 using Zagejmi.Domain.Wallets;
 using Zagejmi.Infrastructure.Wallets.Records;
 
@@ -43,6 +45,11 @@ public class WalletsContext : DbContext
     ///     Gets or sets the bonus grants.
     /// </summary>
     public DbSet<BonusGrantRecord> BonusGrants { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the orders (their money moves through the ledger in the same transaction).
+    /// </summary>
+    public DbSet<OrderRecord> Orders { get; set; }
 
     /// <summary>
     ///     Configures the model.
@@ -134,6 +141,34 @@ public class WalletsContext : DbContext
 
             // The expiry job only looks at grants with something left.
             entity.HasIndex(e => e.ExpiresAt).HasFilter("\"Remaining\" > 0");
+        });
+
+        modelBuilder.Entity<OrderRecord>(entity =>
+        {
+            entity.ToTable("Orders", table =>
+            {
+                table.HasCheckConstraint("CK_Orders_Quantity", $"\"Quantity\" BETWEEN 1 AND {Order.MaxQuantity}");
+                table.HasCheckConstraint("CK_Orders_Amounts", "\"Total\" >= 0 AND \"Fee\" >= 0 AND \"Fee\" <= \"Total\"");
+            });
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ServiceName).HasMaxLength(PlayerService.NameMaxLength);
+            entity.Property(e => e.PriceUnit).HasMaxLength(PlayerService.PriceUnitMaxLength);
+            entity.Property(e => e.DisputeReason).HasMaxLength(Order.DisputeReasonMaxLength);
+            entity.Property(e => e.Outcome).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.Cancellation).HasConversion<string>().HasMaxLength(20);
+
+            // A change is only saved if the order is still in the state it was read in, so two people acting at once
+            // (accept vs. cancel) can never both win.
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20).IsConcurrencyToken();
+
+            entity.HasIndex(e => new { e.CustomerProfileId, e.CreatedAt });
+            entity.HasIndex(e => new { e.PlayerProfileId, e.CreatedAt });
+
+            // The timeout job looks for pending and finished orders past their deadline.
+            entity.HasIndex(e => e.AcceptDeadline).HasFilter("\"Status\" = 'Pending'");
+            entity.HasIndex(e => e.ConfirmDeadline).HasFilter("\"Status\" = 'Finished'");
+            entity.HasIndex(e => e.DisputedAt).HasFilter("\"Status\" = 'Disputed'");
         });
 
         base.OnModelCreating(modelBuilder);

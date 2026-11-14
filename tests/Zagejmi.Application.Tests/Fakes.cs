@@ -13,6 +13,7 @@ using Zagejmi.Application.Auth.Tokens;
 using Zagejmi.Application.Auth.Users.Abstractions;
 using Zagejmi.Application.Auth.Users.EmailVerification;
 using Zagejmi.Application.Mail.Abstractions;
+using Zagejmi.Application.Orders.Abstractions;
 using Zagejmi.Application.Profiles;
 using Zagejmi.Application.Profiles.Abstractions;
 using Zagejmi.Application.Profiles.Reviews;
@@ -22,6 +23,7 @@ using Zagejmi.Application.Wallets;
 using Zagejmi.Application.Wallets.Abstractions;
 using Zagejmi.Application.Wallets.GrantReward;
 using Zagejmi.Domain.Auth;
+using Zagejmi.Domain.Orders;
 using Zagejmi.Domain.Profiles.Customers;
 using Zagejmi.Domain.Profiles.Players;
 using Zagejmi.Domain.Wallets;
@@ -55,6 +57,35 @@ internal sealed class TestWorld
 
     public FakePlayerReviewRepository Reviews { get; } = new();
 
+    public FakeServiceReviewRepository ServiceReviews { get; } = new();
+
+    public FakeOrderRepository Orders => this.orders ??= new FakeOrderRepository(this.Wallets);
+
+    /// <summary>
+    ///     Stores an order of the player's service by the customer that has gone all the way to the given end.
+    /// </summary>
+    public Order AddOrder(
+        Guid customerProfileId,
+        Guid playerProfileId,
+        OrderOutcome outcome = OrderOutcome.Delivered,
+        bool complete = true,
+        string serviceName = "Valorant duo",
+        Guid? serviceId = null)
+    {
+        DateTimeOffset now = this.Clock.GetUtcNow();
+        Order order = Order.Place(
+            customerProfileId, playerProfileId, serviceId ?? Guid.CreateVersion7(), serviceName, null, 0, 1, 10, now, TimeSpan.FromHours(48));
+        order.Accept(now);
+        order.Finish(outcome, now, TimeSpan.FromHours(72));
+        if (complete)
+        {
+            order.Confirm(now);
+        }
+
+        this.Orders.Stored[order.Id] = order.ToSnapshot();
+        return order;
+    }
+
     public FakeWalletRepository Wallets { get; }
 
     public FakeEmailSender Email { get; } = new();
@@ -62,6 +93,8 @@ internal sealed class TestWorld
     public FakeTokenService Tokens { get; } = new();
 
     public IOptions<WalletOptions> WalletOptions { get; }
+
+    private FakeOrderRepository? orders;
 
     public EmailVerificationMailer Mailer { get; }
 
@@ -158,6 +191,20 @@ internal sealed class FakeProfileRepository : IProfileRepository
 
     public List<PlayerProfile> Players { get; } = [];
 
+    public List<PlayerService> Services { get; } = [];
+
+    public Task<IReadOnlyDictionary<Guid, ProfileCard>> GetProfileCardsAsync(
+        IReadOnlyCollection<Guid> profileIds,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyDictionary<Guid, ProfileCard> cards = this.Customers
+            .Select(c => new ProfileCard(c.Id, c.DisplayName, c.ProfilePicture))
+            .Concat(this.Players.Select(p => new ProfileCard(p.Id, p.DisplayName, p.CardProfilePicture)))
+            .Where(c => profileIds.Contains(c.ProfileId))
+            .ToDictionary(c => c.ProfileId);
+        return Task.FromResult(cards);
+    }
+
     public Task<CustomerProfile?> GetCustomerByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(this.Customers.FirstOrDefault(c => c.UserId == userId));
@@ -207,7 +254,7 @@ internal sealed class FakeProfileRepository : IProfileRepository
     public Task<IReadOnlyList<PlayerService>> GetPlayerServicesAsync(
         Guid playerProfileId,
         CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
+        Task.FromResult<IReadOnlyList<PlayerService>>([.. this.Services.Where(x => x.PlayerProfileId == playerProfileId)]);
 
     public Task<int> CountPlayerServicesAsync(Guid playerProfileId, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
@@ -216,7 +263,7 @@ internal sealed class FakeProfileRepository : IProfileRepository
         throw new NotSupportedException();
 
     public Task<PlayerService?> GetPlayerServiceAsync(Guid serviceId, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
+        Task.FromResult(this.Services.FirstOrDefault(x => x.Id == serviceId));
 
     public Task UpdatePlayerServiceAsync(PlayerService service, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
@@ -233,7 +280,11 @@ internal sealed class FakeWalletRepository : IWalletRepository
     public List<Account> Accounts { get; } =
     [
         Account.Restore(SystemAccounts.PromoBudgetId, AccountKind.PromoBudget, null, 0),
+        Account.Restore(SystemAccounts.EscrowId, AccountKind.Escrow, null, 0),
+        Account.Restore(SystemAccounts.PlatformRevenueId, AccountKind.PlatformRevenue, null, 0),
     ];
+
+    public long Balance(Guid accountId) => this.Accounts.Single(a => a.Id == accountId).Balance;
 
     public List<LedgerTransaction> Posted { get; } = [];
 
@@ -451,6 +502,124 @@ internal sealed class FakeAccessTokens : ITokenService, IRefreshTokenRepository
 }
 
 /// <summary>
+///     In-memory orders with the database's rules: a transition is saved only from the expected status, and the order
+///     change and its money (posted through <see cref="FakeWalletRepository" />) succeed or fail together.
+/// </summary>
+internal sealed class FakeOrderRepository : IOrderRepository
+{
+    private readonly FakeWalletRepository wallets;
+
+    public FakeOrderRepository(FakeWalletRepository wallets)
+    {
+        this.wallets = wallets;
+    }
+
+    public Dictionary<Guid, OrderSnapshot> Stored { get; } = [];
+
+    public Task<Order?> GetAsync(Guid orderId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(this.Stored.TryGetValue(orderId, out OrderSnapshot? s) ? Order.Restore(s) : null);
+
+    public async Task<OrderWriteOutcome> PlaceAsync(Order order, LedgerTransaction? payment, CancellationToken cancellationToken = default)
+    {
+        if (payment is not null && await this.wallets.PostAsync(payment, null, cancellationToken) != PostOutcome.Posted)
+        {
+            return OrderWriteOutcome.InsufficientFunds;
+        }
+
+        this.Stored[order.Id] = order.ToSnapshot();
+        return OrderWriteOutcome.Saved;
+    }
+
+    public async Task<OrderWriteOutcome> SaveTransitionAsync(
+        Order order,
+        OrderStatus previousStatus,
+        LedgerTransaction? money,
+        DateTimeOffset? refundedBonusUsableUntil,
+        CancellationToken cancellationToken = default)
+    {
+        if (this.Stored[order.Id].Status != previousStatus)
+        {
+            return OrderWriteOutcome.StateChanged;
+        }
+
+        if (money is not null)
+        {
+            if (await this.wallets.PostAsync(money, null, cancellationToken) != PostOutcome.Posted)
+            {
+                return OrderWriteOutcome.InsufficientFunds;
+            }
+
+            if (refundedBonusUsableUntil is { } until)
+            {
+                foreach (Guid grantId in money.Entries
+                             .Where(e => e.AccountKind == AccountKind.CustomerBonus && e.Amount > 0)
+                             .Select(e => e.BonusGrantId!.Value)
+                             .Distinct())
+                {
+                    int index = this.wallets.Grants.FindIndex(g => g.Id == grantId);
+                    BonusGrant g = this.wallets.Grants[index];
+                    if (g.ExpiresAt < until)
+                    {
+                        this.wallets.Grants[index] = BonusGrant.Restore(
+                            g.Id, g.CustomerProfileId, g.Amount, g.Remaining, g.Reason, g.GrantedAt, until);
+                    }
+                }
+            }
+        }
+
+        this.Stored[order.Id] = order.ToSnapshot();
+        return OrderWriteOutcome.Saved;
+    }
+
+    public Task<EscrowFunding> GetEscrowFundingAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        LedgerTransaction? payment = this.wallets.Posted.FirstOrDefault(
+            t => t.Type == LedgerTransactionType.OrderPayment && t.IdempotencyKey == $"order:{orderId}");
+        if (payment is null)
+        {
+            return Task.FromResult(EscrowFunding.Empty);
+        }
+
+        List<LedgerEntry> escrow = [.. payment.Entries.Where(e => e.AccountKind == AccountKind.Escrow)];
+        return Task.FromResult(new EscrowFunding(
+            escrow.Where(e => e.Funding == Funding.Paid).Sum(e => e.Amount),
+            [.. escrow.Where(e => e.Funding == Funding.Bonus).Select(e => new BonusPart(e.BonusGrantId!.Value, e.Amount))]));
+    }
+
+    public Task<PagedResult<Order>> ListForCustomerAsync(Guid customerProfileId, int skip, int take, CancellationToken cancellationToken = default) =>
+        this.List(s => s.CustomerProfileId == customerProfileId, skip, take);
+
+    public Task<PagedResult<Order>> ListForPlayerAsync(Guid playerProfileId, int skip, int take, CancellationToken cancellationToken = default) =>
+        this.List(s => s.PlayerProfileId == playerProfileId, skip, take);
+
+    public Task<IReadOnlyList<Order>> GetDueAsync(DateTimeOffset now, int take, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<Order>>(
+        [
+            .. this.Stored.Values
+                .Where(s => (s.Status == OrderStatus.Pending && s.AcceptDeadline <= now)
+                            || (s.Status == OrderStatus.Finished && s.ConfirmDeadline <= now))
+                .Take(take)
+                .Select(Order.Restore),
+        ]);
+
+    public Task<IReadOnlyList<Order>> GetDisputedAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<Order>>(
+            [.. this.Stored.Values.Where(s => s.Status == OrderStatus.Disputed).OrderBy(s => s.DisputedAt).Select(Order.Restore)]);
+
+    public Task<bool> HasReviewableOrderAsync(Guid customerProfileId, Guid playerProfileId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(this.Stored.Values.Any(s => s.CustomerProfileId == customerProfileId
+                                                   && s.PlayerProfileId == playerProfileId
+                                                   && s.Status == OrderStatus.Completed
+                                                   && s.Outcome == OrderOutcome.Delivered));
+
+    private Task<PagedResult<Order>> List(Func<OrderSnapshot, bool> filter, int skip, int take)
+    {
+        List<OrderSnapshot> all = [.. this.Stored.Values.Where(filter).OrderByDescending(s => s.CreatedAt)];
+        return Task.FromResult(new PagedResult<Order>([.. all.Skip(skip).Take(take).Select(Order.Restore)], all.Count));
+    }
+}
+
+/// <summary>
 ///     In-memory reviews with the same upsert semantics as the database (one per author and player; an update keeps
 ///     the original ID and creation time).
 /// </summary>
@@ -514,4 +683,56 @@ internal sealed class FakePlayerReviewRepository : IPlayerReviewRepository
             .ToDictionary(g => g.Key, g => new RatingSummary(g.Average(r => (double)r.Rating), g.Count()));
         return Task.FromResult(result);
     }
+}
+
+/// <summary>
+///     In-memory service reviews: one per order; an update keeps the original ID and creation time.
+/// </summary>
+internal sealed class FakeServiceReviewRepository : IServiceReviewRepository
+{
+    public List<ServiceReview> Items { get; } = [];
+
+    public Task<ServiceReview?> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(this.Items.FirstOrDefault(r => r.OrderId == orderId));
+
+    public Task UpsertAsync(ServiceReview review, CancellationToken cancellationToken = default)
+    {
+        int index = this.Items.FindIndex(r => r.OrderId == review.OrderId);
+        if (index < 0)
+        {
+            this.Items.Add(review);
+        }
+        else
+        {
+            this.Items[index] = this.Items[index] with { Rating = review.Rating, Comment = review.Comment, UpdatedAt = review.UpdatedAt };
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(this.Items.RemoveAll(r => r.OrderId == orderId) > 0);
+
+    public Task<PagedResult<ServiceReviewItem>> GetForPlayerAsync(Guid playerProfileId, int skip, int take, CancellationToken cancellationToken = default)
+    {
+        List<ServiceReview> all = [.. this.Items.Where(r => r.PlayerProfileId == playerProfileId).OrderByDescending(r => r.CreatedAt)];
+        return Task.FromResult(new PagedResult<ServiceReviewItem>(
+            [
+                .. all.Skip(skip).Take(take).Select(r => new ServiceReviewItem(
+                    r.OrderId, r.ServiceId, r.ServiceName, r.AuthorProfileId, "Autor", null, r.Rating, r.Comment, r.CreatedAt, r.UpdatedAt)),
+            ],
+            all.Count));
+    }
+
+    public Task<IReadOnlyDictionary<Guid, RatingSummary>> GetSummariesAsync(IReadOnlyCollection<Guid> serviceIds, CancellationToken cancellationToken = default)
+    {
+        IReadOnlyDictionary<Guid, RatingSummary> result = this.Items
+            .Where(r => serviceIds.Contains(r.ServiceId))
+            .GroupBy(r => r.ServiceId)
+            .ToDictionary(g => g.Key, g => new RatingSummary(g.Average(r => (double)r.Rating), g.Count()));
+        return Task.FromResult(result);
+    }
+
+    public Task<IReadOnlySet<Guid>> GetReviewedOrderIdsAsync(IReadOnlyCollection<Guid> orderIds, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlySet<Guid>>(this.Items.Select(r => r.OrderId).Where(orderIds.Contains).ToHashSet());
 }
