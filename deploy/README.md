@@ -80,8 +80,15 @@ ssh root@<IP serveru>
   for v in POSTGRES_PASSWORD MINIO_ROOT_PASSWORD JWT_KEY PASSWORD_PEPPER; do
     sed -i "s/^$v=$/$v=$(openssl rand -hex 32)/" .env
   done
-  nano .env   # zkontrolovat DOMAIN, doplnit SMTP
+  nano .env   # zkontrolovat DOMAIN, doplnit SMTP a ADMIN_EMAIL
 ```
+
+`ADMIN_EMAIL` je e-mail (ověřeného) účtu, který na `/admin/orders` rozhoduje nahlášené objednávky: vrátí Goiny
+zákazníkovi, nebo vyplatí hráče. Bez něj zůstanou nahlášené objednávky zmrazené. Další nastavení (poplatek, lhůty
+objednávek, práh pro zobrazení hodnocení) mají rozumné výchozí hodnoty, viz „Nastavení aplikace“ v hlavním
+[README](../README.md); pro změnu je potřeba přidat proměnnou do `environment` služby `api` v `compose.yaml`.
+
+Po změně `.env` stačí `docker compose up -d` (s `IMAGE_TAG=$(cat .deployed-tag)`), viz „Na serveru“ níže.
 
 > **`PASSWORD_PEPPER` po první registraci už nikdy neměňte**: je součástí každého hashe hesla a po změně by se nikdo
 > nepřihlásil. `.env` si zálohujte mimo server (třeba ve správci hesel).
