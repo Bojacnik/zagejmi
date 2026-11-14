@@ -8,8 +8,9 @@
     <link rel="stylesheet" href="@Assets["styles.css"]"/>
     <ImportMap/>
     <link rel="icon" type="image/png" href="favicon.png"/>
-    <HeadOutlet/>
-    <title>Zagejmi</title>
+    @* Same render mode as Routes: <PageTitle>/<HeadContent> inside interactive pages are sections, and sections
+       cannot reach an outlet across a render mode boundary (the page title would never show). *@
+    <HeadOutlet @rendermode="InteractiveServer"/>
 </head>
 
 <body class="w-full h-fit">
