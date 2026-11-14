@@ -40,6 +40,8 @@ Stav a časové zařazení jsou dvě různé věci. Například požadavek můž
 - `RANK` – relevance a leaderboard
 - `WALLET` – Goin, peněženky a ledger
 - `PAY` – Stripe, zprostředkované platby a cashout
+- `ORDER` – objednávky, Escrow, lhůty a řešení problémů
+- `REVIEW` – recenze služeb a doporučení hráčů
 - `REWARD` – Bonus CAP a odměny
 - `ANALYTICS` – statistiky hráče
 - `OPS` – provoz a infrastruktura

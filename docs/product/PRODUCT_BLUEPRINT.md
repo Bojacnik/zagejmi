@@ -2,7 +2,7 @@
 
 > **Typ dokumentu:** živý produktový discovery dokument  
 > **Stav:** průběžný brainstorming; nejde o finální technickou specifikaci  
-> **Poslední zachycení:** 2026-11-13 (doplněn audit kódu a rozhodnutí k MARKET-003)  
+> **Poslední zachycení:** 2026-11-14 (objednávky, recenze služeb a doporučení; aktualizován audit kódu)  
 > **Zdroj:** produktové rozhovory s vlastníkem Zagejmi
 
 ## 1. Produktový záměr
@@ -24,6 +24,9 @@ Tento dokument se týká výhradně produktu Zagejmi. Nesmí se zaměňovat s pr
 - **Bonus CAP** – centrální omezená zásoba/limit určený pro vydávání Bonus Goinů.
 - **Central Wallet / platform account** – centrální účet platformy používaný pro zprostředkování transakcí; jeho přesná účetní a právní povaha zatím není navržena.
 - **Ghost Mode** – režim, ve kterém je uživatel anonymnější vůči ostatním uživatelům, ale zůstává identifikovaný pro server/platformu.
+- **Objednávka (Order)** – zakoupení služby zákazníkem; cena leží do dokončení v **Escrow** (systémový účet platformy).
+- **Recenze služby** – hodnocení jedné dokončené objednávky (1–5 hvězdiček + text).
+- **Doporučení** – jedno hodnocení hráče od zákazníka (1–5 hvězdiček + text), až po dokončené objednávce u něj.
 
 Požadavky používají stavy definované v [README](./README.md).
 
@@ -35,8 +38,9 @@ Požadavky používají stavy definované v [README](./README.md).
 | Profiles | Existují profily; rozlišení Player/Customer a jejich budoucí chování je potřeba porovnat s aktuálním kódem. |
 | Privacy | Ghost Mode je plánovaný produktový celek. |
 | Verification | Ověření věku/identity je plánované do budoucna. |
-| Marketplace | Hráči jsou v navigaci; samostatná sekce Služby zatím chybí. |
-| Wallet | Virtuální měna Goin už existuje; přesný stav wallet/ledger je nutné auditovat. |
+| Marketplace | Hráči i Služby jsou v navigaci; služby jdou objednat z profilu hráče. |
+| Wallet | Ledger s oddělenými Paid/Bonus Goins, bonus po registraci, Escrow pro objednávky (viz WALLET-002, ORDER-001). |
+| Orders & reviews | Objednávky s Escrow, lhůtami a řešením problémů; recenze služeb a doporučení hráčů (sekce 12). |
 | Payments | Nákup Goinů přes Stripe a cashout hráčů podle vlastníka produktu zatím nejsou k dispozici. |
 | Analytics | Rozšířené Player Analytics jsou plánované později. |
 | UI | Web má fungovat při jakékoli šířce okna; při změně velikosti se dnes některé prvky slévají (hlavně horní lišta), viz UI-001. |
@@ -123,7 +127,8 @@ Požadavky používají stavy definované v [README](./README.md).
 - Uživatel se může přepnout do Ghost Mode.
 - Server stále zná skutečný přihlášený účet a identitu uživatele.
 - Ostatním uživatelům se má zobrazovat anonymněji/neviditelněji; uživatel popsal režim jako kombinaci invisibility a anonymity.
-- Přesné chování pro online status, profil, aktivitu, chat, objednávky, recenze a historii je nutné upřesnit.
+- Rozhodnuto: v Ghost Mode nejde objednávat, měnit objednávky ani psát/mazat recenze a doporučení (jen číst).
+- Přesné chování pro online status, profil, aktivitu, chat a historii je nutné upřesnit.
 - Ghost Mode není anonymita vůči platformě, administraci ani zákonným povinnostem.
 
 ### PRIVACY-002 – Ghost Mode platba
@@ -209,7 +214,8 @@ Požadavky používají stavy definované v [README](./README.md).
 ### MARKET-004 – Samostatné služby a jejich atributy
 - **Stav:** `CONFIRMED` (potřeba samostatné sekce Služby), `OPEN` (detail katalogu)
 - Nabídka služby je spojena s Playerem.
-- Konkrétní kategorie, atributy, pravidla pro hry/ranky, cenotvorba, dostupnost a varianty objednávky se doplní při detailním návrhu.
+- Objednávka kupuje 1–10 jednotek služby (cena × počet); služba s cenou 0 jde objednat zdarma.
+- Konkrétní kategorie, atributy, pravidla pro hry/ranky, cenotvorba a dostupnost se doplní při detailním návrhu.
 
 ---
 
@@ -251,7 +257,13 @@ Požadavky používají stavy definované v [README](./README.md).
   - **Paid Goins:** zakoupené Goins.
   - **Bonus Goins:** Goins získané od platformy jako odměna.
 - Tyto typy musí být v produktu a účetní evidenci rozlišitelné.
-- Pravidla útraty, převodu mezi typy, expirace, refundace a cashoutu zůstávají otevřená.
+- **Rozhodnuto (2026-11-13/14):**
+  - Zákazník má oddělené Paid a Bonus části peněženky, hráč vlastní peněženku výdělků. Převody mezi uživateli nejsou.
+  - Při platbě se nejdřív spotřebují Bonus Goins (od nejdřív expirujícího bonusu), potom Paid Goins.
+  - Bonus Goins expirují 90 dní po připsání; nevyčerpaný zbytek se vrací do `PromoBudget`.
+  - Hráč dostává výplatu vždy v Paid Goins; část objednávky zaplacenou bonusem pokryje `PromoBudget`.
+  - Refund vrací každou část tam, odkud přišla (bonus do stejného bonusu); bonus, který mezitím vypršel, dostane 7 dní navíc.
+- Cashout a převod výdělků hráče do vlastní zákaznické peněženky zůstávají otevřené (PAY-002).
 
 ### WALLET-003 – Centrální Bonus CAP
 - **Stav:** `CONFIRMED` (koncept), `OPEN` (účetní model a limity)
@@ -275,14 +287,58 @@ Požadavky používají stavy definované v [README](./README.md).
 
 ### PAY-003 – Central Wallet pro zprostředkované transakce
 - **Stav:** `CONFIRMED` jako záměr pro Ghost Mode, `OPEN` pro obecné platby
-- Vlastník produktu předpokládá, že současný systém centrální platformní účet nemá.
+- Systémový účet `Escrow` už drží Goins otevřených objednávek (ORDER-001); obecný model pro skutečné peníze zůstává otevřený.
 - Je požadováno posoudit centrální účet pro zprostředkování plateb, zejména Ghost Mode.
 - Tento účet se nesmí zaměnit s Bonus CAP.
 - Právní a účetní model musí být navržen před použitím skutečných peněz.
 
 ---
 
-## 12. Rewards & signup incentives
+## 12. Orders & reviews
+
+### ORDER-001 – Objednávka služby s Escrow
+- **Stav:** `EXISTING` (2026-11-14)
+- Přihlášený zákazník (ne v Ghost Mode, ne vlastní služba) objedná 1–10 jednotek služby z profilu hráče. Celá cena
+  odejde z jeho peněženky do `Escrow` (bonus první, viz WALLET-002). Název, jednotka a cena se do objednávky kopírují.
+- Průběh: **čeká na přijetí** → hráč přijme (nebo odmítne = plný refund) → **probíhá** → hráč ukončí s výsledkem
+  „služba proběhla“ / „zákazník se nedostavil“ → **čeká na potvrzení** → zákazník potvrdí → **dokončeno**.
+- Lhůty: nepřijatá objednávka se po 48 h zruší a vrátí; nepotvrzená se 72 h po ukončení dokončí sama.
+- Zákazník může objednávku zrušit, dokud ji hráč nepřijme (plný refund).
+- Při dokončení dostane hráč cenu minus poplatek platformy: 10 % zaokrouhleno dolů, min. 1 Goin (nastavitelné).
+- Když se zákazník nedostaví, hráč je zaplacen (rezervoval čas); zákazník to může do 72 h nahlásit.
+- Souběžné akce (např. přijetí vs. zrušení) nemohou vyhrát obě; změna stavu a pohyb Goinů se ukládají naráz.
+
+### ORDER-002 – Přehled objednávek
+- **Stav:** `EXISTING`
+- `/orders` (moje objednávky) a `/orders/incoming` (objednávky mých služeb) s aktuálním stavem, další lhůtou a jen
+  těmi akcemi, které daná strana právě smí.
+
+### ORDER-003 – Nahlášení problému a rozhodnutí administrátora
+- **Stav:** `EXISTING` (minimální verze)
+- Zákazník může probíhající nebo ukončenou objednávku nahlásit s popisem; Goins zůstanou v Escrow, dokud nerozhodne
+  administrátor.
+- Administrátor (ověřený účet s e-mailem v nastavení `Admin:Emails`) na `/admin/orders` buď vrátí Goins zákazníkovi,
+  nebo vyplatí hráče. Role administrátora v databázi zatím neexistuje.
+- Otevřené: lhůta pro rozhodnutí, komunikace se stranami, opakované nahlašování, sankce.
+
+### REVIEW-001 – Doporučení hráče
+- **Stav:** `EXISTING`
+- Zákazník může každého hráče doporučit jednou (1–5 hvězdiček + nepovinný text do 1000 znaků), až po aspoň jedné
+  dokončené objednávce u něj, kde služba proběhla. Doporučení může upravit nebo smazat jen autor; hráč ne.
+- Průměr doporučení se na kartách hráčů (Hráči, úvodní stránka) ukáže až od 5 doporučení.
+
+### REVIEW-002 – Recenze služby po každé dokončené objednávce
+- **Stav:** `EXISTING`
+- Každou dokončenou objednávku, kde služba proběhla, může zákazník ohodnotit jednou (1–5 hvězdiček + text), takže
+  stálý zákazník hodnotí každou objednávku zvlášť. Úprava a smazání jen autorem; nedostavení se recenzi neodemyká.
+- Recenze jsou vidět na profilu hráče i s názvem služby; zůstanou i po smazání služby.
+- Průměr služby se na kartách (Služby, služby v profilu hráče) ukáže až od 5 recenzí (`Reviews:MinReviewsToShowRating`),
+  aby kartu neurčila jediná recenze.
+- Otevřené: odpověď hráče na recenzi, nahlašování nevhodných recenzí, vliv hodnocení na řazení (RANK-001).
+
+---
+
+## 13. Rewards & signup incentives
 
 ### REWARD-001 – Signup bonus po ověření e-mailu
 - **Stav:** `CONFIRMED`
@@ -298,7 +354,7 @@ Požadavky používají stavy definované v [README](./README.md).
 
 ---
 
-## 13. Player Dashboard & Analytics
+## 14. Player Dashboard & Analytics
 
 ### ANALYTICS-001 – Rozšíření Player sidebaru o Analytics
 - **Stav:** `LATER`
@@ -327,7 +383,7 @@ Požadavky používají stavy definované v [README](./README.md).
 
 ---
 
-## 14. UI, responzivita a přístupnost
+## 15. UI, responzivita a přístupnost
 
 ### UI-001 – Web funguje při jakékoli šířce okna
 - **Stav:** `CONFIRMED`
@@ -347,7 +403,7 @@ Požadavky používají stavy definované v [README](./README.md).
 
 ---
 
-## 15. Business, legal & launch readiness
+## 16. Business, legal & launch readiness
 
 ### LEGAL-001 – Provoz bez IČO během vývoje
 - **Stav:** `REVIEW`
@@ -373,7 +429,7 @@ Požadavky používají stavy definované v [README](./README.md).
 
 ---
 
-## 16. Audit kódu (2026-11-13)
+## 17. Audit kódu (2026-11-13, aktualizováno 2026-11-14)
 
 Porovnání tohoto dokumentu s kódem na větvi `master`. Část požadavků je hotová dříve, než je dokument popisoval:
 
@@ -383,29 +439,32 @@ Porovnání tohoto dokumentu s kódem na větvi `master`. Část požadavků je 
 | REWARD-001 Signup bonus | Hotovo: 50 Bonus Goins po ověření e-mailu (konfigurovatelné). |
 | WALLET-002 Paid vs. Bonus | Hotovo: každý zápis v ledgeru je označen Paid/Bonus. |
 | WALLET-003 Bonus CAP | Částečně: systémový účet `PromoBudget`; bonusy expirují po 90 dnech a zbytek se vrací do rozpočtu. |
-| PAY-003 Central Wallet | Částečně: existují systémové účty `Escrow`, `TopUpClearing`, `PayoutClearing`, zatím se nepoužívají. |
+| PAY-003 Central Wallet | Částečně: `Escrow` drží Goins otevřených objednávek; `TopUpClearing` a `PayoutClearing` čekají na nákup a cashout. |
+| ORDER-001–003 Objednávky | Hotovo (2026-11-14): Escrow, lhůty 48 h / 72 h, poplatek 10 %, nahlášení a rozhodnutí administrátora. |
+| REVIEW-001/002 Recenze | Hotovo (2026-11-14): recenze každé dokončené objednávky, doporučení po první objednávce, průměr od 5 recenzí. |
 | PRIVACY-001 Ghost Mode | Částečně: přepínač a serverový filtr blokující akce v Ghost Mode. |
 | AUTH-004 / PROFILE-001 | Jeden účet může mít Player i Customer profil a přepínat mezi nimi (odpovídá na otevřenou otázku 1). |
 | MARKET-001 / MARKET-003 | Částečně: stránka Služby s filtry hra, minimální rank, styl hraní a text (viz MARKET-003). |
 | MARKET-002 | Hotovo s návrhem pro „Jiné“ / „Nechci uvádět“ (viz MARKET-002). |
 
-Zatím chybí: objednávky, filtry hra/rank/styl na stránce Hráči, nákup Goinů (Stripe), cashout.
+Zatím chybí: nákup Goinů (Stripe), takže zákazníci zatím utrácí jen bonus z registrace; cashout a převod výdělků hráče;
+filtry hra/rank/styl na stránce Hráči; role administrátora v databázi.
 
-## 17. Otevřená rozhodnutí
+## 18. Otevřená rozhodnutí
 
 Následující body vyžadují další produktový brainstorming nebo technickou/právní analýzu:
 
 1. ~~Může jeden účet později používat Player i Customer profil?~~ Ano, už je implementováno (viz audit).
 2. Které funkce vyžadují pouze login a které také ověřený e-mail?
-3. Jak přesně se Ghost Mode projeví v profilu, presence, chatu, objednávkách a recenzích?
+3. Jak přesně se Ghost Mode projeví v profilu, presence a chatu? (Objednávky a recenze: v Ghost Mode jen čtení.)
 4. Má být Ghost Mode globální přepínač, nebo jej půjde použít jen pro konkrétní objednávku/platbu?
 5. Jak se zachází s jinou nebo neuvedenou hodnotou pohlaví ve výchozím rozděleném zobrazení?
 6. Jaké faktory a váhy budou určovat relevanci hráčů a služeb?
 7. Podle čeho se počítá leaderboard?
 8. Jaké jsou přesné atributy Service a jaké kategorie budou podporované? (Hra, rank a styl hraní jsou rozhodnuté; kategorie zůstávají otevřené.)
-9. Jaká pravidla platí pro útratu Paid versus Bonus Goins?
+9. ~~Jaká pravidla platí pro útratu Paid versus Bonus Goins?~~ Bonus první, výplata hráči v Paid (viz WALLET-002).
 10. Jak se nastaví, čerpá a doplňuje Bonus CAP?
-11. Jak se budou řešit refundy, chargebacky, spory a záporné zůstatky?
+11. Jak se budou řešit chargebacky a záporné zůstatky? (Refundy objednávek a spory: ORDER-001, ORDER-003.)
 12. Jaký právní a účetní model bude mít Central Wallet?
 13. Jaké Goins lze vyplatit hráči a za jakých podmínek?
 14. Jaké budou částky signup bonusů a bude druhá úroveň doplatkem rozdílu?
@@ -415,7 +474,7 @@ Následující body vyžadují další produktový brainstorming nebo technickou
 18. Jak bude vypadat první veřejná a placená release fáze a co do ní nepatří?
 19. Jak bude vypadat plný profil hráče (PROFILE-004): adresa, obsah, formátování textu „o mně“ a vztah k dnešnímu popupu?
 
-## 18. Doporučený další postup
+## 19. Doporučený další postup
 
 1. Pokračovat v brainstormingu a průběžně doplňovat tento dokument.
 2. U každého nového požadavku přidělit ID a stav.

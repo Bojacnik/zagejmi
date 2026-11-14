@@ -39,6 +39,8 @@ services:
       Smtp__Password: ${SMTP_PASSWORD:-}
       Smtp__FromEmail: ${SMTP_FROM_EMAIL:-no-reply@zagejmi.cz}
       Smtp__FromName: ${SMTP_FROM_NAME:-Zagejmi}
+      # Admin who resolves reported orders on /admin/orders (a verified account with this e-mail). Empty = nobody.
+      Admin__Emails__0: ${ADMIN_EMAIL:-}
     volumes:
       - dataprotection_keys:/home/app/.aspnet/DataProtection-Keys # keeps users signed in across deploys
     depends_on:
