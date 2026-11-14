@@ -165,9 +165,10 @@ public sealed class ProfileRepository : IProfileRepository
         }
 
         int total = await query.CountAsync(cancellationToken);
+
+        // Complete listings first (RANK-001, weights in ProfileCompleteness): the player's profile picture, then their
+        // banner, then the service image; ties go to the newest.
         List<ServiceListItem> items = await query
-            // Complete listings first (RANK-001, weights in ProfileCompleteness): the player's profile picture, then
-            // their banner, then the service image; ties go to the newest.
             .OrderByDescending(x =>
                 (x.Player.CardProfilePictureId != null ? ProfileCompleteness.ProfilePicture : 0)
                 + (x.Player.BannerPictureId != null ? ProfileCompleteness.Banner : 0)
