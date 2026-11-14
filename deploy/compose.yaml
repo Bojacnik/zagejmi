@@ -19,6 +19,8 @@ services:
       # Trust X-Forwarded-For/-Proto from the host Caddy, so the app sees https and the real client IP.
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       Database__MigrateOnStartup: "true"
+      # Don't log every SQL statement in production (failed commands are still logged as errors).
+      Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Warning
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=zagejmi;Username=zagejmi;Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       Minio__Endpoint: minio:9000
       Minio__AccessKey: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
