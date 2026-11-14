@@ -48,6 +48,11 @@ public class ProfilesContext : DbContext
     public DbSet<PlayerReviewRecord> PlayerReviews { get; set; }
 
     /// <summary>
+    ///     Gets or sets reviews of completed orders.
+    /// </summary>
+    public DbSet<ServiceReviewRecord> ServiceReviews { get; set; }
+
+    /// <summary>
     ///     Gets or sets the users who own the profiles (read-only; the table belongs to the users context).
     /// </summary>
     public DbSet<ProfileOwnerRecord> ProfileOwners { get; set; }
@@ -132,6 +137,33 @@ public class ProfilesContext : DbContext
 
             // The player's reviews are listed newest first.
             entity.HasIndex(e => new { e.PlayerProfileId, e.CreatedAt });
+        });
+
+        modelBuilder.Entity<ServiceReviewRecord>(entity =>
+        {
+            entity.ToTable("ServiceReviews", table => table.HasCheckConstraint(
+                "CK_ServiceReviews_Rating",
+                $"\"Rating\" BETWEEN {PlayerReview.MinRating} AND {PlayerReview.MaxRating}"));
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ServiceName).HasMaxLength(PlayerService.NameMaxLength).IsRequired();
+            entity.Property(e => e.Comment).HasMaxLength(PlayerReview.CommentMaxLength);
+
+            // Reviews disappear with the player and with the author's customer profile, but not with a removed
+            // service (it keeps its name).
+            entity.HasOne<PlayerProfileRecord>()
+                .WithMany()
+                .HasForeignKey(e => e.PlayerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<CustomerProfileRecord>()
+                .WithMany()
+                .HasForeignKey(e => e.AuthorProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One review per order; the upsert in ServiceReviewRepository relies on this index.
+            entity.HasIndex(e => e.OrderId).IsUnique();
+            entity.HasIndex(e => new { e.PlayerProfileId, e.CreatedAt });
+            entity.HasIndex(e => e.ServiceId);
         });
 
         modelBuilder.Entity<ProfileOwnerRecord>(entity =>

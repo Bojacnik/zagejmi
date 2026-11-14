@@ -4,9 +4,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Options;
+
 using Zagejmi.Application.Abstractions;
 using Zagejmi.Application.Auth.Users.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Profiles.Reviews;
+using Zagejmi.Application.Profiles.Reviews.Abstractions;
 using Zagejmi.Domain.Auth;
 using Zagejmi.Domain.Profiles.Players;
 using Zagejmi.Shared;
@@ -20,16 +24,26 @@ public sealed class GetPlayerDetailHandler : IHandlerRequest<Guid, Result<Player
 {
     private readonly IProfileRepository profileRepository;
     private readonly IUserRepository userRepository;
+    private readonly IServiceReviewRepository reviewRepository;
+    private readonly ReviewOptions reviewOptions;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="GetPlayerDetailHandler" /> class.
     /// </summary>
     /// <param name="profileRepository">The profile repository.</param>
     /// <param name="userRepository">The user repository (for the grammatical gender).</param>
-    public GetPlayerDetailHandler(IProfileRepository profileRepository, IUserRepository userRepository)
+    /// <param name="reviewRepository">The service review repository (averages per service).</param>
+    /// <param name="reviewOptions">When an average is shown.</param>
+    public GetPlayerDetailHandler(
+        IProfileRepository profileRepository,
+        IUserRepository userRepository,
+        IServiceReviewRepository reviewRepository,
+        IOptions<ReviewOptions> reviewOptions)
     {
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
+        this.reviewRepository = reviewRepository;
+        this.reviewOptions = reviewOptions.Value;
     }
 
     /// <summary>
@@ -49,6 +63,9 @@ public sealed class GetPlayerDetailHandler : IHandlerRequest<Guid, Result<Player
         User? user = await this.userRepository.GetByIdAsync(player.UserId, cancellationToken);
         IReadOnlyList<PlayerService> services =
             await this.profileRepository.GetPlayerServicesAsync(player.Id, cancellationToken);
+        IReadOnlyDictionary<Guid, RatingSummary> ratings = services.Count == 0
+            ? new Dictionary<Guid, RatingSummary>()
+            : await this.reviewRepository.GetSummariesAsync([.. services.Select(s => s.Id)], cancellationToken);
 
         return new PlayerDetail(
             player.Id,
@@ -70,7 +87,8 @@ public sealed class GetPlayerDetailHandler : IHandlerRequest<Guid, Result<Player
                     s.RankKey,
                     s.PlayStyles,
                     s.ImageId,
-                    s.IsAvailable))
+                    s.IsAvailable,
+                    this.reviewOptions.Visible(ratings.GetValueOrDefault(s.Id))))
                 .ToList());
     }
 }

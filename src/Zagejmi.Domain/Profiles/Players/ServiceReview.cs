@@ -3,30 +3,59 @@ using System;
 namespace Zagejmi.Domain.Profiles.Players;
 
 /// <summary>
-///     Represents a review of a service provided by a player, including the comment, profile ID of the reviewer, date
-///     of the review, and the rating given.
+///     A customer's review of one completed order of a service: 1–5 whole stars and an optional text. Every completed
+///     order (where the service was delivered) can be reviewed once, so a customer who orders often reviews often. The
+///     service name is copied from the order, so the review stays readable after the service is renamed or removed.
 /// </summary>
-public record ServiceReview
+public sealed record ServiceReview
 {
     /// <summary>
-    ///     Gets or sets the comment provided by the reviewer about the service.
+    ///     Gets the review ID.
     /// </summary>
-    public string? Comment { get; set; }
+    public required Guid Id { get; init; }
 
     /// <summary>
-    ///     Gets or sets the unique identifier of the profile that provided the review. This is a nullable GUID, indicating
-    ///     that the review may not be associated with a specific profile.
+    ///     Gets the reviewed order (one review per order).
     /// </summary>
-    public Guid? ProfileId { get; set; }
+    public required Guid OrderId { get; init; }
 
     /// <summary>
-    ///     Gets or sets the date and time when the review was created. This is represented as a DateTimeOffset to include
-    ///     timezone information.
+    ///     Gets the ordered service.
     /// </summary>
-    public DateTimeOffset Date { get; set; }
+    public required Guid ServiceId { get; init; }
 
     /// <summary>
-    ///     Gets or sets the rating given by the reviewer for the service. This is represented as a decimal value, allowing for fractional ratings.
+    ///     Gets the service name at order time.
     /// </summary>
-    public decimal Rating { get; set; }
+    public required string ServiceName { get; init; }
+
+    /// <summary>
+    ///     Gets the player who provided the service.
+    /// </summary>
+    public required Guid PlayerProfileId { get; init; }
+
+    /// <summary>
+    ///     Gets the customer profile that wrote the review.
+    /// </summary>
+    public required Guid AuthorProfileId { get; init; }
+
+    /// <summary>
+    ///     Gets the rating, <see cref="PlayerReview.MinRating" /> to <see cref="PlayerReview.MaxRating" /> stars.
+    /// </summary>
+    public required int Rating { get; init; }
+
+    /// <summary>
+    ///     Gets the optional text (at most <see cref="PlayerReview.CommentMaxLength" /> characters).
+    /// </summary>
+    public string? Comment { get; init; }
+
+    /// <summary>
+    ///     Gets when the review was first written.
+    /// </summary>
+    public required DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>
+    ///     Gets when the review was last changed.
+    /// </summary>
+    public required DateTimeOffset UpdatedAt { get; init; }
 }

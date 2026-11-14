@@ -194,6 +194,37 @@ public sealed class OrderRepositoryTests : IAsyncLifetime
         Assert.Equal(3, (await orders.ListForPlayerAsync(playerId, 0, 1, Ct)).TotalCount);
     }
 
+    [Fact]
+    public async Task Knows_whether_a_customer_has_a_completed_delivered_order_with_a_player()
+    {
+        (_, OrderRepository orders) = this.CreateRepositories();
+        Guid customerId = Guid.CreateVersion7();
+        Guid playerId = Guid.CreateVersion7();
+
+        Order noShow = NewOrder(customerId, 0, playerProfileId: playerId);
+        await orders.PlaceAsync(noShow, null, Ct);
+        noShow.Accept(Now);
+        await orders.SaveTransitionAsync(noShow, OrderStatus.Pending, null, null, Ct);
+        noShow.Finish(OrderOutcome.CustomerNoShow, Now, ConfirmWindow);
+        await orders.SaveTransitionAsync(noShow, OrderStatus.Active, null, null, Ct);
+        noShow.Confirm(Now);
+        await orders.SaveTransitionAsync(noShow, OrderStatus.Finished, null, null, Ct);
+        Assert.False(await orders.HasReviewableOrderAsync(customerId, playerId, Ct));
+
+        Order delivered = NewOrder(customerId, 0, playerProfileId: playerId);
+        await orders.PlaceAsync(delivered, null, Ct);
+        delivered.Accept(Now);
+        await orders.SaveTransitionAsync(delivered, OrderStatus.Pending, null, null, Ct);
+        delivered.Finish(OrderOutcome.Delivered, Now, ConfirmWindow);
+        await orders.SaveTransitionAsync(delivered, OrderStatus.Active, null, null, Ct);
+        Assert.False(await orders.HasReviewableOrderAsync(customerId, playerId, Ct)); // not confirmed yet
+
+        delivered.Confirm(Now);
+        await orders.SaveTransitionAsync(delivered, OrderStatus.Finished, null, null, Ct);
+        Assert.True(await orders.HasReviewableOrderAsync(customerId, playerId, Ct));
+        Assert.False(await orders.HasReviewableOrderAsync(Guid.CreateVersion7(), playerId, Ct));
+    }
+
     private static Order NewOrder(
         Guid customerProfileId,
         long unitPrice,

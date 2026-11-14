@@ -1,5 +1,6 @@
 using System;
 
+using Zagejmi.Application.Profiles.Reviews;
 using Zagejmi.Domain.Games;
 
 namespace Zagejmi.Application.Profiles.SearchServices;
@@ -21,6 +22,7 @@ namespace Zagejmi.Application.Profiles.SearchServices;
 /// <param name="PlayStyles">Competitive, casual or both.</param>
 /// <param name="ImageId">The service image, if any.</param>
 /// <param name="CreatedAt">When the service was created.</param>
+/// <param name="Rating">The average of the service's reviews, once it has enough of them to show.</param>
 public sealed record ServiceListItem(
     Guid ServiceId,
     Guid PlayerProfileId,
@@ -35,4 +37,5 @@ public sealed record ServiceListItem(
     string? RankKey,
     PlayStyles PlayStyles,
     Guid? ImageId,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    RatingSummary? Rating = null);

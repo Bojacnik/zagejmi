@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Zagejmi.Application.Profiles.Reviews;
 using Zagejmi.Domain.Auth;
 using Zagejmi.Domain.Games;
 
@@ -41,6 +42,7 @@ public sealed record PlayerDetail(
 /// <param name="PlayStyles">Competitive, casual or both (<see cref="PlayStyles.None" /> without a game).</param>
 /// <param name="ImageId">The service image, if any.</param>
 /// <param name="IsAvailable">Whether the service can be ordered right now.</param>
+/// <param name="Rating">The average of the service's reviews, once it has enough of them to show.</param>
 public sealed record PlayerServiceItem(
     Guid ServiceId,
     string Name,
@@ -52,4 +54,5 @@ public sealed record PlayerServiceItem(
     string? RankKey,
     PlayStyles PlayStyles,
     Guid? ImageId,
-    bool IsAvailable);
+    bool IsAvailable,
+    RatingSummary? Rating = null);

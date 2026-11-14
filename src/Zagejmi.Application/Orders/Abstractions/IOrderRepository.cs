@@ -122,4 +122,17 @@ public interface IOrderRepository
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The disputed orders.</returns>
     Task<IReadOnlyList<Order>> GetDisputedAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Gets a value indicating whether the customer has at least one completed order with the player in which the
+    ///     service was actually provided (what a recommendation requires).
+    /// </summary>
+    /// <param name="customerProfileId">The customer profile.</param>
+    /// <param name="playerProfileId">The player profile.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="true" /> when such an order exists.</returns>
+    Task<bool> HasReviewableOrderAsync(
+        Guid customerProfileId,
+        Guid playerProfileId,
+        CancellationToken cancellationToken = default);
 }

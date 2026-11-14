@@ -147,6 +147,13 @@ public static class CzechLabels
     }
 
     /// <summary>
+    ///     Formats a number of recommendations; „doporučení“ has the same form for every count.
+    /// </summary>
+    /// <param name="count">How many recommendations.</param>
+    /// <returns>For example „12 doporučení“.</returns>
+    public static string Recommendations(int count) => $"{count:N0} doporučení";
+
+    /// <summary>
     ///     Formats an average rating with one decimal, the Czech way: „4,5“.
     /// </summary>
     /// <param name="average">The average number of stars.</param>

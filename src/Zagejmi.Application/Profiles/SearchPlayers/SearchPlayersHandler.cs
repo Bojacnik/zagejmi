@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Options;
+
 using Zagejmi.Application.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
 using Zagejmi.Application.Profiles.Reviews;
@@ -20,16 +22,22 @@ public sealed class SearchPlayersHandler : IHandlerRequest<SearchPlayersQuery, R
 {
     private readonly IProfileRepository profileRepository;
     private readonly IPlayerReviewRepository reviewRepository;
+    private readonly ReviewOptions reviewOptions;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SearchPlayersHandler" /> class.
     /// </summary>
     /// <param name="profileRepository">The profile repository.</param>
-    /// <param name="reviewRepository">The review repository (average ratings on the cards).</param>
-    public SearchPlayersHandler(IProfileRepository profileRepository, IPlayerReviewRepository reviewRepository)
+    /// <param name="reviewRepository">The recommendation repository (average ratings on the cards).</param>
+    /// <param name="reviewOptions">When an average is shown.</param>
+    public SearchPlayersHandler(
+        IProfileRepository profileRepository,
+        IPlayerReviewRepository reviewRepository,
+        IOptions<ReviewOptions> reviewOptions)
     {
         this.profileRepository = profileRepository;
         this.reviewRepository = reviewRepository;
+        this.reviewOptions = reviewOptions.Value;
     }
 
     /// <summary>
@@ -71,7 +79,7 @@ public sealed class SearchPlayersHandler : IHandlerRequest<SearchPlayersQuery, R
                     p.Description,
                     p.CreatedAt,
                     p.CardProfilePicture,
-                    ratings.GetValueOrDefault(p.Id)))
+                    this.reviewOptions.Visible(ratings.GetValueOrDefault(p.Id))))
                 .ToList(),
             players.TotalCount);
     }

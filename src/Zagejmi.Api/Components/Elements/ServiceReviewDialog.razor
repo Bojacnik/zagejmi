@@ -1,0 +1,181 @@
+@using System.Threading
+@using Zagejmi.Application.Profiles.Reviews.DeleteServiceReview
+@using Zagejmi.Application.Profiles.Reviews.GetServiceReviews
+@using Zagejmi.Application.Profiles.Reviews.WriteServiceReview
+@using Zagejmi.Domain.Profiles.Players
+@using Zagejmi.Shared
+@implements IDisposable
+@inject GetOrderReviewHandler GetOrderReviewHandler
+@inject WriteServiceReviewHandler WriteServiceReviewHandler
+@inject DeleteServiceReviewHandler DeleteServiceReviewHandler
+
+@* Review of one completed order (REVIEW-002): stars + optional text; editable and deletable by the customer. *@
+
+<div class="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true"
+     aria-labelledby="service-review-title" @onkeydown="OnKeyDown" @onkeydown:stopPropagation tabindex="-1" @ref="dialog">
+    <div class="absolute inset-0 bg-black/70" @onclick="Close"></div>
+
+    <form class="relative w-full max-w-md rounded-2xl border border-accent-700/50 bg-primary-950 p-6 shadow-2xl shadow-black/60 modal-pop-in space-y-4"
+          @onsubmit="SaveAsync" @onsubmit:preventDefault>
+        <div>
+            <h2 id="service-review-title" class="text-xl font-bold text-text-default">
+                @(existing is null ? "Ohodnoťte službu" : "Vaše recenze")
+            </h2>
+            <p class="text-text-muted">@ServiceName</p>
+        </div>
+
+        @if (isLoading)
+        {
+            <p class="text-text-muted">Načítáme…</p>
+        }
+        else
+        {
+            <StarInput @bind-Value="rating"/>
+
+            <div>
+                <label for="service-review-comment" class="sr-only">Text recenze</label>
+                <textarea id="service-review-comment" @bind="comment" @bind:event="oninput" rows="4"
+                          maxlength="@PlayerReview.CommentMaxLength" placeholder="Jak služba proběhla? (nepovinné)"
+                          class="w-full rounded-lg bg-primary-900 border border-accent-800/70 px-3 py-2 text-text-default placeholder:text-text-muted/60"></textarea>
+                <p class="text-xs text-text-muted text-right">@(comment?.Length ?? 0) / @PlayerReview.CommentMaxLength</p>
+            </div>
+        }
+
+        @if (errorMessage is not null)
+        {
+            <p class="text-sm text-red-300" role="alert">@errorMessage</p>
+        }
+
+        <div class="flex flex-wrap items-center justify-end gap-3">
+            @if (existing is not null)
+            {
+                @if (confirmDelete)
+                {
+                    <span class="text-sm text-text-muted">Opravdu smazat?</span>
+                    <button type="button" @onclick="DeleteAsync" disabled="@isSaving" class="text-sm font-semibold text-red-300 hover:underline">Ano</button>
+                    <button type="button" @onclick="() => confirmDelete = false" class="text-sm text-text-muted hover:underline">Ne</button>
+                }
+                else
+                {
+                    <button type="button" @onclick="() => confirmDelete = true" class="mr-auto text-sm text-text-muted hover:text-red-300 hover:underline">Smazat recenzi</button>
+                }
+            }
+            <button type="button" @onclick="Close" class="px-4 py-2 rounded-lg text-text-muted hover:text-text-default">Zavřít</button>
+            <button type="submit" disabled="@(isSaving || isLoading || rating == 0)"
+                    class="px-4 py-2 rounded-lg bg-accent-600 text-white font-semibold hover:bg-accent-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                @(isSaving ? "Ukládáme…" : existing is null ? "Odeslat recenzi" : "Uložit změny")
+            </button>
+        </div>
+    </form>
+</div>
+
+@code {
+    private readonly CancellationTokenSource disposed = new();
+    private ElementReference dialog;
+    private ServiceReview? existing;
+    private bool isLoading = true;
+    private bool isSaving;
+    private bool confirmDelete;
+    private int rating;
+    private string? comment;
+    private string? errorMessage;
+
+    /// <summary>Gets or sets the signed-in user.</summary>
+    [Parameter, EditorRequired]
+    public Guid UserId { get; set; }
+
+    /// <summary>Gets or sets the reviewed order.</summary>
+    [Parameter, EditorRequired]
+    public Guid OrderId { get; set; }
+
+    /// <summary>Gets or sets the service name.</summary>
+    [Parameter]
+    public string ServiceName { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the callback after the review was saved or deleted.</summary>
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    /// <summary>Gets or sets the callback when the dialog closes.</summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Result<ServiceReview?> result = await GetOrderReviewHandler.Handle(new GetOrderReviewQuery(UserId, OrderId), disposed.Token);
+            if (result.IsFailure)
+            {
+                errorMessage = result.Error!.Message;
+                return;
+            }
+
+            existing = result.Value;
+            rating = existing?.Rating ?? 0;
+            comment = existing?.Comment;
+        }
+        catch (OperationCanceledException)
+        {
+            // Closed while loading.
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await dialog.FocusAsync();
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        await RunAsync(() => WriteServiceReviewHandler.Handle(new WriteServiceReviewCommand(UserId, OrderId, rating, comment), disposed.Token));
+    }
+
+    private async Task DeleteAsync()
+    {
+        await RunAsync(() => DeleteServiceReviewHandler.Handle(new DeleteServiceReviewCommand(UserId, OrderId), disposed.Token));
+    }
+
+    private async Task RunAsync(Func<Task<Result>> action)
+    {
+        isSaving = true;
+        errorMessage = null;
+        try
+        {
+            Result result = await action();
+            if (result.IsFailure)
+            {
+                errorMessage = result.Error!.Message;
+                return;
+            }
+
+            await OnChanged.InvokeAsync();
+            await Close();
+        }
+        catch (OperationCanceledException)
+        {
+            // Closed while saving.
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private Task Close() => OnClose.InvokeAsync();
+
+    private Task OnKeyDown(KeyboardEventArgs e) => e.Key == "Escape" ? Close() : Task.CompletedTask;
+
+    public void Dispose()
+    {
+        disposed.Cancel();
+        disposed.Dispose();
+    }
+}

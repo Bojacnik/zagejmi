@@ -15,27 +15,28 @@
 @inject ActiveProfileService ActiveProfiles
 
 @*
-    Reviews of a player (REVIEW-001): average, the viewer's own review as an editable form, and the list newest first.
-    Any customer may review any player except their own; ghosts read only. Written as the customer profile, so a user
-    acting as Hráč/Hráčka is asked to switch first.
+    Recommendations of a player (doporučení, REVIEW-001): average, the viewer's own recommendation as an editable form,
+    and the list newest first. A customer can recommend a player once, after a completed order with them; ghosts read
+    only. Written as the customer profile, so a user acting as Hráč/Hráčka is asked to switch first. Reviews of single
+    orders are listed by ServiceReviewsList.
 *@
 
-<section class="px-6 sm:px-8 py-6 border-t border-accent-800/40" aria-labelledby="reviews-title">
+<section class="px-6 sm:px-8 py-6 border-t border-accent-800/40" aria-labelledby="recommendations-title">
     <div class="flex flex-wrap items-baseline justify-between gap-3">
-        <h3 id="reviews-title" class="text-xl font-bold text-text-default">Recenze</h3>
+        <h3 id="recommendations-title" class="text-xl font-bold text-text-default">Doporučení</h3>
         @if (view is { Summary.Count: > 0 } summaryView)
         {
             <div class="flex items-center gap-2" aria-label="@($"Průměrné hodnocení {CzechLabels.Rating(summaryView.Summary.Average)} z 5")">
                 <Stars Value="summaryView.Summary.Average"/>
                 <span class="font-bold text-text-default">@CzechLabels.Rating(summaryView.Summary.Average)</span>
-                <span class="text-sm text-text-muted">(@CzechLabels.Reviews(summaryView.Summary.Count))</span>
+                <span class="text-sm text-text-muted">(@CzechLabels.Recommendations(summaryView.Summary.Count))</span>
             </div>
         }
     </div>
 
     @if (view is null && errorMessage is null)
     {
-        <p class="text-text-muted mt-4">Načítáme recenze…</p>
+        <p class="text-text-muted mt-4">Načítáme doporučení…</p>
     }
     else if (view is null)
     {
@@ -48,46 +49,33 @@
         {
             case ReviewEligibility.SignedOut:
                 <p class="mt-4 text-sm text-text-muted">
-                    Recenzi můžete napsat po <a href="/login" class="text-accent-300 hover:underline">přihlášení</a>.
+                    Doporučení můžete napsat po <a href="/login" class="text-accent-300 hover:underline">přihlášení</a> a dokončené objednávce.
                 </p>
                 break;
             case ReviewEligibility.GhostMode:
-                <p class="mt-4 text-sm text-text-muted">V režimu ducha recenze jen čtete. Pro napsání recenze režim ducha vypněte.</p>
+                <p class="mt-4 text-sm text-text-muted">V režimu ducha doporučení jen čtete. Pro napsání režim ducha vypněte.</p>
+                break;
+            case ReviewEligibility.NoCompletedOrder:
+                <p class="mt-4 text-sm text-text-muted">Doporučení můžete napsat po první dokončené objednávce u tohoto profilu.</p>
                 break;
             case ReviewEligibility.CanReview when ActiveProfiles.Active != ProfileType.Customer:
                 <p class="mt-4 text-sm text-text-muted">
-                    Recenze se píší za profil @CzechLabels.Role(ProfileType.Customer, ActiveProfiles.GrammaticalGender).
+                    Doporučení se píší za profil @CzechLabels.Role(ProfileType.Customer, ActiveProfiles.GrammaticalGender).
                     Přepněte se na něj v horní liště.
                 </p>
                 break;
             case ReviewEligibility.CanReview:
                 <form class="mt-4 rounded-xl border border-accent-800/40 bg-primary-900/60 p-4 space-y-3"
                       @onsubmit="SaveAsync" @onsubmit:preventDefault>
-                    <p class="text-sm font-medium text-text-default">@(view.Mine is null ? "Vaše hodnocení" : "Vaše recenze")</p>
+                    <p class="text-sm font-medium text-text-default">@(view.Mine is null ? "Doporučili byste tento profil ostatním?" : "Vaše doporučení")</p>
 
-                    <div class="flex items-center gap-1" role="radiogroup" aria-label="Počet hvězdiček">
-                        @for (int i = PlayerReview.MinRating; i <= PlayerReview.MaxRating; i++)
-                        {
-                            int stars = i;
-                            bool filled = stars <= (hoverRating ?? rating);
-                            <button type="button" role="radio" aria-checked="@(stars == rating ? "true" : "false")"
-                                    aria-label="@StarLabel(stars)" title="@StarLabel(stars)"
-                                    @onclick="() => rating = stars"
-                                    @onmouseenter="() => hoverRating = stars" @onmouseleave="() => hoverRating = null"
-                                    class="p-0.5 rounded focus-visible:outline-2 focus-visible:outline-accent-400">
-                                <svg class="w-8 h-8 transition-colors @(filled ? "text-amber-400" : "text-primary-700")"
-                                     viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                    <path d="@StarPath"/>
-                                </svg>
-                            </button>
-                        }
-                    </div>
+                    <StarInput @bind-Value="rating"/>
 
                     <div>
-                        <label for="review-comment" class="sr-only">Text recenze</label>
+                        <label for="review-comment" class="sr-only">Text doporučení</label>
                         <textarea id="review-comment" @bind="comment" @bind:event="oninput" rows="3"
                                   maxlength="@PlayerReview.CommentMaxLength"
-                                  placeholder="Jak se vám s ním nebo s ní hrálo? (nepovinné)"
+                                  placeholder="Co byste o něm nebo o ní řekli ostatním? (nepovinné)"
                                   class="w-full rounded-lg bg-primary-950 border border-accent-800/70 px-3 py-2 text-text-default placeholder:text-text-muted/60"></textarea>
                         <p class="text-xs text-text-muted text-right">@(comment?.Length ?? 0) / @PlayerReview.CommentMaxLength</p>
                     </div>
@@ -100,7 +88,7 @@
                     <div class="flex flex-wrap items-center gap-3">
                         <button type="submit" disabled="@(isSaving || rating == 0)"
                                 class="px-4 py-2 rounded-lg bg-accent-600 text-white font-semibold hover:bg-accent-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                            @(isSaving ? "Ukládáme…" : view.Mine is null ? "Odeslat recenzi" : "Uložit změny")
+                            @(isSaving ? "Ukládáme…" : view.Mine is null ? "Odeslat doporučení" : "Uložit změny")
                         </button>
                         @if (view.Mine is not null)
                         {
@@ -115,7 +103,7 @@
                             else
                             {
                                 <button type="button" @onclick="() => confirmDelete = true"
-                                        class="text-sm text-text-muted hover:text-red-300 hover:underline">Smazat recenzi</button>
+                                        class="text-sm text-text-muted hover:text-red-300 hover:underline">Smazat doporučení</button>
                             }
                         }
                         @if (savedMessage is not null)
@@ -130,7 +118,7 @@
         @* List *@
         @if (reviews.Count == 0)
         {
-            <p class="mt-4 text-text-muted">Zatím tu není žádná recenze.</p>
+            <p class="mt-4 text-text-muted">Zatím tu není žádné doporučení.</p>
         }
         else
         {
@@ -152,7 +140,7 @@
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                 <span class="font-semibold text-text-default">@review.AuthorName</span>
-                                <span aria-label="@StarLabel(review.Rating)"><Stars Value="review.Rating" Size="w-4 h-4"/></span>
+                                <span aria-label="@StarInput.Label(review.Rating)"><Stars Value="review.Rating" Size="w-4 h-4"/></span>
                                 <span class="text-xs text-text-muted">
                                     @CzechLabels.InPragueTime(review.CreatedAt).ToString("d. M. yyyy")@(review.IsEdited ? " · upraveno" : "")
                                 </span>
@@ -170,7 +158,7 @@
             {
                 <button type="button" @onclick="LoadMoreAsync" disabled="@isLoadingMore"
                         class="mt-4 text-sm font-semibold text-accent-300 hover:underline disabled:opacity-50">
-                    @(isLoadingMore ? "Načítáme…" : "Načíst další recenze")
+                    @(isLoadingMore ? "Načítáme…" : "Načíst další doporučení")
                 </button>
             }
         }
@@ -197,7 +185,6 @@
     private bool isLoadingMore;
 
     private int rating;
-    private int? hoverRating;
     private string? comment;
     private bool isSaving;
     private bool confirmDelete;
@@ -316,7 +303,7 @@
             }
 
             await ReloadAsync();
-            savedMessage = isNew ? "Děkujeme za recenzi!" : "Změny jsou uložené.";
+            savedMessage = isNew ? "Děkujeme za doporučení!" : "Změny jsou uložené.";
         }
         catch (OperationCanceledException)
         {
@@ -348,7 +335,7 @@
             }
 
             await ReloadAsync();
-            savedMessage = "Recenze je smazaná.";
+            savedMessage = "Doporučení je smazané.";
         }
         catch (OperationCanceledException)
         {
@@ -364,13 +351,6 @@
     {
         _ = InvokeAsync(StateHasChanged);
     }
-
-    private static string StarLabel(int stars) => stars switch
-    {
-        1 => "1 hvězdička",
-        >= 2 and <= 4 => $"{stars} hvězdičky",
-        _ => $"{stars} hvězdiček",
-    };
 
     private static string Initials(string name)
     {

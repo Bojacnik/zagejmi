@@ -8,6 +8,7 @@ using Zagejmi.Application.Abstractions;
 using Zagejmi.Application.Orders.Abstractions;
 using Zagejmi.Application.Profiles;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Profiles.Reviews.Abstractions;
 using Zagejmi.Domain.Orders;
 using Zagejmi.Shared;
 
@@ -37,6 +38,7 @@ public sealed class GetOrdersHandler : IHandlerRequest<GetOrdersQuery, Result<Pa
 {
     private readonly IProfileRepository profileRepository;
     private readonly IOrderRepository orderRepository;
+    private readonly IServiceReviewRepository reviewRepository;
     private readonly TimeProvider clock;
 
     /// <summary>
@@ -44,11 +46,17 @@ public sealed class GetOrdersHandler : IHandlerRequest<GetOrdersQuery, Result<Pa
     /// </summary>
     /// <param name="profileRepository">The profile repository.</param>
     /// <param name="orderRepository">The order repository.</param>
+    /// <param name="reviewRepository">The service review repository (which orders are reviewed).</param>
     /// <param name="clock">The clock.</param>
-    public GetOrdersHandler(IProfileRepository profileRepository, IOrderRepository orderRepository, TimeProvider clock)
+    public GetOrdersHandler(
+        IProfileRepository profileRepository,
+        IOrderRepository orderRepository,
+        IServiceReviewRepository reviewRepository,
+        TimeProvider clock)
     {
         this.profileRepository = profileRepository;
         this.orderRepository = orderRepository;
+        this.reviewRepository = reviewRepository;
         this.clock = clock;
     }
 
@@ -80,6 +88,14 @@ public sealed class GetOrdersHandler : IHandlerRequest<GetOrdersQuery, Result<Pa
             orders.Items,
             o => OrderActions.Available(o, request.Role, this.clock.GetUtcNow()),
             cancellationToken);
+        if (request.Role == OrderRole.Customer && views.Any(v => v.Order.UnlocksReview))
+        {
+            IReadOnlySet<Guid> reviewed = await this.reviewRepository.GetReviewedOrderIdsAsync(
+                [.. views.Where(v => v.Order.UnlocksReview).Select(v => v.Order.Id)],
+                cancellationToken);
+            views = [.. views.Select(v => v with { HasReview = reviewed.Contains(v.Order.Id) })];
+        }
+
         return new PagedResult<OrderView>(views, orders.TotalCount);
     }
 

@@ -14,6 +14,7 @@ using Zagejmi.Application.Images.Abstractions;
 using Zagejmi.Application.Orders;
 using Zagejmi.Application.Orders.Abstractions;
 using Zagejmi.Application.Profiles.Abstractions;
+using Zagejmi.Application.Profiles.Reviews;
 using Zagejmi.Application.Profiles.Reviews.Abstractions;
 using Zagejmi.Application.Wallets;
 using Zagejmi.Application.Wallets.Abstractions;
@@ -44,6 +45,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IPlayerReviewRepository, PlayerReviewRepository>();
+        services.AddScoped<IServiceReviewRepository, ServiceReviewRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddSingleton<IPasswordHasher, Argon2PasswordHasher>();
 
@@ -95,6 +97,7 @@ public static class InfrastructureServiceCollectionExtensions
         // Orders live next to the ledger (their money moves in the same database transaction).
         services.Configure<OrderOptions>(configuration.GetSection(OrderOptions.SectionName));
         services.Configure<AdminOptions>(configuration.GetSection(AdminOptions.SectionName));
+        services.Configure<ReviewOptions>(configuration.GetSection(ReviewOptions.SectionName));
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddHostedService<OrderTimeoutService>();
 
