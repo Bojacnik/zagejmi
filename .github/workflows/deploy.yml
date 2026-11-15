@@ -112,8 +112,9 @@ jobs:
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
 
-      - name: Copy compose file
-        run: scp -o BatchMode=yes deploy/compose.yaml "$SSH_TARGET:/opt/zagejmi/"
+      - name: Copy compose file and mail scripts
+        # deploy/mail → /opt/zagejmi/mail (setup and switch of our own mail server, see deploy/MAIL.md).
+        run: scp -o BatchMode=yes -r deploy/compose.yaml deploy/mail "$SSH_TARGET:/opt/zagejmi/"
 
       - name: Pull and start
         env:

@@ -86,6 +86,8 @@ ssh root@<IP serveru>
   nano .env   # zkontrolovat DOMAIN, doplnit SMTP a ADMIN_EMAIL
 ```
 
+Vlastní mail server místo SMTP relay: [MAIL.md](MAIL.md).
+
 `ADMIN_EMAIL` je e-mail (ověřeného) účtu, který na `/admin/orders` rozhoduje nahlášené objednávky: vrátí Goiny
 zákazníkovi, nebo vyplatí hráče. Bez něj zůstanou nahlášené objednávky zmrazené. Další nastavení (poplatek, lhůty
 objednávek, práh pro zobrazení hodnocení) mají rozumné výchozí hodnoty, viz „Nastavení aplikace“ v hlavním

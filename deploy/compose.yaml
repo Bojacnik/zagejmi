@@ -3,7 +3,8 @@
 #   IMAGE_TAG=<commit sha> docker compose up -d
 # HTTPS is done by the Caddy installed on the server itself (systemd, /etc/caddy/Caddyfile), which also serves other
 # sites; it proxies zagejmi.cz to 127.0.0.1:3000. Nothing here is reachable from outside: the app listens on loopback
-# only, PostgreSQL and MinIO only on the internal network.
+# only, PostgreSQL and MinIO only on the internal network. The optional mail server (profile "mail") is the exception: it
+# publishes the mail ports 25, 465, 587 and 993.
 # Secrets come from .env on the server (template: deploy/.env.example), never from the repository.
 name: zagejmi
 
@@ -31,9 +32,13 @@ services:
       Api__BaseUrl: http://localhost:8080/
       Cors__AllowedOrigins__0: https://${DOMAIN}
       EmailVerification__PublicBaseUrl: https://${DOMAIN}
+      # Where mail goes out: an SMTP relay (Brevo) or our own mail server (the "mail" service below, reached inside the
+      # zagejmi network under MAIL_HOSTNAME). Switch between them with deploy/mail/switch-smtp.sh.
       Smtp__Host: ${SMTP_HOST:-}
       Smtp__Port: ${SMTP_PORT:-587}
       Smtp__EnableSsl: ${SMTP_ENABLE_SSL:-true}
+      # Auto (by port: 465 = implicit TLS, otherwise STARTTLS), StartTls, SslOnConnect or None.
+      Smtp__Security: ${SMTP_SECURITY:-Auto}
       Smtp__UseAuthentication: ${SMTP_USE_AUTHENTICATION:-true}
       Smtp__Username: ${SMTP_USERNAME:-}
       Smtp__Password: ${SMTP_PASSWORD:-}
@@ -96,7 +101,42 @@ services:
     networks:
       - zagejmi
 
+  mail:
+    # Our own mail server for @zagejmi.cz (Stalwart: SMTP, IMAP, DKIM, spam filter, web admin). Off until .env has
+    # COMPOSE_PROFILES=mail; deploy/mail/setup-mail.sh turns it on and configures it, deploy/MAIL.md is the runbook.
+    # It owns the mail ports on the server directly (no Caddy in between, so it sees the real client IPs); its web part
+    # (admin, MTA-STS, autoconfig) goes through the host Caddy on 127.0.0.1:8090. The TLS certificate is Caddy's,
+    # copied into ./mail-tls by deploy/mail/sync-cert.sh.
+    image: stalwartlabs/stalwart:v1.0.3
+    profiles: [ "mail" ]
+    restart: unless-stopped
+    init: true
+    environment:
+      # "admin:<password>": a fixed administrator for setup-mail.sh, the cert reload and the web admin. Optional here
+      # (compose checks variables even for services that are off); empty = no such administrator.
+      STALWART_RECOVERY_ADMIN: ${MAIL_ADMIN:-}
+      # Its public address behind Caddy, for redirects and links (otherwise they point to 127.0.0.1:8080).
+      STALWART_PUBLIC_URL: https://${MAIL_HOSTNAME:-mx.zagejmi.cz}
+    ports:
+      - "25:25"     # incoming mail from other servers
+      - "465:465"   # sending from mail clients and the app (implicit TLS)
+      - "587:587"   # sending from mail clients (STARTTLS)
+      - "993:993"   # IMAP for mail clients
+      - "127.0.0.1:8090:8080" # host Caddy → web admin, MTA-STS, autoconfig; loopback only
+    volumes:
+      - mail_config:/etc/stalwart
+      - mail_data:/var/lib/stalwart
+      - ./mail-tls:/etc/stalwart/tls:ro
+    logging: *logging
+    networks:
+      zagejmi:
+        # The app reaches the mail server by its public name without leaving the server, so its TLS certificate fits.
+        aliases:
+          - ${MAIL_HOSTNAME:-mx.zagejmi.cz}
+
 volumes:
+  mail_config:
+  mail_data:
   dataprotection_keys:
   postgres_data:
   minio_data:

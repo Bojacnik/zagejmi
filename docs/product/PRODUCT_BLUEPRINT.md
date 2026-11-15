@@ -81,7 +81,13 @@ Požadavky používají stavy definované v [README](./README.md).
 - Development/debug: Mailpit.
 - Současná produkce: existující SMTP relay vlastníka projektu.
 - Pozdější produkce: vlastní mail server po uplynutí prvního měsíce provozu Hetzner serveru.
-- Aplikační logika odesílání e-mailů má být nezávislá na konkrétním SMTP provideru.
+  - **Připraveno (2026-11-15), zatím vypnuté:** Stalwart (SMTP, IMAP, DKIM, spam filtr, webová administrace) jako služba
+    `mail` v produkčním compose pro `@zagejmi.cz`, se schránkami `noreply@` (odesílá aplikace) a `postmaster@`, další
+    schránky přes webovou administraci. Zapnutí, DNS záznamy a přepnutí aplikace (oběma směry jedním příkazem) popisuje
+    `deploy/MAIL.md`; vyzkoušeno lokálně včetně ověření TLS certifikátu a podpisu DKIM.
+  - Čeká se na Hetzner: odblokování odchozího portu 25 (a 465) a reverzní DNS `mx.zagejmi.cz`.
+- Aplikační logika odesílání e-mailů má být nezávislá na konkrétním SMTP provideru (MailKit; STARTTLS na 587 i TLS
+  hned od spojení na 465, nastavení `Smtp:Security`).
 - Konkrétní údaje relay serveru ani tajné hodnoty nepatří do dokumentace v repozitáři.
 
 ---
