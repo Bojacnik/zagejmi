@@ -1,7 +1,6 @@
 @page "/logout"
 @rendermode InteractiveServer
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 
 <PageTitle>Odhlášení – Zagejmi</PageTitle>
@@ -14,9 +13,14 @@
 
 @code {
 
-    protected override async Task OnInitializedAsync()
+    // The tokens live in the browser's storage, which is only reachable once the page is interactive (not while it is
+    // prerendered on the server), so the logout runs after the first interactive render.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await HandleLogout();
+        if (firstRender)
+        {
+            await HandleLogout();
+        }
     }
 
     private async Task HandleLogout()
@@ -28,9 +32,7 @@
                 await jwtProvider.ClearTokensAsync();
             }
 
-            HttpClient client = HttpClientFactory.CreateClient("WriteAPI");
-            await client.PostAsync("api/v1/auth/logout", null);
-
+            // Signing out only forgets the tokens in this browser; the server does not revoke them yet (issue #32).
             // Redirect to homepage with full page reload
             NavigationManager.NavigateTo("/", true);
         }

@@ -54,6 +54,11 @@ Požadavky používají stavy definované v [README](./README.md).
 - **Stav:** `EXISTING`
 - Základní registrace a login jsou již implementované.
 - Před dalšími změnami je nutné ověřit jejich současné chování a datový model v kódu.
+- **Odhlášení (opraveno 2026-11-15):** ikona odhlášení vede na `/logout`, který smaže tokeny v prohlížeči a přejde na
+  úvodní stránku; funguje z každé stránky včetně chráněných (dřív odhlášení z např. `/profile` skončilo na přihlášení
+  a samotná stránka `/logout` tokeny při prerenderu nesmazala).
+- **Chybí (`CONFIRMED` jako bezpečnostní potřeba):** server tokeny při odhlášení nezneplatní; zkopírovaný token platí
+  do vypršení (přístupový 2 h, obnovovací 30 dní). Issue #32.
 
 ### AUTH-002 – Ověření e-mailu
 - **Stav:** `CONFIRMED`
