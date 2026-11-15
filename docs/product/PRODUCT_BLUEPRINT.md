@@ -395,6 +395,7 @@ Požadavky používají stavy definované v [README](./README.md).
   - Ostatní stránky (Profil, Peněženka, formuláře, popupy) zatím nebyly systematicky zkontrolovány.
 - **Opraveno (2026-11-13), ověřeno screenshoty v Chrome v šířkách 360–1536 px:**
   - Horní lišta: hlavní navigace je v liště od 1024 px, pod tím v panelu „Menu“; jméno uživatele od 1536 px; „Odhlásit se“ je od 1024 px ikona s popiskem (2026-11-14; pod 1024 px je jako text v panelu Menu); pod 640 px je přepínač profilu v panelu Menu. Lišta je flex, takže pravá část už nepřetéká přes navigaci.
+  - Přepínač profilu (Zákazník/Hráč) se už nikdy nezužuje (dřív se v šířkách 1024–1180 px slil do sebe, issue #27): obě poloviny jsou stejně široké jako delší popisek. Aby se vešel vedle navigace, v šířkách 1024–1279 px se schová text „Zagejmi“ u loga a odkazy v navigaci mají menší odsazení (2026-11-15, ověřeno v šířkách 640–1920 px pro Zákazník/Hráč i Zákaznice/Hráčka).
   - Postranní panel: od 1024 px sloupec vedle obsahu jako dřív; pod 1024 px je ve výchozím stavu zavřený a vysouvá se přes obsah, po navigaci se zavře.
   - Odsazení obsahu se zmenšuje podle šířky obrazovky.
 - **Zbývá (`PROPOSED`):**
