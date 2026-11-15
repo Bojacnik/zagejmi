@@ -88,7 +88,8 @@ Výchozí hodnoty jsou v kódu, přepsat je jde v `appsettings*.json` nebo prom�
 
 ## Využité technologie
 
-ASP.NET Core, Blazor Server, Entity Framework Core + PostgreSQL, MinIO, SkiaSharp, TailwindCSS, xUnit v3.
+ASP.NET Core, Blazor Server, Entity Framework Core + PostgreSQL, MinIO, SkiaSharp, MailKit, TailwindCSS, xUnit v3.
+V produkci Docker Compose, host Caddy a (připravený) mail server Stalwart.
 
 ## Produkce (Hetzner)
 

@@ -29,6 +29,7 @@ V Dockeru (`/opt/zagejmi`) běží:
 | `api`      | aplikace Zagejmi; migrace databáze pouští sama při startu | jen přes Caddy (`127.0.0.1:3000`)      |
 | `postgres` | databáze                                                  | ne                                     |
 | `minio`    | obrázky                                                   | ne                                     |
+| `mail`     | vlastní mail server (Stalwart), **vypnutý**, dokud `.env` nemá `COMPOSE_PROFILES=mail`, viz [MAIL.md](MAIL.md) | porty 25, 465, 587, 993; web přes Caddy (`127.0.0.1:8090`) |
 
 ## Vydání nové verze
 
