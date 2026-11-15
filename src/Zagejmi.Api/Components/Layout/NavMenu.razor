@@ -165,6 +165,9 @@
 
         SidebarStateService.OnChange += StateHasChanged;
         NavigationManager.LocationChanged += OnLocationChanged;
+        // Sign-in and sign-out update the bar right away. The state is still re-read on every navigation as well,
+        // because the provider checks the token's expiry only when asked.
+        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
         SidebarStateService.SetSelectedPageFromUri(NavigationManager.Uri);
     }
 
@@ -227,6 +230,15 @@
         }
     }
 
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> state)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await RefreshAuthenticationState();
+            StateHasChanged();
+        });
+    }
+
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         _ = HandleLocationChangedAsync(e.Location);
@@ -284,20 +296,13 @@
         NavigationManager.NavigateTo(url);
     }
 
-    private async Task HandleLogout()
+    private void HandleLogout()
     {
         Debug.WriteLine("HandleLogout: Starting logout - navigating to logout endpoint");
 
-        if (AuthenticationStateProvider is JwtAuthenticationStateProvider authProvider)
-        {
-            await authProvider.ClearTokensAsync();
-        }
-
-        isAuthenticated = false;
-        username = null;
-        ActiveProfiles.Clear();
-
-        // Route through logout page to complete remote WriteAPI logout and final redirect.
+        // The /logout page clears the tokens, logs out on the API and goes to the home page. Clearing them here first
+        // would sign out the page that is open right now: a protected page (e.g. /profile) would then redirect to the
+        // login before the browser gets to /logout.
         NavigationManager.NavigateTo("/logout", true);
     }
 
@@ -310,6 +315,7 @@
     {
         SidebarStateService.OnChange -= StateHasChanged;
         NavigationManager.LocationChanged -= OnLocationChanged;
+        AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
     }
 
 }

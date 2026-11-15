@@ -25,7 +25,6 @@
 @implements IDisposable
 
 @inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ActiveProfileService ActiveProfiles
 @inject SetDefaultProfileHandler SetDefaultProfileHandler
 @inject SetProfileImageHandler SetProfileImageHandler
@@ -686,11 +685,19 @@ else if (cropTarget is { } target)
 
     private bool CanAddProfile => availableTypes.Count > 0;
 
+    /// <summary>
+    ///     The signed-in user, cascaded from the app's authentication state (follows sign-in and sign-out).
+    /// </summary>
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            AuthenticationState authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            AuthenticationState authState = AuthenticationState is null
+                ? new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()))
+                : await AuthenticationState;
             ClaimsPrincipal user = authState.User;
 
             if (user.Identity?.IsAuthenticated != true)
