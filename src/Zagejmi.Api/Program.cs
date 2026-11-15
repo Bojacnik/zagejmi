@@ -231,11 +231,16 @@ public static class Program
             app.UseHsts();
         }
 
-        // Redirect HTTP requests to HTTPS, in development only. In production the app speaks plain HTTP behind the host
-        // Caddy, which already redirects http:// to https:// and forwards X-Forwarded-Proto: https; the only plain-HTTP
-        // requests that reach the app are local ones like the deploy health check on 127.0.0.1:3000, which must not be
-        // redirected (and the middleware would log "Failed to determine the https port for redirect" for them).
-        if (app.Environment.IsDevelopment())
+        // Redirect HTTP requests to HTTPS, in development only and only when the app has an HTTPS address (the "https"
+        // launch profile). In production the app speaks plain HTTP behind the host Caddy, which already redirects
+        // http:// to https:// and forwards X-Forwarded-Proto: https; the only plain-HTTP requests that reach the app are
+        // local ones like the deploy health check on 127.0.0.1:3000, which must not be redirected. Without an HTTPS
+        // address (e.g. the "http" profile) there is nowhere to redirect to, and the middleware would only log
+        // "Failed to determine the https port for redirect".
+        bool hasHttpsAddress =
+            (app.Configuration["urls"] ?? string.Empty).Contains("https://", StringComparison.OrdinalIgnoreCase)
+            || !string.IsNullOrEmpty(app.Configuration["https_port"]);
+        if (app.Environment.IsDevelopment() && hasHttpsAddress)
         {
             app.UseHttpsRedirection();
         }

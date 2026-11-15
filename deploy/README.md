@@ -19,8 +19,9 @@ zagejmi.cz, www.zagejmi.cz {
 }
 ```
 
-Přesměrování http → https tedy dělá Caddy; aplikace sama přesměrovává jen při vývoji (v produkci by lokální požadavky
-bez Caddy, třeba health check na `127.0.0.1:3000`, nemohla přesměrovat a jen by do logu psala varování).
+Přesměrování http → https tedy dělá Caddy; aplikace sama přesměrovává jen při vývoji s HTTPS adresou (profil `https`).
+V produkci a při vývoji jen na HTTP by neměla kam přesměrovat a jen by do logu psala varování „Failed to determine the
+https port for redirect“ (v produkci kvůli lokálním požadavkům bez Caddy, třeba health checku na `127.0.0.1:3000`).
 
 V Dockeru (`/opt/zagejmi`) běží:
 
