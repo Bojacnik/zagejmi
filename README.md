@@ -74,6 +74,8 @@ Výchozí hodnoty jsou v kódu, přepsat je jde v `appsettings*.json` nebo prom�
 | `Orders` | `RefundedBonusGrace`, `TimeoutInterval` | 7 dní, 5 min | jak dlouho je vrácený bonus ještě použitelný; jak často běží kontrola lhůt |
 | `Reviews` | `MinReviewsToShowRating` | 5 | od kolika recenzí se průměr ukáže na kartách |
 | `Admin` | `Emails` | prázdné | e-maily administrátorů (ověřené), kteří rozhodují nahlášené objednávky na `/admin/orders` |
+| `Smtp` | `Security` | `Auto` | zabezpečení spojení: `Auto` (port 465 = TLS hned, jinak STARTTLS podle `EnableSsl`), `StartTls`, `SslOnConnect`, `None` |
+| `Smtp` | `Timeout` | 30 s | jak dlouho smí trvat jeden krok SMTP (spojení, přihlášení, odeslání) |
 
 ## Konvence
 
@@ -98,8 +100,9 @@ v [deploy/README.md](deploy/README.md).
 git push origin master:production
 ```
 
-Pro odesílání e-mailů doplňte SMTP relay do `/opt/zagejmi/.env` na serveru a v DNS domény `zagejmi.cz` nastavte
-SPF/DKIM/DMARC podle zvoleného providera. Aby šly řešit nahlášené objednávky, nastavte tam i `ADMIN_EMAIL`.
+E-maily dnes odcházejí přes SMTP relay (Brevo) nastavený v `/opt/zagejmi/.env` na serveru. Připravený je i vlastní
+mail server (Stalwart, služba `mail` v `deploy/compose.yaml`, vypnutá); jeho zapnutí a přepnutí aplikace na něj
+popisuje [deploy/MAIL.md](deploy/MAIL.md). Aby šly řešit nahlášené objednávky, nastavte tam i `ADMIN_EMAIL`.
 
 Debug stack s Mailpit (databáze, MinIO a API jsou v base compose, debug přidává Mailpit a debug SMTP override):
 

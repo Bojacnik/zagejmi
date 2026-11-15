@@ -19,6 +19,8 @@
         <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0"/>
         <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.23.0"/>
         <PackageVersion Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1"/>
+        <!-- Mail: SMTP with STARTTLS and implicit TLS (port 465); System.Net.Mail.SmtpClient only does STARTTLS -->
+        <PackageVersion Include="MailKit" Version="4.18.2"/>
         <!-- Hosting -->
         <PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.0.0"/>
         <!-- Image Processing -->

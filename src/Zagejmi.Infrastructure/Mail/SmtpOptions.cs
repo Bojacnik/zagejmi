@@ -1,3 +1,5 @@
+using System;
+
 namespace Zagejmi.Infrastructure.Mail;
 
 /// <summary>
@@ -18,9 +20,21 @@ public sealed class SmtpOptions
     public int Port { get; set; } = 587;
 
     /// <summary>
-    ///     Gets or sets a value indicating whether SSL (Secure Sockets Layer) should be enabled for the SMTP connection.
+    ///     Gets or sets a value indicating whether the connection is encrypted when <see cref="Security" /> is
+    ///     <see cref="SmtpSecurity.Auto" /> (STARTTLS, or implicit TLS on port 465). Ignored otherwise.
     /// </summary>
     public bool EnableSsl { get; set; } = true;
+
+    /// <summary>
+    ///     Gets or sets how the connection is secured. <see cref="SmtpSecurity.Auto" /> (the default) picks it from
+    ///     <see cref="Port" /> and <see cref="EnableSsl" />.
+    /// </summary>
+    public SmtpSecurity Security { get; set; } = SmtpSecurity.Auto;
+
+    /// <summary>
+    ///     Gets or sets how long one SMTP operation (connect, authenticate, send) may take before it fails.
+    /// </summary>
+    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
     ///     Gets or sets a value indicating whether authentication should be used for the SMTP connection.
