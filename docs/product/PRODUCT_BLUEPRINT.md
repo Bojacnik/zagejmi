@@ -2,7 +2,7 @@
 
 > **Typ dokumentu:** živý produktový discovery dokument  
 > **Stav:** průběžný brainstorming; nejde o finální technickou specifikaci  
-> **Poslední zachycení:** 2026-11-14 (objednávky, recenze služeb a doporučení; aktualizován audit kódu)  
+> **Poslední zachycení:** 2026-11-15 (audit stavu dokumentace proti kódu a produkci; vlastní mail server připraven)  
 > **Zdroj:** produktové rozhovory s vlastníkem Zagejmi
 
 ## 1. Produktový záměr
@@ -34,16 +34,17 @@ Požadavky používají stavy definované v [README](./README.md).
 
 | Oblast | Aktuální obraz |
 |---|---|
-| Authentication | Základní login a registrace podle vlastníka produktu existují; ověřování e-mailu je potřeba doplnit. |
-| Profiles | Existují profily; rozlišení Player/Customer a jejich budoucí chování je potřeba porovnat s aktuálním kódem. |
-| Privacy | Ghost Mode je plánovaný produktový celek. |
+| Authentication | Registrace, login a ověření e-mailu existují (AUTH-002). |
+| Profiles | Jeden účet může mít profil Zákazník i Hráč a přepínat mezi nimi; hráč vypisuje služby (PROFILE-002). |
+| Privacy | Ghost Mode: přepínač existuje a blokuje akce (objednávky, recenze); zbytek rozsahu je otevřený (PRIVACY-001). |
 | Verification | Ověření věku/identity je plánované do budoucna. |
 | Marketplace | Hráči i Služby jsou v navigaci; služby jdou objednat z profilu hráče. |
 | Wallet | Ledger s oddělenými Paid/Bonus Goins, bonus po registraci, Escrow pro objednávky (viz WALLET-002, ORDER-001). |
 | Orders & reviews | Objednávky s Escrow, lhůtami a řešením problémů; recenze služeb a doporučení hráčů (sekce 12). |
 | Payments | Nákup Goinů přes Stripe a cashout hráčů podle vlastníka produktu zatím nejsou k dispozici. |
 | Analytics | Rozšířené Player Analytics jsou plánované později. |
-| UI | Web má fungovat při jakékoli šířce okna; při změně velikosti se dnes některé prvky slévají (hlavně horní lišta), viz UI-001. |
+| UI | Web má fungovat při jakékoli šířce okna; horní lišta je opravená, ostatní stránky zbývá projít (UI-001). |
+| Provoz | Produkce na Hetzneru (zagejmi.cz); e-maily přes SMTP relay, vlastní mail server připravený (OPS-001). **Produkce zatím neběží na aktuálním `master`**, viz audit (sekce 17). |
 | Legal & launch | Podnikatelský, platební a regulatorní model musí být vyhodnocen před ostrým komerčním spuštěním. |
 
 ---
@@ -56,10 +57,12 @@ Požadavky používají stavy definované v [README](./README.md).
 - Před dalšími změnami je nutné ověřit jejich současné chování a datový model v kódu.
 
 ### AUTH-002 – Ověření e-mailu
-- **Stav:** `CONFIRMED`
+- **Stav:** `EXISTING` (ověření), `OPEN` (zásady pro neověřené účty)
 - Po registraci má uživatel ověřit vlastnictví e-mailové adresy.
-- Je potřeba navrhnout ověřovací odkaz/token, jeho expiraci, opakované zaslání a jednorázové použití.
-- Zásady pro neověřené účty (co smějí dělat a kdy je vyžadováno ověření) zůstávají otevřené.
+- **Implementováno:** po registraci přijde odkaz s jednorázovým tokenem platným 24 h; nový odkaz jde poslat znovu
+  nejdřív po 1 minutě a starší odkazy tím přestanou platit. Přihlásit se jde až s ověřeným e-mailem; po ověření
+  přijde signup bonus (REWARD-001).
+- Zásady pro neověřené účty nad rámec „nepřihlásí se“ zůstávají otevřené (otevřené rozhodnutí 2).
 
 ### AUTH-003 – Veřejné prohlížení a přihlášení pro používání
 - **Stav:** `CONFIRMED`
@@ -70,9 +73,9 @@ Požadavky používají stavy definované v [README](./README.md).
 - Přihlášení samo o sobě nedává přístup k soukromým údajům ostatních uživatelů; je nutná autorizace podle vztahu a oprávnění.
 
 ### AUTH-004 – Typ profilu při začátku používání
-- **Stav:** `CONFIRMED` (základní záměr), `OPEN` (detail)
-- Při začátku používání si uživatel vytvoří Player nebo Customer profil.
-- Není rozhodnuto, zda může jeden účet později provozovat oba typy profilů, přepínat mezi nimi nebo je kombinovat.
+- **Stav:** `EXISTING`
+- Každý účet má od registrace profil Zákazník; profil Hráč si může kdykoli založit v Profilu.
+- Účet s oběma profily mezi nimi přepíná přepínačem v horní liště a může si nastavit, který je výchozí.
 
 ## 5. E-mailová infrastruktura
 
@@ -95,16 +98,18 @@ Požadavky používají stavy definované v [README](./README.md).
 ## 6. Player & Customer profiles
 
 ### PROFILE-001 – Player a Customer profily
-- **Stav:** `CONFIRMED` (produktový záměr), `REVIEW` (stávající implementace)
-- Základní typy profilu jsou Player a Customer.
-- Při vytvoření profilu uživatel na začátku zvolí jeden z těchto typů.
-- Možnost pozdějšího vytvoření druhého typu profilu je otevřená.
+- **Stav:** `EXISTING`
+- Základní typy profilu jsou Player a Customer; jeden účet může mít oba (AUTH-004).
+- Zákazník a hráč mají oddělené peněženky (WALLET-002) a v UI rodově správné názvy (Zákazník/Zákaznice, Hráč/Hráčka).
 
 ### PROFILE-002 – Player nabízí vlastní služby
-- **Stav:** `CONFIRMED` (produktový záměr), `PROPOSED` (datový návrh)
+- **Stav:** `EXISTING` (základ), `OPEN` (kategorie, dostupnost)
 - Player má mít možnost vypisovat služby, které poskytuje.
 - Zákazník může najít hráče přes jeho profil nebo hledat přímo službu.
-- **Návrh:** Service by měla být samostatná entita navázaná na Player profil, s vlastní kategorií, hrou, parametry, cenou a dostupností. Tento datový návrh je potřeba ověřit proti existujícímu modelu a potvrdit před implementací.
+- **Implementováno:** služba je samostatná entita profilu hráče: název, popis, cena v Goinech za jednotku, jednotka,
+  obrázek, hra, rank a styl hraní (MARKET-003), dostupnost zapnuto/vypnuto a nepovinná kategorie jako volný text
+  (zobrazí se na kartě). Hráč je spravuje v Profilu.
+- Pevný seznam kategorií (a filtr podle nich) a dostupnost v čase (kalendář) zatím nejsou (otevřené rozhodnutí 8).
 
 ### PROFILE-003 – Upozornění na doplnění profilu
 - **Stav:** `CONFIRMED` (záměr), `LATER`
@@ -181,6 +186,7 @@ Požadavky používají stavy definované v [README](./README.md).
   - **Služby:** zákazník hledá konkrétní službu bez nutnosti začít výběrem konkrétního hráče.
 - Obě cesty mají pracovat se stejnými hráči a jejich nabídkami; nejde o dva nezávislé marketplace katalogy.
 - **Implementováno:** stránka Služby (`/services`) se všemi dostupnými službami všech hráčů; kliknutí otevře detail hráče. Řazení: nejdřív úplné profily a nabídky s obrázky, potom od nejnovějších (viz RANK-001).
+- Úvodní stránka má sekci „Doporučujeme“: první čtyři hráče ve stejném pořadí jako na stránce Hráči.
 
 ### MARKET-002 – Výchozí rozdělení výsledků podle pohlaví
 - **Stav:** `CONFIRMED` (výchozí UX), `OPEN` (okrajové případy a profilová data)
@@ -194,7 +200,7 @@ Požadavky používají stavy definované v [README](./README.md).
   - Nadpis sekce ukazuje celkový počet; odkaz „Zobrazit vše (N)“ přepne na záložku dané skupiny.
   - Záložka skupiny nebo Všichni ukáže úplný seznam se stránkováním „Načíst další“. Každá záložka má vlastní URL (`?gender=Women|Men|Others|All`), takže jde sdílet a funguje tlačítko zpět.
   - Carousel ani popup se pro „Zobrazit vše“ nepoužívá (dlouhý seznam, filtry a detail hráče by se v popupu nevešly); carousel případně později na úvodní stránce.
-- **Návrh (`PROPOSED`, k potvrzení):** hodnoty „Jiné“ a „Nechci uvádět“ tvoří společnou třetí sekci „Ostatní“ pod muži. Volba přepínače se zatím nepamatuje (po načtení stránky je vždy zapnutý).
+- **Návrh (`PROPOSED`, k potvrzení):** hodnoty „Jiné“ a „Nechci uvádět“ tvoří společnou třetí sekci „Ostatní“ pod muži. Zvolená záložka je jen v adrese, po novém otevření stránky je výchozí Přehled.
 
 ### MARKET-003 – Filtry discovery
 - **Stav:** `CONFIRMED` (požadované typy filtrů), `OPEN` (konkrétní UI a datové možnosti)
@@ -209,7 +215,7 @@ Požadavky používají stavy definované v [README](./README.md).
   - Hry a jejich ranky se vybírají z **předem připraveného seznamu** se známými ranky, nikoliv volným textem.
   - Kompetitivní / nekompetitivní hraní si **nastavuje Player u každé služby**: může nabízet jen jedno, nebo obojí.
 - **Implementováno:** katalog her a ranků (`GameCatalog`), služba má hru, rank a styl hraní (kompetitivně / pro zábavu / obojí). Stránka Služby filtruje podle textu (název služby nebo hráče), hry, minimálního ranku („Gold a výš“) a stylu hraní.
-- **Zatím chybí:** filtr podle kategorie (kategorie nejsou rozhodnuté), stejné filtry na stránce Hráči a rozdělení podle pohlaví (MARKET-002).
+- **Zatím chybí:** filtr podle kategorie (kategorie nejsou rozhodnuté) a filtry hra/rank/styl na stránce Hráči (ta má jen hledání podle přezdívky). Rozdělení podle pohlaví funguje na obou stránkách (MARKET-002).
 - **Návrh (`PROPOSED`, k potvrzení):**
   - Rank u služby znamená rank hráče v dané hře. Rozsah ranků pro služby typu boosting zatím není řešen.
   - Ranky jsou pouze úrovně (tiers) bez divizí (např. „Gold“, ne „Gold 2“).
@@ -240,7 +246,8 @@ Požadavky používají stavy definované v [README](./README.md).
   - Hráči: obrázek služby = aspoň jedna dostupná služba s obrázkem.
   - Služby: profilovka a banner hráče, který službu nabízí, a obrázek dané služby.
   - Váhy jsou na jednom místě v kódu (`ProfileCompleteness`), aby je mohl použít i PROFILE-003.
-- Další faktory relevance (hodnocení, dostupnost, …) zůstávají `PROPOSED`.
+- Další faktory relevance (hodnocení, dostupnost, …) zůstávají `PROPOSED`. Hodnocení (REVIEW-001/002) se na kartách
+  ukazuje, ale **řazení zatím neovlivňuje**.
 
 ### RANK-002 – Leaderboard hráčů
 - **Stav:** `CONFIRMED` (požadavek), `OPEN` (metrika a pravidla)
@@ -347,8 +354,10 @@ Požadavky používají stavy definované v [README](./README.md).
 ## 13. Rewards & signup incentives
 
 ### REWARD-001 – Signup bonus po ověření e-mailu
-- **Stav:** `CONFIRMED`
+- **Stav:** `EXISTING`
 - Po úspěšném ověření e-mailu má uživatel získat jednorázový registrační bonus v Bonus Goins.
+- **Implementováno:** 50 Bonus Goins na zákaznický účet z `PromoBudget`, platnost 90 dní (`Wallets:SignUpBonus`,
+  `Wallets:BonusLifetime`); připíše se jen jednou.
 
 ### REWARD-002 – Vyšší signup bonus po ověření Identitou občana
 - **Stav:** `CONFIRMED` (princip), `OPEN` (výše a způsob doplatku)
@@ -436,9 +445,14 @@ Požadavky používají stavy definované v [README](./README.md).
 
 ---
 
-## 17. Audit kódu (2026-11-13, aktualizováno 2026-11-14)
+## 17. Audit kódu (2026-11-13, aktualizováno 2026-11-15)
 
-Porovnání tohoto dokumentu s kódem na větvi `master`. Část požadavků je hotová dříve, než je dokument popisoval:
+Porovnání tohoto dokumentu s kódem na větvi `master`. Část požadavků je hotová dříve, než je dokument popisoval.
+
+**`master` ≠ produkce.** Na zagejmi.cz běží verze z PR #19 (2026-11-14). Od té doby je v `master`, ale **ještě není
+nasazené**: objednávky (ORDER-001–003), recenze a doporučení (REVIEW-001/002), ikona odhlášení, oprava přepínače
+profilu (UI-001), přesměrování na HTTPS jen při vývoji, MailKit a připravený mail server (OPS-001). Před nasazením
+nastavit `ADMIN_EMAIL` na serveru (deploy/README.md), jinak nahlášené objednávky nemá kdo rozhodnout.
 
 | Požadavek | Stav v kódu |
 |---|---|
@@ -453,9 +467,14 @@ Porovnání tohoto dokumentu s kódem na větvi `master`. Část požadavků je 
 | AUTH-004 / PROFILE-001 | Jeden účet může mít Player i Customer profil a přepínat mezi nimi (odpovídá na otevřenou otázku 1). |
 | MARKET-001 / MARKET-003 | Částečně: stránka Služby s filtry hra, minimální rank, styl hraní a text (viz MARKET-003). |
 | MARKET-002 | Hotovo s návrhem pro „Jiné“ / „Nechci uvádět“ (viz MARKET-002). |
+| PROFILE-002 Služby | Hotovo (základ): služba s cenou, jednotkou, obrázkem, hrou, rankem a stylem hraní; kategorie jen jako volný text. |
+| OPS-001 E-maily | Relay v provozu; vlastní mail server (Stalwart) připravený a vypnutý, čeká na Hetzner (deploy/MAIL.md). |
+| UI-001 | Horní lišta opravená (včetně přepínače profilu, issue #27); ostatní stránky zbývá projít. |
 
 Zatím chybí: nákup Goinů (Stripe), takže zákazníci zatím utrácí jen bonus z registrace; cashout a převod výdělků hráče;
-filtry hra/rank/styl na stránce Hráči; role administrátora v databázi.
+filtry hra/rank/styl na stránce Hráči; role administrátora v databázi; vliv hodnocení na řazení; odpověď hráče na
+recenzi a nahlašování recenzí; kategorie služeb; leaderboard; plný profil hráče (PROFILE-004); Analytics.
+Otevřené GitHub issues: #1 (ikona webu ve správné velikosti).
 
 ## 18. Otevřená rozhodnutí
 
