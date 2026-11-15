@@ -19,6 +19,9 @@ zagejmi.cz, www.zagejmi.cz {
 }
 ```
 
+Přesměrování http → https tedy dělá Caddy; aplikace sama přesměrovává jen při vývoji (v produkci by lokální požadavky
+bez Caddy, třeba health check na `127.0.0.1:3000`, nemohla přesměrovat a jen by do logu psala varování).
+
 V Dockeru (`/opt/zagejmi`) běží:
 
 | Služba     | K čemu                                                    | Zvenku                                 |

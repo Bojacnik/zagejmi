@@ -231,8 +231,14 @@ public static class Program
             app.UseHsts();
         }
 
-        // Redirect HTTP requests to HTTPS to ensure secure communication
-        app.UseHttpsRedirection();
+        // Redirect HTTP requests to HTTPS, in development only. In production the app speaks plain HTTP behind the host
+        // Caddy, which already redirects http:// to https:// and forwards X-Forwarded-Proto: https; the only plain-HTTP
+        // requests that reach the app are local ones like the deploy health check on 127.0.0.1:3000, which must not be
+        // redirected (and the middleware would log "Failed to determine the https port for redirect" for them).
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
 
         // Add routing middleware to the pipeline to enable endpoint routing
         app.UseRouting();
