@@ -182,6 +182,21 @@ Požadavky používají stavy definované v [README](./README.md).
 
 ---
 
+### VERIFY-004 – Integrace s Národní identitou (Identita občana)
+- **Stav:** `LATER` (dlouhodobý produktový záměr), `REVIEW` (technická, právní a procesní proveditelnost)
+- Zagejmi by mělo do budoucna podporovat integraci s českým systémem **Národní identita / Identita občana** jako součást širší identity a ověřovací infrastruktury platformy.
+- Integraci chápat jako možnost pro uživatele, nikoliv jako povinný způsob registrace nebo přihlášení. Běžné účty a jiné podporované metody autentizace mají zůstat dostupné.
+- Podle možností oficiálního rozhraní a schváleného integračního modelu zvážit:
+  - přihlášení nebo propojení existujícího účtu Zagejmi prostřednictvím Identity občana;
+  - ověření identity uživatele a případně ověření konkrétních atributů, například věku, pokud je daný atribut poskytován a jeho použití je oprávněné;
+  - opětovné ověření při citlivých nebo regulovaných operacích, pokud to bude přiměřené a podporované.
+- Rozlišovat autentizaci (potvrzení, kdo se přihlašuje), identifikaci (zjištění konkrétní identity) a ověření jednotlivých atributů (například dosažení věkové hranice). Úspěšné přihlášení přes Národní identitu automaticky neznamená, že Zagejmi získalo nebo smí uchovávat všechny osobní údaje uživatele.
+- Preferovat předávání a ukládání pouze minimálního výsledku a nezbytných metadat ověření; neukládat kopie dokladů ani údaje, které platforma nepotřebuje.
+- Zachovat jasnou vazbu mezi ověřenou identitou a účtem Zagejmi, včetně bezpečného procesu prvního propojení, opakovaného přihlášení, změny či odpojení identity a řešení duplicitních účtů.
+- Integraci navrhnout tak, aby respektovala souhlas a informovanost uživatele, ochranu osobních údajů, účelové omezení, retenční pravidla a bezpečnost autentizačního toku.
+- Vyšší registrační bonus po ověření Identitou občana (REWARD-002) je samostatná produktová motivace; nesmí být jediným důvodem ani skrytým předpokladem pro samotnou integraci.
+- Konkrétní poskytovatel/rozhraní, podmínky přístupu, úrovně záruky identity, dostupné atributy, technický protokol, poplatky a právní základ zůstávají otevřené. Před implementací ověřit aktuální oficiální integrační možnosti Národní identity a požadavky na provozovatele služby.
+
 ## 9. Marketplace discovery – Players & Services
 
 ### MARKET-001 – Samostatná navigace Hráči a Služby
