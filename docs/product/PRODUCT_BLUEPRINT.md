@@ -197,6 +197,59 @@ Požadavky používají stavy definované v [README](./README.md).
 - Vyšší registrační bonus po ověření Identitou občana (REWARD-002) je samostatná produktová motivace; nesmí být jediným důvodem ani skrytým předpokladem pro samotnou integraci.
 - Konkrétní poskytovatel/rozhraní, podmínky přístupu, úrovně záruky identity, dostupné atributy, technický protokol, poplatky a právní základ zůstávají otevřené. Před implementací ověřit aktuální oficiální integrační možnosti Národní identity a požadavky na provozovatele služby.
 
+## 9. GitHub integration and cross-entity linking
+
+### GITHUB-001 – Přehled připojených GitHub repozitářů
+- **Stav:** `CONFIRMED` (produktový záměr), `LATER` (plná integrace), `REVIEW` (rozsah oprávnění a technické řešení)
+- Uživatel má mít možnost propojit svůj GitHub účet a sledovat všechny repozitáře, ke kterým dané propojení získá oprávnění. Neomezovat přehled pouze na repozitáře organizace Zagejmi.
+- Umožnit přehled repozitářů a jejich aktuálního stavu, včetně dostupných informací o aktivitě, posledních změnách a upozorněních.
+- U každého repozitáře zobrazovat přímý odkaz na GitHub a umožnit otevřít jeho detail.
+- Rozsah viditelných repozitářů musí odpovídat oprávněním uděleným uživatelem a GitHubem; soukromé repozitáře ani jejich metadata se nesmějí zpřístupnit ostatním uživatelům bez výslovného oprávnění.
+- Připojení a oprávnění musí být odvolatelné. Uživatel má mít přehled o tom, jaké účty a repozitáře jsou propojené a jaká oprávnění integrace používá.
+
+### GITHUB-002 – Sledování GitHub objektů a jejich stavu
+- **Stav:** `CONFIRMED` (produktový záměr), `LATER`
+- U připojených repozitářů sledovat podle dostupných oprávnění zejména:
+  - Issues včetně stavu, assignee, labels, milestones, komentářů a termínů, pokud jsou dostupné;
+  - Pull requests včetně review, approvals, změn stavu a merge;
+  - commity, branche a související aktivitu;
+  - GitHub Actions workflows a jejich běhy, výsledky, chyby a odkazy na logy;
+  - releases, deployments a další relevantní události, pokud je uživatel povolí.
+- Každý importovaný objekt musí zachovat stabilní externí identifikátor, zdrojový repozitář, poslední známý stav a přímý odkaz na původní objekt na GitHubu.
+- Stav synchronizovat průběžně prostřednictvím podporovaných webhooků a doplňkového periodického ověřování; počítat s opakováním, zpožděním a změnami událostí mimo pořadí.
+- Rozlišovat data načtená z GitHubu od lokálních úkolů a ručních poznámek. Uživatel musí poznat, kde je zdroj pravdy a zda je údaj aktuální.
+- Nevyvozovat automaticky, že uzavřené issue znamená dokončený libovolný úkol nebo projekt; mapování stavů a pravidla synchronizace musí být explicitní.
+
+### LINK-001 – Propojený model objektů napříč Zagejmi
+- **Stav:** `CONFIRMED` (produktový záměr), `LATER` (postupná realizace), `OPEN` (datový model a pravidla vztahů)
+- Zagejmi má umožnit vzájemně propojovat relevantní objekty napříč celou aplikací, nikoliv je držet jako izolované moduly.
+- Propojitelné objekty mají zahrnovat zejména:
+  - GitHub repozitáře, issues, pull requests, commity, branche a CI/CD běhy;
+  - interní projekty, úkoly, podúkoly, milníky a plánované pracovní bloky;
+  - kalendářní události, termíny, připomínky a osobní plán;
+  - uživatelské a osobní profily, osoby, spolupracovníky a relevantní vztahy;
+  - další budoucí entity, například dokumenty, poznámky, konverzace nebo objednávky, pokud to dává smysl.
+- Jeden objekt může být propojen s více objekty a vztahy mohou mít různé významy (například „souvisí s“, „realizuje“, „blokuje“, „patří do“, „řeší“ nebo „účastní se“). Vztahy mají být dohledatelné z obou stran.
+- Zachovat přímé odkazy na externí zdroje a interní stabilní ID; nevytvářet nekontrolované kopie stejného objektu v různých modulech.
+- Uživatel musí mít možnost vztahy ručně vytvořit, upravit a odstranit. Automatické návrhy vztahů musí být vysvětlitelné a potvrditelné.
+
+### AI-001 – AI jako kontextový koordinátor napříč aplikací
+- **Stav:** `CONFIRMED` (produktový záměr), `LATER` (implementace), `REVIEW` (oprávnění, ochrana dat a bezpečnost)
+- AI má umět pracovat s propojeným kontextem napříč kalendářem, úkoly, projekty, GitHubem, osobními profily a dalšími částmi Zagejmi, pokud k nim uživatel udělí přístup.
+- Má umět rozpoznávat souvislosti a navrhovat párování, například:
+  - GitHub issue ↔ interní úkol nebo podúkol;
+  - pull request / commit ↔ úkol a projekt;
+  - GitHub milestone nebo release ↔ projektový milník a kalendářní termín;
+  - CI/CD selhání ↔ související úkol, projekt a odpovědná osoba;
+  - schůzka nebo událost ↔ projekt, úkoly a účastníci;
+  - osoba z profilu ↔ spolupracovník, autor změny nebo účastník související aktivity, pokud je vazba doložitelná.
+- AI má umět využít tyto vazby při plánování kalendáře, prioritizaci úkolů, přípravě na schůzky, shrnutí stavu projektů a upozorňování na blokery nebo blížící se termíny.
+- Návrhy vazeb musí obsahovat důvod a odkazy na zdrojové objekty. Nejednoznačné shody mají být předloženy uživateli k potvrzení; AI nesmí domýšlet identitu osoby ani automaticky slučovat různé objekty pouze podle podobného názvu.
+- Automatické vytváření nebo změna úkolů, termínů, issue, PR a dalších objektů podléhá samostatným oprávněním a nastavení potvrzování. Čtení dat nesmí automaticky znamenat právo je měnit.
+- AI smí vyhledávat pouze v datech, která smí aktuální uživatel vidět. Oprávnění se musí kontrolovat i při přístupu přes propojené objekty, vyhledávání, souhrny a AI nástroje.
+- Citlivé nebo soukromé osobní profily a jejich části se AI zpřístupní pouze na základě samostatného výslovného oprávnění. Přístup k GitHubu nesmí sám o sobě udělit přístup k osobním údajům.
+- Zaznamenávat původ použitých informací a provedené AI akce tak, aby šlo dohledat, z čeho doporučení vycházelo a co AI změnila.
+
 ## 9. Marketplace discovery – Players & Services
 
 ### MARKET-001 – Samostatná navigace Hráči a Služby
