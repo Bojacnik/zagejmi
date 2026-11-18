@@ -37,6 +37,9 @@ Stav a časové zařazení jsou dvě různé věci. Například požadavek můž
 - PROFILE – uživatelské profily
 - PRIVACY – soukromí a Ghost Mode
 - VERIFY – věk a identita
+- GITHUB – GitHub účty, repozitáře a vývojová aktivita
+- LINK – propojení objektů napříč aplikací
+- AI – oprávnění a asistence AI napříč aplikací
 - MARKET – marketplace, služby a discovery
 - RANK – relevance a leaderboard
 - WALLET – Goin, peněženky a ledger
