@@ -369,7 +369,8 @@ Požadavky používají stavy definované v [README](./README.md).
 - **Stav:** `CONFIRMED` jako požadavek
 - Player má mít možnost vyplatit způsobilý zůstatek mimo platformu na svůj bankovní účet.
 - Podle současného popisu cashout zatím není implementovaný.
-- Způsobilost zůstatku, čekací lhůty, poplatky, minimální částka, ověření identity, výplaty a řešení sporů jsou otevřené.
+- **Rozhodnuto (2026-11-19):** výdělek jde vybrat 14 dní po dokončení objednávky; minimální výběr 500 Goins.
+- Poplatky, ověření identity, způsob výplat a řešení sporů jsou otevřené (návrh ve [Specifikaci prvního vydání](./FIRST_RELEASE_SPEC.md)).
 - Není rozhodnuto, zda mohou být vypláceny pouze Paid Goins, nebo jiný typ zůstatku. Bonus Goins jsou zatím zamýšlené jako odměnová měna; možnost cashoutu není schválena.
 
 ### PAY-004 – Refund nákupu a chargeback

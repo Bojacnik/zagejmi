@@ -109,9 +109,9 @@ z `PromoBudget` (WALLET-002). Každý vydaný bonus je tedy budoucí skutečný 
   datum narození, bankovní účet). Stripe tím pokryje KYC a Zagejmi neukládá doklady (VERIFY-001 návrh).
 - **Věk:** výplaty a nové služby jen pro hráče, kterému je podle Stripe ověřeného data narození aspoň 18 let
   (VERIFY-002). Profil hráče jde založit dál bez ověření, ale bez služeb se nezobrazí v katalogu.
-- **Dostupnost výdělku:** výdělek z dokončené objednávky jde vybrat **14 dní** po dokončení (rezerva na
-  reklamace a chargebacky). Do té doby je v peněžence vidět jako „čeká“.
-- **Minimální výběr:** 500 Goins; výběr na žádost hráče, nejvýš jeden za den.
+- **Dostupnost výdělku** (`CONFIRMED` 2026-11-19, D6): výdělek z dokončené objednávky jde vybrat **14 dní** po
+  dokončení (rezerva na reklamace a chargebacky). Do té doby je v peněžence vidět jako „čeká“.
+- **Minimální výběr** (`CONFIRMED` 2026-11-19, D6): 500 Goins. Výběr na žádost hráče, nejvýš jeden za den (`PROPOSED`).
 - Ledger: `PlayerEarnings → PayoutClearing` (typ `Payout`) a Stripe transfer na Connect účet; při selhání
   transferu zpětný pohyb (`PayoutFailed`). Stripe výplaty na banku řídí Stripe.
 - Převod výdělků hráče do vlastní zákaznické peněženky v R1 není (WALLET-002, otevřené).
@@ -190,5 +190,5 @@ krok 5 je poslední.
 | ~~D3~~ | Minimální věk zákazníka a forma potvrzení (VERIFY-003) | Rozhodnuto 2026-11-19: 18+, potvrzení při registraci |
 | D4 | Vracení nevyužitých Paid Goinů | Na žádost do 14 dnů, jen neutracená část nákupu |
 | D5 | Výše signup bonusu a rozpočet `PromoBudget` při skutečných penězích (WALLET-003) | Ponechat 50 Goins; rozpočet stanovit před spuštěním |
-| D6 | Doba do dostupnosti výdělku a minimální výběr | 14 dní; 500 Goins |
+| ~~D6~~ | Doba do dostupnosti výdělku a minimální výběr | Rozhodnuto 2026-11-19: 14 dní; 500 Goins |
 | ~~D7~~ | Kdo platí poplatek Stripe | Rozhodnuto 2026-11-19: platforma |
