@@ -2,7 +2,7 @@
 
 > **Typ dokumentu:** živý produktový discovery dokument  
 > **Stav:** průběžný brainstorming; nejde o finální technickou specifikaci  
-> **Poslední zachycení:** 2026-11-15 (audit stavu dokumentace proti kódu a produkci; vlastní mail server připraven)  
+> **Poslední zachycení:** 2026-11-19 (první vydání bude se skutečnými penězi, viz [Specifikace prvního vydání](./FIRST_RELEASE_SPEC.md))  
 > **Zdroj:** produktové rozhovory s vlastníkem Zagejmi
 
 ## 1. Produktový záměr
@@ -371,6 +371,11 @@ Požadavky používají stavy definované v [README](./README.md).
 - Způsobilost zůstatku, čekací lhůty, poplatky, minimální částka, ověření identity, výplaty a řešení sporů jsou otevřené.
 - Není rozhodnuto, zda mohou být vypláceny pouze Paid Goins, nebo jiný typ zůstatku. Bonus Goins jsou zatím zamýšlené jako odměnová měna; možnost cashoutu není schválena.
 
+### PAY-004 – Refund nákupu a chargeback
+- **Stav:** `CONFIRMED` jako potřeba (první vydání je se skutečnými penězi), `PROPOSED` jako řešení
+- Nákup Goinů jde vrátit a karetní spor (chargeback) musí mít v ledgeru jasný dopad, i když zákazník Goins už utratil.
+- Návrh pravidel a ledgerových pohybů je ve [Specifikaci prvního vydání](./FIRST_RELEASE_SPEC.md#pay-004--refund-a-chargeback-nový-požadavek-proposed).
+
 ### PAY-003 – Central Wallet pro zprostředkované transakce
 - **Stav:** `CONFIRMED` jako záměr pro Ghost Mode, `OPEN` pro obecné platby
 - Systémový účet `Escrow` už drží Goins otevřených objednávek (ORDER-001); obecný model pro skutečné peníze zůstává otevřený.
@@ -570,7 +575,8 @@ Následující body vyžadují další produktový brainstorming nebo technickou
 15. Jaký minimální věk bude vyžadován u Customer účtů?
 16. Které metody ověření věku/identity budou dostupné při spuštění?
 17. Jak se budou definovat měsíční průměrné výdělky a reklamovanost v Analytics?
-18. Jak bude vypadat první veřejná a placená release fáze a co do ní nepatří?
+18. ~~Jak bude vypadat první veřejná a placená release fáze a co do ní nepatří?~~ První vydání bude se skutečnými
+    penězi (rozhodnuto 2026-11-19); rozsah a návrhy viz [Specifikace prvního vydání](./FIRST_RELEASE_SPEC.md).
 19. Jak bude vypadat plný profil hráče (PROFILE-004): adresa, obsah, formátování textu „o mně“ a vztah k dnešnímu popupu?
 
 ## 19. Doporučený další postup
