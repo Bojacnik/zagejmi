@@ -139,7 +139,8 @@ Podle Fáze A v [Competitive Positioning](./COMPETITIVE_STRATEGY.md) (sekce 8):
 - **Nahlášení:** uživatele (z profilu) a recenze (u recenze), s důvodem; fronta na `/admin/reports`.
   Blokace účtu zakáže přihlášení, objednávky a výplaty; zůstatky zůstanou.
 - **Odpověď hráče na recenzi** jedním veřejným textem (REVIEW-002, otevřený bod) – pomáhá řešit spory veřejně.
-- **Minimální věk zákazníka:** při registraci potvrzení „je mi 18 let“ (checkbox, ne ověření); viz D3.
+- **Minimální věk zákazníka** (`CONFIRMED` 2026-11-19, D3): 18 let. Při registraci povinné potvrzení „je mi 18 let“
+  (checkbox, ne ověření dokladem); u existujících účtů se potvrzení vyžádá před prvním nákupem Goinů.
 
 ## 9. Datový model (`PROPOSED`)
 
@@ -186,7 +187,7 @@ krok 5 je poslední.
 |---|---|---|
 | D1 | Platební model: uložené zůstatky Goinů (dnešní peněženka) vs. platba každé objednávky zvlášť přes Stripe Connect (Goins jen jako bonus) | Rozhodnout po právní konzultaci (GATE-2); spec počítá s peněženkou, protože ji kód už má |
 | ~~D2~~ | Kurz a balíčky Goinů | Rozhodnuto 2026-11-19: 1 Goin = 1 Kč; 200 / 500 / 1 000 / 2 000 |
-| D3 | Minimální věk zákazníka a forma potvrzení (VERIFY-003) | 18+, potvrzení při registraci |
+| ~~D3~~ | Minimální věk zákazníka a forma potvrzení (VERIFY-003) | Rozhodnuto 2026-11-19: 18+, potvrzení při registraci |
 | D4 | Vracení nevyužitých Paid Goinů | Na žádost do 14 dnů, jen neutracená část nákupu |
 | D5 | Výše signup bonusu a rozpočet `PromoBudget` při skutečných penězích (WALLET-003) | Ponechat 50 Goins; rozpočet stanovit před spuštěním |
 | D6 | Doba do dostupnosti výdělku a minimální výběr | 14 dní; 500 Goins |

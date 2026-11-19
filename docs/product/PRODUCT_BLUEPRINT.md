@@ -177,8 +177,9 @@ Požadavky používají stavy definované v [README](./README.md).
 - Jak a kdy se věk ověří, včetně případů výjimek a odvolání, je otevřené.
 
 ### VERIFY-003 – Minimální věk Customer
-- **Stav:** `OPEN`
-- Minimální věk zákazníka a pravidla pro nezletilé zákazníky nebyly rozhodnuty.
+- **Stav:** `CONFIRMED` (2026-11-19), `REVIEW` z hlediska právního základu
+- Zákazníkovi musí být aspoň 18 let. V prvním vydání to potvrdí zaškrtnutím při registraci (bez ověření dokladem);
+  existující účty potvrzení udělají před prvním nákupem Goinů. Ověření dokladem je pozdější krok (VERIFY-001).
 
 ---
 
@@ -572,7 +573,7 @@ Následující body vyžadují další produktový brainstorming nebo technickou
 12. Jaký právní a účetní model bude mít Central Wallet?
 13. Jaké Goins lze vyplatit hráči a za jakých podmínek?
 14. Jaké budou částky signup bonusů a bude druhá úroveň doplatkem rozdílu?
-15. Jaký minimální věk bude vyžadován u Customer účtů?
+15. ~~Jaký minimální věk bude vyžadován u Customer účtů?~~ 18 let, potvrzení při registraci (VERIFY-003).
 16. Které metody ověření věku/identity budou dostupné při spuštění?
 17. Jak se budou definovat měsíční průměrné výdělky a reklamovanost v Analytics?
 18. ~~Jak bude vypadat první veřejná a placená release fáze a co do ní nepatří?~~ První vydání bude se skutečnými
