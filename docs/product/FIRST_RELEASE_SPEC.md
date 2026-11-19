@@ -63,13 +63,15 @@ leaderboard (RANK-002), relevance podle hodnocení (RANK-001), kalendář dostup
 (ANALYTICS-001–004), GitHub integrace a AI koordinátor (GITHUB-001/002, LINK-001, AI-001), vlastní mail server
 (OPS-001, nezávisle na R1).
 
-## 4. Ekonomika Goinů (`PROPOSED`)
+## 4. Ekonomika Goinů
 
-| Pravidlo | Návrh |
+Kurz, balíčky a poplatek Stripe rozhodl vlastník 2026-11-19 (D2, D7); ostatní řádky jsou `PROPOSED`.
+
+| Pravidlo | Návrh / rozhodnutí |
 |---|---|
-| Kurz | 1 Goin = 1 Kč při nákupu; cena se zobrazuje v Goinech i v Kč |
-| Balíčky | 200, 500, 1 000, 2 000 Goins; minimální nákup 200 Goins |
-| Poplatek Stripe | Nese platforma (zákazník platí přesně kurz × počet) |
+| Kurz | `CONFIRMED`: 1 Goin = 1 Kč při nákupu; cena se zobrazuje v Goinech i v Kč |
+| Balíčky | `CONFIRMED`: 200, 500, 1 000, 2 000 Goins; minimální nákup 200 Goins |
+| Poplatek Stripe | `CONFIRMED`: nese platforma (zákazník platí přesně kurz × počet) |
 | Poplatek platformy | Beze změny: 10 % z objednávky, dolů, min. 1 Goin (ORDER-001) |
 | Výplata hráči | Jen výdělky (`PlayerEarnings`), vždy v Paid Goins (WALLET-002) |
 | Bonus Goins | Nelze koupit ani vyplatit; jsou marketingový náklad platformy |
@@ -183,9 +185,9 @@ krok 5 je poslední.
 | # | Rozhodnutí | Návrh |
 |---|---|---|
 | D1 | Platební model: uložené zůstatky Goinů (dnešní peněženka) vs. platba každé objednávky zvlášť přes Stripe Connect (Goins jen jako bonus) | Rozhodnout po právní konzultaci (GATE-2); spec počítá s peněženkou, protože ji kód už má |
-| D2 | Kurz a balíčky Goinů | 1 Goin = 1 Kč; 200 / 500 / 1 000 / 2 000 |
+| ~~D2~~ | Kurz a balíčky Goinů | Rozhodnuto 2026-11-19: 1 Goin = 1 Kč; 200 / 500 / 1 000 / 2 000 |
 | D3 | Minimální věk zákazníka a forma potvrzení (VERIFY-003) | 18+, potvrzení při registraci |
 | D4 | Vracení nevyužitých Paid Goinů | Na žádost do 14 dnů, jen neutracená část nákupu |
 | D5 | Výše signup bonusu a rozpočet `PromoBudget` při skutečných penězích (WALLET-003) | Ponechat 50 Goins; rozpočet stanovit před spuštěním |
 | D6 | Doba do dostupnosti výdělku a minimální výběr | 14 dní; 500 Goins |
-| D7 | Kdo platí poplatek Stripe | Platforma |
+| ~~D7~~ | Kdo platí poplatek Stripe | Rozhodnuto 2026-11-19: platforma |
