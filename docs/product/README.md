@@ -5,6 +5,7 @@ Tato složka je centrální zdroj produktových požadavků pro Zagejmi. Zachycu
 ## Dokumenty
 
 - [Product Blueprint](./PRODUCT_BLUEPRINT.md) – aktuální přehled produktu, požadavků, stavu implementace a otevřených rozhodnutí.
+- [Specifikace prvního vydání (R1)](./FIRST_RELEASE_SPEC.md) – rozsah prvního veřejného vydání se skutečnými penězi, podmínky spuštění, návrhy pravidel, plán dodání a rozhodnutí pro R1.
 - [Competitive Positioning & Product Experience](./COMPETITIVE_STRATEGY.md) – konkurenční analýza E-Pal/Metafy, doporučené vymezení Zagejmi, UX principy, návrh informační architektury a pořadí redesignu.
 
 ## Jak dokumentaci číst

@@ -2,7 +2,7 @@
 
 > **Typ dokumentu:** živý produktový discovery dokument  
 > **Stav:** průběžný brainstorming; nejde o finální technickou specifikaci  
-> **Poslední zachycení:** 2026-11-15 (audit stavu dokumentace proti kódu a produkci; vlastní mail server připraven)  
+> **Poslední zachycení:** 2026-11-19 (první vydání bude se skutečnými penězi, viz [Specifikace prvního vydání](./FIRST_RELEASE_SPEC.md))  
 > **Zdroj:** produktové rozhovory s vlastníkem Zagejmi
 
 ## 1. Produktový záměr
@@ -177,8 +177,9 @@ Požadavky používají stavy definované v [README](./README.md).
 - Jak a kdy se věk ověří, včetně případů výjimek a odvolání, je otevřené.
 
 ### VERIFY-003 – Minimální věk Customer
-- **Stav:** `OPEN`
-- Minimální věk zákazníka a pravidla pro nezletilé zákazníky nebyly rozhodnuty.
+- **Stav:** `CONFIRMED` (2026-11-19), `REVIEW` z hlediska právního základu
+- Zákazníkovi musí být aspoň 18 let. V prvním vydání to potvrdí zaškrtnutím při registraci (bez ověření dokladem);
+  existující účty potvrzení udělají před prvním nákupem Goinů. Ověření dokladem je pozdější krok (VERIFY-001).
 
 ---
 
@@ -368,8 +369,14 @@ Požadavky používají stavy definované v [README](./README.md).
 - **Stav:** `CONFIRMED` jako požadavek
 - Player má mít možnost vyplatit způsobilý zůstatek mimo platformu na svůj bankovní účet.
 - Podle současného popisu cashout zatím není implementovaný.
-- Způsobilost zůstatku, čekací lhůty, poplatky, minimální částka, ověření identity, výplaty a řešení sporů jsou otevřené.
+- **Rozhodnuto (2026-11-19):** výdělek jde vybrat 14 dní po dokončení objednávky; minimální výběr 500 Goins.
+- Poplatky, ověření identity, způsob výplat a řešení sporů jsou otevřené (návrh ve [Specifikaci prvního vydání](./FIRST_RELEASE_SPEC.md)).
 - Není rozhodnuto, zda mohou být vypláceny pouze Paid Goins, nebo jiný typ zůstatku. Bonus Goins jsou zatím zamýšlené jako odměnová měna; možnost cashoutu není schválena.
+
+### PAY-004 – Refund nákupu a chargeback
+- **Stav:** `CONFIRMED` jako potřeba (první vydání je se skutečnými penězi), `PROPOSED` jako řešení
+- Nákup Goinů jde vrátit a karetní spor (chargeback) musí mít v ledgeru jasný dopad, i když zákazník Goins už utratil.
+- Návrh pravidel a ledgerových pohybů je ve [Specifikaci prvního vydání](./FIRST_RELEASE_SPEC.md#pay-004--refund-a-chargeback-nový-požadavek-proposed).
 
 ### PAY-003 – Central Wallet pro zprostředkované transakce
 - **Stav:** `CONFIRMED` jako záměr pro Ghost Mode, `OPEN` pro obecné platby
@@ -567,10 +574,11 @@ Následující body vyžadují další produktový brainstorming nebo technickou
 12. Jaký právní a účetní model bude mít Central Wallet?
 13. Jaké Goins lze vyplatit hráči a za jakých podmínek?
 14. Jaké budou částky signup bonusů a bude druhá úroveň doplatkem rozdílu?
-15. Jaký minimální věk bude vyžadován u Customer účtů?
+15. ~~Jaký minimální věk bude vyžadován u Customer účtů?~~ 18 let, potvrzení při registraci (VERIFY-003).
 16. Které metody ověření věku/identity budou dostupné při spuštění?
 17. Jak se budou definovat měsíční průměrné výdělky a reklamovanost v Analytics?
-18. Jak bude vypadat první veřejná a placená release fáze a co do ní nepatří?
+18. ~~Jak bude vypadat první veřejná a placená release fáze a co do ní nepatří?~~ První vydání bude se skutečnými
+    penězi (rozhodnuto 2026-11-19); rozsah a návrhy viz [Specifikace prvního vydání](./FIRST_RELEASE_SPEC.md).
 19. Jak bude vypadat plný profil hráče (PROFILE-004): adresa, obsah, formátování textu „o mně“ a vztah k dnešnímu popupu?
 
 ## 19. Doporučený další postup
