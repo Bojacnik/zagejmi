@@ -110,3 +110,7 @@ Debug stack s Mailpit (databáze, MinIO a API jsou v base compose, debug přidá
 ```bash
 docker compose -f docker-compose.yaml -f docker-compose.debug.yaml up -d --build
 ```
+
+## Branding
+
+- [Create a logo for Zagejmi](https://github.com/Bojacnik/zagejmi/issues/37) — explore and select a recognizable logo and suitable variants for the website, small icons, and marketing materials. The visual direction is intentionally open.
