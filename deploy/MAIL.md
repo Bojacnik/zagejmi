@@ -118,6 +118,31 @@ cd /opt/zagejmi && bash mail/switch-smtp.sh relay
 
 `switch-smtp.sh status` ukáže, co se právě používá. Hesla nevypisuje.
 
+## Další domény (kaimo, vutregbot)
+
+Stejný server obsluhuje i ostatní projekty na tomhle stroji, každý na vlastní subdoméně. Seznam je v `.env`:
+
+```
+MAIL_EXTRA_DOMAINS=kaimo.zagejmi.cz vutregbot.zagejmi.cz
+```
+
+`setup-mail.sh` pro každou z nich:
+
+- založí doménu a její DKIM klíče;
+- založí schránku `noreply@<doména>` s heslem v `.env` jako `MAIL_NOREPLY_PASSWORD_<JMÉNO>`, např.
+  `MAIL_NOREPLY_PASSWORD_KAIMO`;
+- přidá `postmaster@<doména>` jako alias schránky `postmaster@zagejmi.cz`;
+- vypíše jen záznamy, které pošta potřebuje: DKIM, SPF, MX, DMARC a TLS-RPT.
+
+Mail klienti a aplikace se i u subdomén připojují na `mx.zagejmi.cz`, takže subdomény nepotřebují vlastní certifikát
+ani blok v Caddy. Další doménu přidáte tak, že ji připíšete do `MAIL_EXTRA_DOMAINS` a skript pustíte znovu.
+
+**DKIM klíče se samy nemění.** Skript vypne jejich automatickou rotaci u všech domén. DNS na Wedosu se spravuje ručně,
+takže by Stalwart po rotaci podepisoval klíčem, který v DNS není, a pošta by neprošla kontrolou DKIM.
+
+`setup-mail.sh` jde pustit i před krokem 3. Bez certifikátu jen vypíše varování, server zatím použije self-signed
+certifikát a DNS záznamy vypíše i tak. Po `install-host.sh` ho pusťte znovu a certifikát se doplní.
+
 ## Schránky a správa
 
 - **Webová administrace:** https://mx.zagejmi.cz/admin.
